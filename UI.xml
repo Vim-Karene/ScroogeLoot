@@ -1,0 +1,105 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+    <!-- Scrooge Loot UI Elements -->
+
+    <!-- Main Loot Roll Window -->
+    <Frame name="ScroogeLoot_MainFrame" parent="UIParent" hidden="true">
+        <Size>
+            <AbsDimension x="400" y="300"/>
+        </Size>
+        <Anchors>
+            <Anchor point="CENTER"/>
+        </Anchors>
+        <Backdrop>
+            <EdgeFile file="Interface/Tooltips/UI-Tooltip-Border" tile="true"/>
+            <EdgeSize val="16"/>
+            <Background file="Interface/DialogFrame/UI-DialogBox-Background"/>
+            <TileSize val="32"/>
+        </Backdrop>
+        <Frames>
+            <!-- Title Bar -->
+            <FontString name="$parentTitle" inherits="GameFontNormalLarge">
+                <Anchors>
+                    <Anchor point="TOP" offset="0, -10"/>
+                </Anchors>
+                <Text>Scrooge Loot</Text>
+            </FontString>
+
+            <!-- Timer Display -->
+            <FontString name="$parentTimer" inherits="GameFontNormal">
+                <Anchors>
+                    <Anchor point="TOP" relativePoint="TOP" offset="0, -40"/>
+                </Anchors>
+                <Text>Time Remaining: 5:00</Text>
+            </FontString>
+
+            <!-- Loot Item Section -->
+            <Frame name="$parentLootSection">
+                <Size>
+                    <AbsDimension x="350" y="160"/>
+                </Size>
+                <Anchors>
+                    <Anchor point="TOP" relativePoint="TOP" offset="0, -70"/>
+                </Anchors>
+                <Backdrop>
+                    <EdgeFile file="Interface/Tooltips/UI-Tooltip-Border" tile="true"/>
+                    <EdgeSize val="12"/>
+                </Backdrop>
+
+                <!-- Loot Item Name -->
+                <FontString name="$parentItemName" inherits="GameFontHighlight">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" offset="10, -10"/>
+                    </Anchors>
+                    <Text>Item: [Example Item]</Text>
+                </FontString>
+
+                <!-- Roll Buttons -->
+                <Frames>
+                    <Button name="$parentTokenRoll" inherits="UIPanelButtonTemplate">
+                        <Size>
+                            <AbsDimension x="80" y="22"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="TOPLEFT" offset="10, -40"/>
+                        </Anchors>
+                        <Text>Token Roll</Text>
+                    </Button>
+                    <Button name="$parentRaiderRoll" inherits="UIPanelButtonTemplate">
+                        <Size>
+                            <AbsDimension x="80" y="22"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativeTo="$parentTokenRoll" relativePoint="RIGHT" offset="10, 0"/>
+                        </Anchors>
+                        <Text>Raider Roll</Text>
+                    </Button>
+                    <Button name="$parentMainSpec" inherits="UIPanelButtonTemplate">
+                        <Size>
+                            <AbsDimension x="80" y="22"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativeTo="$parentRaiderRoll" relativePoint="RIGHT" offset="10, 0"/>
+                        </Anchors>
+                        <Text>Main Spec</Text>
+                    </Button>
+                    <Button name="$parentOffSpec" inherits="UIPanelButtonTemplate">
+                        <Size>
+                            <AbsDimension x="80" y="22"/>
+                        </Size>
+                        <Anchors>
+                            <Anchor point="LEFT" relativeTo="$parentMainSpec" relativePoint="RIGHT" offset="10, 0"/>
+                        </Anchors>
+                        <Text>Off Spec</Text>
+                    </Button>
+                </Frames>
+            </Frame>
+
+            <!-- Close Button -->
+            <Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+                <Anchors>
+                    <Anchor point="TOPRIGHT" offset="-5, -5"/>
+                </Anchors>
+            </Button>
+        </Frames>
+    </Frame>
+</Ui>

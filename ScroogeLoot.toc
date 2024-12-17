@@ -1,0 +1,20 @@
+## Interface: 30300
+## Title: Scrooge Loot
+## Author: YourName
+## Version: 1.0
+## Notes: Loot Management Addon for Raids
+## SavedVariables: ScroogeLootDB
+## SavedVariablesPerCharacter: ScroogeLootCharDB
+
+Core.lua
+
+## UI Files
+UI.xml
+
+## Lua Files
+SpreadsheetHandler.lua
+LootManager.lua
+PlayerUI.lua
+LootMasterUI.lua
+AttendanceTracker.lua
+Utilities.lua
