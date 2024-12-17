@@ -1,20 +1,27 @@
-## Interface: 30300
+## Interface: 12340
 ## Title: Scrooge Loot
 ## Author: YourName
-## Version: 1.0
-## Notes: Loot Management Addon for Raids
+## Version: 1.0.0
+## Notes: A comprehensive loot management addon for Turtle WoW.
 ## SavedVariables: ScroogeLootDB
-## SavedVariablesPerCharacter: ScroogeLootCharDB
 
-Core.lua
-
-## UI Files
-UI.xml
-
-## Lua Files
-SpreadsheetHandler.lua
-LootManager.lua
-PlayerUI.lua
-LootMasterUI.lua
-AttendanceTracker.lua
+-- Core Files
+core.lua
 Utilities.lua
+SavedVariables.lua
+
+-- UI Files
+UI.xml
+LootMasterUI.lua
+PlayerUI.lua
+
+-- Logic Files
+LootManager.lua
+SpreadsheetHandler.lua
+AttendanceTracker.lua
+
+-- Assets
+Textures\icon.tga
+Textures\frame_bg.tga
+
+## Dependencies: None
