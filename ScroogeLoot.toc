@@ -1,7 +1,7 @@
 ## Interface: 30300
 ## Title: Scrooge Loot
 ## Notes: Custom loot system based on RCLootCouncil with Duck and Token Points.
-## Author: Original RCLootCouncil by Potdisc, modified by [Your Name]
+## Author: Original RCLootCouncil by Potdisc, modified by Vim
 ## Version: 1.0
 ## SavedVariables: ScroogeLootDB
 
