@@ -98,8 +98,8 @@ It’s now the official loot addon for Epoch WoW, where it continues to evolve t
 # 🦆 Scrooge Loot – How the System is intended to work:
 
 ## 🪙 TOKEN ROLL *(Highest Priority)*
-- **Only available to Ducks** (designated raiders).
-- Each Duck selects **3 token items** from the current raid tier.
+- **Only available to raiders**.
+- Each raider selects **3 token items** from the current raid tier.
 - You start with **0 Token Points (TP)**.
 - If a token item drops:
   - If **only you** tokened it → you get it automatically.
@@ -115,7 +115,7 @@ It’s now the official loot addon for Epoch WoW, where it continues to evolve t
 ---
 
 ## 🟪 DUCK ROLL *(Second Priority)*
-- Only available to **Ducks**.
+- Only available to **raiders**.
 - Used for items not covered by Token Rolls.
 - If you win a Duck Roll:
   - You gain **-50 Duck Points (DP)** (this is a **roll penalty**).
@@ -126,16 +126,16 @@ It’s now the official loot addon for Epoch WoW, where it continues to evolve t
 ---
 
 ## 🟩 MAIN SPEC (MS) ROLL *(Third Priority)*
-- **Open to everyone**, Duck or non-Duck.
+- **Open to everyone**, raider or non-raider.
 - Used for items that are an upgrade to your **main spec**.
-- If you're a Duck and have Duck Debt, your **DP penalty applies here**.
+- If you're a raider and have negative duck points, your **DP penalty applies here**.
 
 ---
 
 ## 🟧 OFF SPEC (OS) ROLL *(Fourth Priority)*
 - **Open to everyone**.
 - Used for gear not suited for your current spec but still useful.
-- Ducks with active DP debt are **penalized here too**.
+- raiders with negative DP are **penalized here too**.
 
 ---
 
