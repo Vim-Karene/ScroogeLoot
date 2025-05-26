@@ -95,6 +95,59 @@ It’s now the official loot addon for Epoch WoW, where it continues to evolve t
 3. Make sure the folder is named ScroogeLoot (not double-nested).
 4. Enable it on the character selection screen.
 
+# 🦆 Scrooge Loot – How the System is intended to work:
+
+## 🪙 TOKEN ROLL *(Highest Priority)*
+- **Only available to Ducks** (designated raiders).
+- Each Duck selects **3 token items** from the current raid tier.
+- You start with **0 Token Points (TP)**.
+- If a token item drops:
+  - If **only you** tokened it → you get it automatically.
+  - If **multiple players** tokened it → you **roll**, and your TP is **added** to your roll.
+- **Winning** the roll:
+  - Your **TP resets to 0**
+  - You **consume that token slot** for the raid tier.
+- **Losing** the roll:
+  - You gain **+20 TP**.
+- For every full **raid reset attended**, you earn **+10 TP**.
+- You may change one of your chosen token items up to **3 times** per tier.
+
+---
+
+## 🟪 DUCK ROLL *(Second Priority)*
+- Only available to **Ducks**.
+- Used for items not covered by Token Rolls.
+- If you win a Duck Roll:
+  - You gain **-50 Duck Points (DP)** (this is a **roll penalty**).
+- Every raid you attend restores **+25 DP** (up to a max of 0).
+- Your current DP is **subtracted** from future rolls.
+- Duck Points are **separate** from Token Points.
+
+---
+
+## 🟩 MAIN SPEC (MS) ROLL *(Third Priority)*
+- **Open to everyone**, Duck or non-Duck.
+- Used for items that are an upgrade to your **main spec**.
+- If you're a Duck and have Duck Debt, your **DP penalty applies here**.
+
+---
+
+## 🟧 OFF SPEC (OS) ROLL *(Fourth Priority)*
+- **Open to everyone**.
+- Used for gear not suited for your current spec but still useful.
+- Ducks with active DP debt are **penalized here too**.
+
+---
+
+## ⚪ TRANSMOG ROLL *(Lowest Priority)*
+- **Open to everyone**, no restrictions.
+- Used for **cosmetic** or **vanity** items only.
+- No points are gained or lost.
+- Has the **lowest loot priority**.
+
+---
+
+
 ## ⚖️ License & Credits
 Scrooge Loot is a fork of RCLootCouncil, and retains its original license:
 GNU General Public License v3.0 (GPLv3).
