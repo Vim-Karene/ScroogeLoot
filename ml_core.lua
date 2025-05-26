@@ -1,77 +1,79 @@
--- ScroogeLootML: ml_core.lua additions
+SL = SL or {}
+ScroogeLoot = ScroogeLoot or {}
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
-ScroogeLootML = addon:NewModule("ScroogeLootML", "AceEvent-3.0", "AceBucket-3.0", "AceComm-3.0", "AceTimer-3.0", "AceHook-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
-local LibDialog = LibStub("LibDialog-1.0")
-local Deflate = LibStub("LibDeflate")
-
-local raidActive = false
-local presentPlayers = {}
-
-function ScroogeLootML:StartRaid()
-  if not IsMasterLooter() then return end
-  raidActive = true
-  presentPlayers = {}
-  for i = 1, GetNumGroupMembers() do
-    local name, _, _, _, _, _, _, online = GetRaidRosterInfo(i)
-    if online then
-      presentPlayers[name] = true
-    end
-  end
-  SendChatMessage("Raid Started", "RAID_WARNING")
-end
-
-function ScroogeLootML:ConcludeRaid()
-  if not IsMasterLooter() then return end
-  raidActive = false
-  for name in pairs(presentPlayers) do
-    local p = addon:GetOrCreatePlayer(name)
-    p.attendance = p.attendance + 1
-    p.TP = p.TP + 10
-    p.DP = math.min(0, p.DP + 25)
-  end
-  SendChatMessage("Raid Concluded", "RAID_WARNING")
-end
-
-function ScroogeLootML:AdjustRolls(rolls)
+function SL:AdjustRolls(rolls)
   for _, roll in ipairs(rolls) do
-    local p = addon:GetOrCreatePlayer(roll.name)
-    if roll.type == "Duck Roll" or roll.type == "MS Roll" or roll.type == "OS Roll" then
-      roll.value = roll.value + p.DP
+    local p = ScroogeLoot:GetOrCreatePlayer(roll.name)
+    if roll.type == "Duck Roll" and p.raider then
+      roll.value = roll.value + (p.DP or 0)
+    elseif (roll.type == "MS Roll" or roll.type == "OS Roll") and p.raider then
+      roll.value = roll.value + (p.DP or 0)
     elseif roll.type == "Token Roll" then
-      roll.value = roll.value + p.TP
+      roll.value = roll.value + (p.TP or 0)
     end
   end
 end
 
-function ScroogeLootML:AwardItem(winner, rollType, item)
-  local p = addon:GetOrCreatePlayer(winner)
-  if rollType == "Duck Roll" or rollType == "MS Roll" or rollType == "OS Roll" then
-    p.DP = p.DP - 50
-  elseif rollType == "Token Roll" then
-    local match = false
-    for _, token in ipairs(p.tokens) do
-      if token == item then match = true break end
-    end
-    if not match then
-      print("Cannot award this item to " .. winner .. ": not in their tokens.")
-      return false
-    end
-    p.TP = 0
-    for _, r in ipairs(self.lastRolls or {}) do
-      if r.name ~= winner and r.type == "Token Roll" then
-        local loser = addon:GetOrCreatePlayer(r.name)
-        loser.TP = loser.TP + 20
-      end
-    end
-  end
-  return true
+-- /slhelp command to list all available Scrooge Loot commands
+function SL:ShowHelp()
+  print("|cffffff00/sl|r - Open the Loot Master session window")
+  print("|cffffff00Scrooge Loot Commands:")
+  print("|cffffff00/sl start|r - Start tracking attendance")
+  print("|cffffff00/sl conclude|r - Conclude raid and apply attendance rewards")
+  print("|cffffff00/slpm|r - Open Player Manager UI")
+  print("|cffffff00/slroster|r - View attendance summary")
+  print("|cffffff00/slstats|r - Show statistics dashboard")
+  print("|cffffff00/slhelp|r - Show this help message")
 end
--- /slroster — Attendance Summary Window
-function SL:ShowAttendanceSummary()
-  local frame = CreateFrame("Frame", "SLSummaryFrame", UIParent, "BasicFrameTemplateWithInset")
-  frame:SetSize(300, 400)
+
+SLASH_SCROOGEHELP1 = "/slhelp"
+SlashCmdList["SCROOGEHELP"] = function() SL:ShowHelp() end
+-- Add custom roll buttons to RCLootCouncil vote frame
+hooksecurefunc("RCLootCouncil", "StartSession", function()
+  if not RCLootCouncilFrame then return end
+  if SL.rollButtonsAdded then return end
+  SL.rollButtonsAdded = true
+
+  local rollTypes = {
+    {name = "Token Roll", label = "Token", color = {1.0, 0.84, 0.0}},
+    {name = "Duck Roll", label = "Duck", color = {0.64, 0.21, 0.93}},
+    {name = "MS Roll", label = "MS", color = {0.1, 1.0, 0.1}},
+    {name = "OS Roll", label = "OS", color = {1.0, 0.5, 0.0}},
+    {name = "Transmog Roll", label = "TM", color = {0.7, 0.7, 0.7}}
+  }
+
+  local lastButton
+  for i, roll in ipairs(rollTypes) do
+    local btn = CreateFrame("Button", "SL_" .. roll.name:gsub(" ", ""), RCLootCouncilFrame, "GameMenuButtonTemplate")
+    btn:SetSize(100, 24)
+    btn:SetText(roll.label)
+    btn:SetNormalFontObject("GameFontNormal")
+    btn:SetHighlightFontObject("GameFontHighlight")
+    btn:SetScript("OnClick", function()
+      SendChatMessage("!roll " .. roll.label, "RAID")
+    end)
+
+    if i == 1 then
+      btn:SetPoint("TOPRIGHT", RCLootCouncilFrame, "TOPLEFT", -10, 0)
+    else
+      btn:SetPoint("TOP", lastButton, "BOTTOM", 0, -5)
+    end
+    lastButton = btn
+
+    -- Tint text color for flavor
+    btn:GetFontString():SetTextColor(unpack(roll.color))
+  end
+end)
+
+-- Extended Player Manager UI with TP/DP editing and token management
+function SL:CreatePlayerManagerUI()
+  if self.playerManagerFrame then
+    self.playerManagerFrame:Show()
+    return
+  end
+
+  local frame = CreateFrame("Frame", "SLPlayerManagerFrame", UIParent, "BasicFrameTemplateWithInset")
+  frame:SetSize(500, 500)
   frame:SetPoint("CENTER")
   frame:SetMovable(true)
   frame:EnableMouse(true)
@@ -81,274 +83,242 @@ function SL:ShowAttendanceSummary()
   frame.title = frame:CreateFontString(nil, "OVERLAY")
   frame.title:SetFontObject("GameFontHighlight")
   frame.title:SetPoint("LEFT", frame.TitleBg, "LEFT", 5, 0)
-  frame.title:SetText("Attendance Summary")
+  frame.title:SetText("Scrooge Loot - Player Manager")
 
   local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
   scrollFrame:SetPoint("TOPLEFT", 10, -30)
   scrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
 
   local content = CreateFrame("Frame", nil, scrollFrame)
-  content:SetSize(260, 1000)
+  content:SetSize(460, 2000)
   scrollFrame:SetScrollChild(content)
 
-  local y = -10
+  local yOffset = -10
   for name, data in pairs(ScroogeLoot.playerData) do
-    local present = data.attendance or 0
-    local absent = data["not-present"] or 0
-    local percent = (present + absent) > 0 and math.floor((present / (present + absent)) * 100) or 0
-
     local label = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    label:SetPoint("TOPLEFT", 10, y)
-    label:SetText(name .. ": " .. present .. "✓ / " .. absent .. "✗  (" .. percent .. "%)")
-    y = y - 20
+    label:SetPoint("TOPLEFT", 10, yOffset)
+    label:SetText(name)
+
+    local checkbox = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+    checkbox:SetPoint("TOPLEFT", 120, yOffset)
+    checkbox:SetChecked(data.raider)
+    checkbox:SetScript("OnClick", function(self)
+      ScroogeLoot:GetOrCreatePlayer(name).raider = self:GetChecked()
+    end)
+
+    local fields = {"TP", "DP", "attendance", "not-present"}
+    for i, field in ipairs(fields) do
+      local box = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
+      box:SetSize(30, 20)
+      box:SetPoint("TOPLEFT", 200 + (i - 1) * 40, yOffset)
+      box:SetText(data[field] or 0)
+      box:SetAutoFocus(false)
+      box:SetNumeric(true)
+      box:SetScript("OnEnterPressed", function(self)
+        local val = tonumber(self:GetText()) or 0
+        ScroogeLoot:GetOrCreatePlayer(name)[field] = val
+        self:ClearFocus()
+      end)
+    end
+
+    -- Token inputs
+    for t = 1, 3 do
+      local tokenBox = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
+      tokenBox:SetSize(80, 20)
+      tokenBox:SetPoint("TOPLEFT", 380 + (t - 1) * 85, yOffset)
+      tokenBox:SetText((data.tokens and data.tokens[t]) or "")
+      tokenBox:SetAutoFocus(false)
+      tokenBox:SetScript("OnEnterPressed", function(self)
+        local text = self:GetText()
+        local p = ScroogeLoot:GetOrCreatePlayer(name)
+        p.tokens = p.tokens or {"", "", ""}
+        p.tokens[t] = text
+        self:ClearFocus()
+      end)
+    end
+
+    yOffset = yOffset - 30
   end
 end
 
-SLASH_SCROOGEROSTER1 = "/slroster"
-SlashCmdList["SCROOGEROSTER"] = function() SL:ShowAttendanceSummary() end
+-- Extend Player Manager with search, export/import, and a log viewer
+function SL:CreatePlayerManagerUI()
+  if self.playerManagerFrame then
+    self.playerManagerFrame:Show()
+    return
+  end
 
--- Import/Export Buttons (attachable to any frame)
-function SL:AddExportImportButtons(parent)
-  local exportBtn = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
-  exportBtn:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, 10)
-  exportBtn:SetSize(120, 25)
+  local frame = CreateFrame("Frame", "SLPlayerManagerFrame", UIParent, "BasicFrameTemplateWithInset")
+  frame:SetSize(800, 600)
+  frame:SetPoint("CENTER")
+  frame:SetMovable(true)
+  frame:EnableMouse(true)
+  frame:RegisterForDrag("LeftButton")
+  frame:SetScript("OnDragStart", frame.StartMoving)
+  frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+  frame.title = frame:CreateFontString(nil, "OVERLAY")
+  frame.title:SetFontObject("GameFontHighlight")
+  frame.title:SetPoint("LEFT", frame.TitleBg, "LEFT", 5, 0)
+  frame.title:SetText("Scrooge Loot - Player Manager")
+
+  -- Search box
+  local searchBox = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+  searchBox:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -30, -10)
+  searchBox:SetSize(150, 20)
+  searchBox:SetAutoFocus(false)
+  searchBox:SetScript("OnTextChanged", function(self)
+    SL:UpdatePlayerManagerUI(self:GetText())
+  end)
+
+  -- Scroll area
+  local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+  scrollFrame:SetPoint("TOPLEFT", 10, -40)
+  scrollFrame:SetPoint("BOTTOMRIGHT", -250, 10)
+
+  local content = CreateFrame("Frame", nil, scrollFrame)
+  content:SetSize(600, 4000)
+  scrollFrame:SetScrollChild(content)
+  frame.content = content
+  frame.searchBox = searchBox
+  SL.playerManagerFrame = frame
+
+  -- Export/Import buttons
+  local exportBtn = CreateFrame("Button", nil, frame, "GameMenuButtonTemplate")
+  exportBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 620, -40)
+  exportBtn:SetSize(140, 25)
   exportBtn:SetText("Export XML")
   exportBtn:SetScript("OnClick", function()
     ScroogeLoot:ExportPlayerDataToXML()
   end)
 
-  local importBtn = CreateFrame("Button", nil, parent, "GameMenuButtonTemplate")
-  importBtn:SetPoint("LEFT", exportBtn, "RIGHT", 10, 0)
-  importBtn:SetSize(120, 25)
+  local importBtn = CreateFrame("Button", nil, frame, "GameMenuButtonTemplate")
+  importBtn:SetPoint("TOPLEFT", exportBtn, "BOTTOMLEFT", 0, -5)
+  importBtn:SetSize(140, 25)
   importBtn:SetText("Import XML")
   importBtn:SetScript("OnClick", function()
-    print("Use /sl import [filename] in the future.")
+    print("Use /sl import [filename] to import player data.")
   end)
+
+  -- Placeholder loot log (simulated)
+  local logBox = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+  logBox:SetPoint("TOPLEFT", 620, -100)
+  logBox:SetSize(160, 400)
+
+  local logContent = CreateFrame("Frame", nil, logBox)
+  logContent:SetSize(140, 800)
+  logBox:SetScrollChild(logContent)
+
+  local logText = logContent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  logText:SetPoint("TOPLEFT")
+  logText:SetJustifyH("LEFT")
+  logText:SetText("Token Roll Log:
+- Baba won [Shoulders of Duck]
+- Hjördis lost [Belt of Sass]
+...")
 end
 
--- Mini Statistics Dashboard
-function SL:ShowDashboard()
-  local f = CreateFrame("Frame", nil, UIParent, "BasicFrameTemplateWithInset")
-  f:SetSize(260, 160)
-  f:SetPoint("CENTER")
-  f:SetMovable(true)
-  f:EnableMouse(true)
-  f:RegisterForDrag("LeftButton")
-  f:SetScript("OnDragStart", f.StartMoving)
-  f:SetScript("OnDragStop", f.StopMovingOrSizing)
-  f.title = f:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-  f.title:SetPoint("CENTER", f.TitleBg, "CENTER", 0, 0)
-  f.title:SetText("Scrooge Stats")
-
-  local total, raiders, attending = 0, 0, 0
+-- Refresh function with filter
+function SL:UpdatePlayerManagerUI(filter)
+  local frame = self.playerManagerFrame
+  if not frame then return end
+  local content = frame.content
+  local yOffset = -10
   for name, data in pairs(ScroogeLoot.playerData) do
-    total = total + 1
-    if data.raider then
-      raiders = raiders + 1
-      if data.attendance and data.attendance > 0 then
-        attending = attending + 1
+    if not filter or name:lower():find(filter:lower()) then
+      local label = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+      label:SetPoint("TOPLEFT", 10, yOffset)
+      label:SetText(name)
+
+      local checkbox = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+      checkbox:SetPoint("TOPLEFT", 120, yOffset)
+      checkbox:SetChecked(data.raider)
+      checkbox:SetScript("OnClick", function(self)
+        ScroogeLoot:GetOrCreatePlayer(name).raider = self:GetChecked()
+      end)
+
+      local fields = {"TP", "DP", "attendance", "not-present"}
+      for i, field in ipairs(fields) do
+        local box = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
+        box:SetSize(30, 20)
+        box:SetPoint("TOPLEFT", 200 + (i - 1) * 40, yOffset)
+        box:SetText(data[field] or 0)
+        box:SetAutoFocus(false)
+        box:SetNumeric(true)
+        box:SetScript("OnEnterPressed", function(self)
+          local val = tonumber(self:GetText()) or 0
+          ScroogeLoot:GetOrCreatePlayer(name)[field] = val
+          self:ClearFocus()
+        end)
       end
+
+      for t = 1, 3 do
+        local tokenBox = CreateFrame("EditBox", nil, content, "InputBoxTemplate")
+        tokenBox:SetSize(80, 20)
+        tokenBox:SetPoint("TOPLEFT", 380 + (t - 1) * 85, yOffset)
+        tokenBox:SetText((data.tokens and data.tokens[t]) or "")
+        tokenBox:SetAutoFocus(false)
+        tokenBox:SetScript("OnEnterPressed", function(self)
+          local text = self:GetText()
+          local p = ScroogeLoot:GetOrCreatePlayer(name)
+          p.tokens = p.tokens or {"", "", ""}
+          p.tokens[t] = text
+          self:ClearFocus()
+        end)
+      end
+      yOffset = yOffset - 30
     end
-  end
-
-  local percent = raiders > 0 and math.floor((attending / raiders) * 100) or 0
-
-  local info = {
-    "Total Players: " .. total,
-    "Raiders: " .. raiders,
-    "Active Raiders: " .. attending,
-    "Avg. Attendance: " .. percent .. "%"
-  }
-
-  for i, line in ipairs(info) do
-    local t = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    t:SetPoint("TOPLEFT", 15, -30 - (i - 1) * 20)
-    t:SetText(line)
   end
 end
 
-SLASH_SCROOGESTATS1 = "/slstats"
-SlashCmdList["SCROOGESTATS"] = function() SL:ShowDashboard() end
-
--- (Optional) Roll restriction printout (commented out)
-/*
-hooksecurefunc("RCLootCouncil", "HandleRollClick", function(rollType, player)
-  if rollType == "Token Roll" or rollType == "Duck Roll" then
-    local p = ScroogeLoot:GetOrCreatePlayer(player)
-    if not p.raider then
-      print(player .. " is not a raider and cannot roll on " .. rollType)
-    end
+-- Token Roll Log Window
+function SL:ShowTokenRollLog()
+  if self.tokenLogFrame then
+    self.tokenLogFrame:Show()
+    return
   end
-end)
-*/
 
--- Add buttons to Loot Master UI window
-function SL:AddButtonsToLootMasterUI()
-  if not RCLootCouncilFrame then return end
-  if self.buttonsAdded then return end
-  self.buttonsAdded = true
+  local frame = CreateFrame("Frame", "SLTokenLogFrame", UIParent, "BasicFrameTemplateWithInset")
+  frame:SetSize(400, 300)
+  frame:SetPoint("CENTER")
+  frame:SetMovable(true)
+  frame:EnableMouse(true)
+  frame:RegisterForDrag("LeftButton")
+  frame:SetScript("OnDragStart", frame.StartMoving)
+  frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+  frame.title = frame:CreateFontString(nil, "OVERLAY")
+  frame.title:SetFontObject("GameFontHighlight")
+  frame.title:SetPoint("LEFT", frame.TitleBg, "LEFT", 5, 0)
+  frame.title:SetText("Token Roll Log")
 
-  local startButton = CreateFrame("Button", nil, RCLootCouncilFrame, "GameMenuButtonTemplate")
-  startButton:SetPoint("TOPLEFT", RCLootCouncilFrame, "TOPRIGHT", 10, -10)
-  startButton:SetSize(120, 25)
-  startButton:SetText("Start Raid")
-  startButton:SetScript("OnClick", function() SL:StartRaid() end)
+  local scrollFrame = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
+  scrollFrame:SetPoint("TOPLEFT", 10, -30)
+  scrollFrame:SetPoint("BOTTOMRIGHT", -30, 10)
 
-  local endButton = CreateFrame("Button", nil, RCLootCouncilFrame, "GameMenuButtonTemplate")
-  endButton:SetPoint("TOPLEFT", startButton, "BOTTOMLEFT", 0, -5)
-  endButton:SetSize(120, 25)
-  endButton:SetText("End Raid")
-  endButton:SetScript("OnClick", function() SL:ConcludeRaid() end)
+  local content = CreateFrame("Frame", nil, scrollFrame)
+  content:SetSize(360, 1000)
+  scrollFrame:SetScrollChild(content)
 
-  local managerButton = CreateFrame("Button", nil, RCLootCouncilFrame, "GameMenuButtonTemplate")
-  managerButton:SetPoint("TOPLEFT", endButton, "BOTTOMLEFT", 0, -5)
-  managerButton:SetSize(120, 25)
-  managerButton:SetText("Player Manager")
-  managerButton:SetScript("OnClick", function() SL:CreatePlayerManagerUI() end)
+  local logText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  logText:SetPoint("TOPLEFT", 0, 0)
+  logText:SetJustifyH("LEFT")
+  logText:SetWidth(340)
+  logText:SetText("Token Roll Log:
+- Baba won [Shoulders of Duck]
+- Hjördis lost [Belt of Sass]
+(placeholder entries)")
+
+  self.tokenLogFrame = frame
 end
 
--- Hook to automatically add buttons when loot session starts
-hooksecurefunc("RCLootCouncilML", "StartSession", function()
-  
-    local f = CreateFrame("Frame")
-    f:SetScript("OnUpdate", function(self, elapsed)
-      self.t = (self.t or 0) + elapsed
-      if self.t > 1 then
-        SL:AddButtonsToLootMasterUI()
-        self:SetScript("OnUpdate", nil)
-      end
-    end)
-    
-end)
-
--- Hook to restrict Duck/Token rolls to raiders only with message feedback
-hooksecurefunc("RCLootCouncil", "HandleRollClick", function(rollType, player)
-  if rollType == "Duck Roll" or rollType == "Token Roll" then
-    local p = ScroogeLoot:GetOrCreatePlayer(player)
-    if not p.raider then
-      SendChatMessage("[Scrooge Loot] " .. player .. " is not marked as a raider and cannot use " .. rollType .. ".", "RAID_WARNING")
-    elseif rollType == "Token Roll" then
-      local valid = false
-      for _, token in ipairs(p.tokens or {}) do
-        if token and token ~= "" then
-          valid = true
-          break
-        end
-      end
-      if not valid then
-        SendChatMessage("[Scrooge Loot] " .. player .. " has no token items selected and cannot use Token Roll.", "RAID_WARNING")
-      end
-    end
-  end
-end)
-
--- Hook to restrict Duck/Token rolls to raiders only with whisper feedback
-hooksecurefunc("RCLootCouncil", "HandleRollClick", function(rollType, player)
-  if rollType == "Duck Roll" or rollType == "Token Roll" then
-    local p = ScroogeLoot:GetOrCreatePlayer(player)
-    if not p.raider then
-      SendChatMessage("[Scrooge Loot] You are not marked as a raider and cannot use " .. rollType .. ".", "WHISPER", nil, player)
-    elseif rollType == "Token Roll" then
-      local valid = false
-      for _, token in ipairs(p.tokens or {}) do
-        if token and token ~= "" then
-          valid = true
-          break
-        end
-      end
-      if not valid then
-        SendChatMessage("[Scrooge Loot] You have no token items selected and cannot use Token Roll.", "WHISPER", nil, player)
-      end
-    end
-  end
-end)
-
--- Sort rolls by type priority and roll value
-local rollPriority = {
-  ["Token Roll"] = 1,
-  ["Duck Roll"] = 2,
-  ["MS Roll"] = 3,
-  ["OS Roll"] = 4
-}
-
-function SL:SortRolls(rolls)
-  table.sort(rolls, function(a, b)
-    local ap = rollPriority[a.type] or 99
-    local bp = rollPriority[b.type] or 99
-    if ap == bp then
-      return a.value > b.value
-    else
-      return ap < bp
-    end
+-- Add button to Player Manager UI to open Token Log
+hooksecurefunc(SL, "CreatePlayerManagerUI", function()
+  local f = SL.playerManagerFrame
+  if not f then return end
+  local logBtn = CreateFrame("Button", nil, f, "GameMenuButtonTemplate")
+  logBtn:SetPoint("TOPLEFT", f, "TOPLEFT", 620, -80)
+  logBtn:SetSize(140, 25)
+  logBtn:SetText("Token Roll Log")
+  logBtn:SetScript("OnClick", function()
+    SL:ShowTokenRollLog()
   end)
-end
-
--- Call SL:SortRolls before awarding an item
--- Wrap existing AwardItem function to use sorting
-local originalAwardItem = SL.AwardItem
-function SL:AwardItemWithSorting(winner, rollType, item)
-  if self.lastRolls then
-    self:SortRolls(self.lastRolls)
-  end
-  return originalAwardItem(self, winner, rollType, item)
-end
-SL.AwardItem = SL.AwardItemWithSorting
-
--- Add priority indicator to roll display rows
-function SL:GetRollPriorityLabel(rollType)
-  local labels = {
-    ["Token Roll"] = "|cffffd700[Token]|r",
-    ["Duck Roll"] = "|cffa335ee[Duck]|r",
-    ["MS Roll"]   = "|cff00ff00[MS]|r",
-    ["OS Roll"]   = "|cffff8000[OS]|r"
-  }
-  return labels[rollType] or ""
-end
-
--- Hook to modify roll list rows (assumes roll display uses some frame list)
--- This must be connected to whatever RCLootCouncil uses to render rolls
-hooksecurefunc("RCLootCouncil", "AddRollEntry", function(roll)
-  if roll.frame and roll.type then
-    local label = SL:GetRollPriorityLabel(roll.type)
-    if not roll.frame.priorityTag then
-      roll.frame.priorityTag = roll.frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-      roll.frame.priorityTag:SetPoint("LEFT", roll.frame, "LEFT", 5, 0)
-    end
-    roll.frame.priorityTag:SetText(label)
-  end
-end)
-
--- Extend roll priority to include Transmog Roll
-local rollPriority = {
-  ["Token Roll"] = 1,
-  ["Duck Roll"] = 2,
-  ["MS Roll"]   = 3,
-  ["OS Roll"]   = 4,
-  ["Transmog Roll"] = 5
-}
-
--- Extend GetRollPriorityLabel to include Transmog
-function SL:GetRollPriorityLabel(rollType)
-  local labels = {
-    ["Token Roll"] = "|cffffd700[Token]|r",
-    ["Duck Roll"] = "|cffa335ee[Duck]|r",
-    ["MS Roll"]   = "|cff00ff00[MS]|r",
-    ["OS Roll"]   = "|cffff8000[OS]|r",
-    ["Transmog Roll"] = "|cff999999[TM]|r"
-  }
-  return labels[rollType] or ""
-end
-
--- Add Transmog Roll Button to RCLootCouncil UI if supported
-hooksecurefunc("RCLootCouncil", "CreateRollButtons", function(self)
-  if not self.TransmogRollButton then
-    local btn = CreateFrame("Button", nil, self, "GameMenuButtonTemplate")
-    btn:SetSize(100, 25)
-    btn:SetText("Transmog Roll")
-    btn:SetPoint("TOP", self, "BOTTOM", 0, -10)
-    btn:SetScript("OnClick", function()
-      SendChatMessage("!roll TM", "RAID")
-    end)
-    self.TransmogRollButton = btn
-  end
 end)
