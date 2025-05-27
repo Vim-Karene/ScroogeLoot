@@ -322,3 +322,65 @@ hooksecurefunc(SL, "CreatePlayerManagerUI", function()
     SL:ShowTokenRollLog()
   end)
 end)
+
+-- Roll Priority Table
+local rollPriority = {
+  ["Token Roll"] = 1,
+  ["Duck Roll"] = 2,
+  ["MS Roll"] = 3,
+  ["OS Roll"] = 4,
+  ["Transmog Roll"] = 5
+}
+
+-- Start Raid: record attendance at start
+function SL:StartRaid()
+  if not IsInRaid() then print("You must be in a raid to start.") return end
+  for i = 1, GetNumGroupMembers() do
+    local name = GetRaidRosterInfo(i)
+    if name then
+      local p = ScroogeLoot:GetOrCreatePlayer(name)
+      p._present = true -- temporary flag to check later
+    end
+  end
+  print("Scrooge Loot: Raid started.")
+end
+
+-- Conclude Raid: finalize attendance and award TP
+function SL:ConcludeRaid()
+  if not ScroogeLoot.playerData then return end
+  for name, p in pairs(ScroogeLoot.playerData) do
+    if p._present then
+      p.attendance = (p.attendance or 0) + 1
+      p.TP = (p.TP or 0) + 5
+      p.DP = math.min((p.DP or 0) + 25, 0)
+    else
+      p["not-present"] = (p["not-present"] or 0) + 1
+    end
+    p._present = nil
+  end
+  print("Scrooge Loot: Raid concluded.")
+end
+
+-- Add global/per-character toggle to Player Manager UI
+hooksecurefunc(SL, "CreatePlayerManagerUI", function()
+  local f = SL.playerManagerFrame
+  if not f then return end
+
+  local toggle = CreateFrame("CheckButton", nil, f, "UICheckButtonTemplate")
+  toggle:SetPoint("TOPLEFT", f, "TOPLEFT", 620, -140)
+  toggle:SetChecked(ScroogeLoot_UseGlobal)
+  toggle.text = toggle:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+  toggle.text:SetPoint("LEFT", toggle, "RIGHT", 5, 0)
+  toggle.text:SetText("Use Global Save")
+  toggle:SetScript("OnClick", function(self)
+    ScroogeLoot_UseGlobal = self:GetChecked()
+    print("|cffffff00Scrooge Loot:|r Save mode changed. Will apply on next login.")
+  end)
+end)
+
+  toggle:SetScript("OnEnter", function(self)
+    GameTooltip:SetOwner(self, "ANCHOR_RIGHT")
+    GameTooltip:SetText("Toggle between global or per-character saved data.\nChange applies after reload or relog.", nil, nil, nil, nil, true)
+    GameTooltip:Show()
+  end)
+  toggle:SetScript("OnLeave", function() GameTooltip:Hide() end)
