@@ -22,3 +22,9 @@ L["EXPORT_XML"] = "Export XML"
 L["IMPORT_XML"] = "Import XML"
 L["ATTENDANCE_SUMMARY"] = "Attendance Summary"
 L["STATISTICS_DASHBOARD"] = "Scrooge Stats"
+
+-- Auto-patched keys
+L["USE_GLOBAL_SAVE"] = "Utiliser la sauvegarde globale"
+L["TOGGLE_TOOLTIP"] = "Basculer entre les données sauvegardées globales ou par personnage.
+Changement effectif après rechargement ou reconnexion."
+L["TOKEN_ROLL_LOG"] = "Journal des lancers de jeton"

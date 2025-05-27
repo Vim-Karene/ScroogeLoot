@@ -22,3 +22,9 @@ L["EXPORT_XML"] = "Export XML"
 L["IMPORT_XML"] = "Import XML"
 L["ATTENDANCE_SUMMARY"] = "Attendance Summary"
 L["STATISTICS_DASHBOARD"] = "Scrooge Stats"
+
+-- Auto-patched keys
+L["USE_GLOBAL_SAVE"] = "Använd global sparning"
+L["TOGGLE_TOOLTIP"] = "Växla mellan global eller karaktärsspecifik sparning.
+Ändringen träder i kraft efter omladdning eller omstart."
+L["TOKEN_ROLL_LOG"] = "Tokenrullningslogg"

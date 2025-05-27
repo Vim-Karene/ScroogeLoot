@@ -22,3 +22,9 @@ L["EXPORT_XML"] = "Export XML"
 L["IMPORT_XML"] = "Import XML"
 L["ATTENDANCE_SUMMARY"] = "Attendance Summary"
 L["STATISTICS_DASHBOARD"] = "Scrooge Stats"
+
+-- Auto-patched keys
+L["USE_GLOBAL_SAVE"] = "Globale Speicherung verwenden"
+L["TOGGLE_TOOLTIP"] = "Zwischen globaler oder charakterspezifischer Speicherung wechseln.
+Änderung gilt nach dem nächsten Login oder Reload."
+L["TOKEN_ROLL_LOG"] = "Token-Würfellog"
