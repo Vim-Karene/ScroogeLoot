@@ -66,7 +66,7 @@ Scrooge Loot is a customized version of RCLootCouncil, tailored to support a uni
 ## ✨ What Is Scrooge Loot?
 Scrooge Loot is a raid loot management addon built on top of the trusted RCLootCouncil framework for World of Warcraft 3.3.5a, modified to support custom point-based loot distribution systems and enhanced raid tracking.
 
-It is designed exclusively for raid leaders and loot masters who want advanced control, transparency, and automation when it comes to distributing loot and managing attendance.
+It is designed exclusively for raid leaders and loot masters who want advanced control, transparency, and automation when it comes to distributing loot and managing attendance. However, all raid party members need this add-on installed for it to work as intended.
 
 ## 🧠 Key Features
 
