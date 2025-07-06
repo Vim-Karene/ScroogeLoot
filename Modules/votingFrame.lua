@@ -51,21 +51,25 @@ function SLVotingFrame:OnInitialize()
 end
 
 function SLVotingFrame:OnEnable()
-	self:RegisterComm("ScroogeLoot")
-	db = addon:Getdb()
-	active = true
-	moreInfo = db.modules["SLVotingFrame"].moreInfo
-	self.frame = self:GetFrame()
+        self:RegisterComm("ScroogeLoot")
+        addon:RegisterMessage("SL_LOOT_TABLE", "HandleLootTable")
+        addon:RegisterMessage("SL_PLAYER_DATA", "HandlePlayerData")
+        db = addon:Getdb()
+        active = true
+        moreInfo = db.modules["SLVotingFrame"].moreInfo
+        self.frame = self:GetFrame()
 end
 
 function SLVotingFrame:OnDisable() -- We never really call this
-	self:Hide()
-	self.frame:SetParent(nil)
-	self.frame = nil
-	wipe(lootTable)
-	active = false
-	session = 1
-	self:UnregisterAllComm()
+        self:Hide()
+        self.frame:SetParent(nil)
+        self.frame = nil
+        wipe(lootTable)
+        active = false
+        session = 1
+        addon:UnregisterMessage("SL_LOOT_TABLE")
+        addon:UnregisterMessage("SL_PLAYER_DATA")
+        self:UnregisterAllComm()
 end
 
 function SLVotingFrame:Hide()
@@ -196,9 +200,28 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 					self:SetCandidateData(session, name, k, v)
 				end
 				self:Update()
-			end
-		end
-	end
+                        end
+                end
+        end
+end
+
+function SLVotingFrame:HandleLootTable(event, table)
+        active = true
+        self:Setup(table)
+        if not addon.enabled then return end
+        if db.autoOpen then
+                self:Show()
+        else
+                addon:Print(L['A new session has begun, type "/sl open" to open the voting frame.'])
+        end
+        guildRanks = addon:GetGuildRanks()
+end
+
+function SLVotingFrame:HandlePlayerData(event, data)
+        addon.PlayerData = data
+        if self.frame and self.frame:IsShown() then
+                self:Update()
+        end
 end
 
 -- Getter/Setter for candidate data

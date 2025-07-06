@@ -662,9 +662,12 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 
 					-- Show  the LootFrame
 					self:CallModule("lootframe")
-					self:GetActiveModule("lootframe"):Start(lootTable)
+                                        self:GetActiveModule("lootframe"):Start(lootTable)
 
-					-- The votingFrame handles lootTable itself
+                                        -- Notify other modules about the new loot table
+                                        self:SendMessage("SL_LOOT_TABLE", lootTable)
+
+                                        -- The votingFrame handles lootTable itself
 
 				else -- a non-ML send a lootTable?!
 					self:Debug(tostring(sender).." is not ML, but sent lootTable!")
@@ -725,12 +728,14 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 			elseif command == "playerInfoRequest" then
 				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
 
-			elseif command == "playerData" then
-				-- Update local PlayerData from the master looter
-				if not self.isMasterLooter then
-					local incomingData = unpack(data)
-					self.PlayerData = incomingData
-				end
+                        elseif command == "playerData" then
+                                -- Update local PlayerData from the master looter
+                                if not self.isMasterLooter then
+                                        local incomingData = unpack(data)
+                                        self.PlayerData = incomingData
+                                        -- Forward the data to interested modules
+                                        self:SendMessage("SL_PLAYER_DATA", incomingData)
+                                end
 			elseif command == "message" then
 				self:Print(unpack(data))
 
