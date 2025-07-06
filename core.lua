@@ -219,8 +219,8 @@ function ScroogeLoot:OnInitialize()
 	end
 
 	-- register chat and comms
-	self:RegisterChatCommand("rc", "ChatCommand")
-  	self:RegisterChatCommand("rclc", "ChatCommand")
+       self:RegisterChatCommand("sl", "ChatCommand")
+       self:RegisterChatCommand("rclc", "ChatCommand")
 	self:RegisterComm("ScroogeLoot")
 	self:RegisterComm("ScroogeLoot_WotLK")
 	self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
@@ -337,7 +337,7 @@ function ScroogeLoot:OnEnable()
 					self.isMasterLooter = true
 					self.masterLooter = self.playerName
 					if #db.council == 0 then -- if there's no council
-						self:Print(L["You haven't set a council! You can edit your council by typing '/rc council'"])
+                                               self:Print(L["You haven't set a council! You can edit your council by typing '/sl council'"])
 					end
 					self:CallModule("masterlooter")
 					self:GetActiveModule("masterlooter"):NewML(self.masterLooter)
