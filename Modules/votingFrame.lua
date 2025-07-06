@@ -32,6 +32,7 @@ function SLVotingFrame:OnInitialize()
 		{ name = "",															sortnext = 2,		width = 20},	-- 1 Class
 		{ name = L["Name"],														sortnext = 4,		width = 80},	-- 2 Candidate Name
 		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
+                { name = L["Attendance"],       align = "CENTER",              sortnext = 4,            width = 60},    -- 4 Attendance %
 		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
 		{ name = L["ilvl"],														sortnext = 9,		width = 40},	-- 5 Total ilvl
 		{ name = L["Diff"],														sortnext = 5,		width = 40},	-- 6 ilvl difference
@@ -41,6 +42,7 @@ function SLVotingFrame:OnInitialize()
 		{ name = L["Vote"],			align = "CENTER",							sortnext = 4,		width = 60},	-- 10 Vote button
 		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 11 Note icon
 		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 12 Roll
+                { name = L["Final"],                    align = "CENTER",      sortnext = 4,            width = 30},    -- 13 Final roll
 	}
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	filterMenu = CreateFrame("Frame", "ScroogeLoot_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -381,6 +383,7 @@ function SLVotingFrame:BuildST()
 				{ value = "",	DoCellUpdate = self.SetCellClass,		name = "class",},
 				{ value = "",	DoCellUpdate = self.SetCellName,			name = "name",},
 				{ value = "",	DoCellUpdate = self.SetCellRank,			name = "rank",},
+                                { value = "",   DoCellUpdate = self.SetCellAttendance,        name = "attendance",},
 				{ value = "",	DoCellUpdate = self.SetCellResponse,	name = "response",},
 				{ value = "",	DoCellUpdate = self.SetCellIlvl,			name = "ilvl",},
 				{ value = "",	DoCellUpdate = self.SetCellDiff,			name = "diff",},
@@ -390,6 +393,7 @@ function SLVotingFrame:BuildST()
 				{ value = 0,	DoCellUpdate = self.SetCellVote,			name = "vote",},
 				{ value = 0,	DoCellUpdate = self.SetCellNote, 		name = "note",},
 				{ value = "",	DoCellUpdate = self.SetCellRoll,			name = "roll"},
+                                { value = "",   DoCellUpdate = self.SetCellFinal,                       name = "final"},
 			},
 		}
 		i = i + 1
@@ -768,7 +772,20 @@ function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, co
 	local name = data[realrow].name
 	frame.text:SetText(lootTable[session].candidates[name].rank)
 	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
-	data[realrow].cols[column].value = lootTable[session].candidates[name].rank
+        data[realrow].cols[column].value = lootTable[session].candidates[name].rank
+end
+
+function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+        local name = data[realrow].name
+        local p = addon.PlayerData and addon.PlayerData[name]
+        local att = p and p.attendance
+        if att then
+                frame.text:SetText(att .. "%")
+                data[realrow].cols[column].value = att
+        else
+                frame.text:SetText("N/A")
+                data[realrow].cols[column].value = 0
+        end
 end
 
 function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -899,7 +916,7 @@ end
 function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
        local name = data[realrow].name
        local info = lootTable[session].candidates[name].rollInfo or {}
-       frame.text:SetText(lootTable[session].candidates[name].roll)
+       frame.text:SetText(info.base or "")
        frame:SetScript("OnEnter", function()
                addon:CreateTooltip(
                        "Base: "..tostring(info.base),
@@ -908,7 +925,23 @@ function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, co
                )
        end)
        frame:SetScript("OnLeave", addon.HideTooltip)
-       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+       data[realrow].cols[column].value = info.base or 0
+end
+
+function SLVotingFrame.SetCellFinal(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+       local name = data[realrow].name
+       local info = lootTable[session].candidates[name].rollInfo or {}
+       local roll = lootTable[session].candidates[name].roll
+       frame.text:SetText(roll)
+       frame:SetScript("OnEnter", function()
+               addon:CreateTooltip(
+                       "Base: "..tostring(info.base),
+                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
+                       "Final: "..tostring(info.final)
+               )
+       end)
+       frame:SetScript("OnLeave", addon.HideTooltip)
+       data[realrow].cols[column].value = roll
 end
 
 function SLVotingFrame.filterFunc(table, row)
