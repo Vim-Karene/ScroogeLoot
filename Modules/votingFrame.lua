@@ -874,9 +874,18 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 end
 
 function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].roll)
-	data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+       local name = data[realrow].name
+       local info = lootTable[session].candidates[name].rollInfo or {}
+       frame.text:SetText(lootTable[session].candidates[name].roll)
+       frame:SetScript("OnEnter", function()
+               addon:CreateTooltip(
+                       "Base: "..tostring(info.base),
+                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
+                       "Final: "..tostring(info.final)
+               )
+       end)
+       frame:SetScript("OnLeave", addon.HideTooltip)
+       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
 end
 
 function SLVotingFrame.filterFunc(table, row)
