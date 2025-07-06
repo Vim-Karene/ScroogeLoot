@@ -718,6 +718,12 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 			elseif command == "playerInfoRequest" then
 				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
 
+			elseif command == "playerData" then
+				-- Update local PlayerData from the master looter
+				if not self.isMasterLooter then
+					local incomingData = unpack(data)
+					self.PlayerData = incomingData
+				end
 			elseif command == "message" then
 				self:Print(unpack(data))
 

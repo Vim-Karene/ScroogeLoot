@@ -28,6 +28,7 @@ function addon:SetPlayerField(name, field, value)
     if not self.isMasterLooter then return end
     EnsurePlayer(name)
     self.PlayerData[name][field] = value
+    self:BroadcastPlayerData()
 end
 
 -- Increment attendance values and update derived attendance field.
@@ -43,11 +44,19 @@ function addon:ModifyAttendance(name, attendedInc, absentInc)
     else
         data.attendance = 100
     end
+    self:BroadcastPlayerData()
 end
 
 -- Retrieve a player's data table (read only)
 function addon:GetPlayerData(name)
     EnsurePlayer(name)
     return self.PlayerData[name]
+end
+
+-- Broadcast the complete PlayerData table to the raid.
+function addon:BroadcastPlayerData()
+    if not self.isMasterLooter then return end
+    -- Send to everyone in the current group/raid
+    self:SendCommand("group", "playerData", self.PlayerData)
 end
 
