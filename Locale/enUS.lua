@@ -10,7 +10,7 @@ debug = false
 local L = LibStub("AceLocale-3.0"):NewLocale("ScroogeLoot", "enUS", true, debug)
 if not L then return end
 
-L["A new session has begun, type '/rc open' to open the voting frame."] = true
+L["A new session has begun, type '/sl open' to open the voting frame."] = true
 L["Append realm names"] = true
 L[" is not active in this raid."] = true
 L["Now handles looting"] = true
@@ -63,7 +63,7 @@ L["auto_award_desc"] = "Activates Auto Award."
 L["auto_award_to_desc"] = "The player to Auto Award items to. A selectable list of raid members appear if you're in a raid group."
 L["auto_enable_desc"] = "Check to always let ScroogeLoot handle loot. Unchecking will make the addon ask if you want to use it every time you enter a raid or become Master Looter."
 L["auto_loot_desc"] = "Enables autolooting of all equippable items"
-L["auto_open_desc"] = "Check to Auto Open the voting frame when available. The voting frame can otherwise be opened with /rc open. Note: This requires permission from the Master Looter."
+L["auto_open_desc"] = "Check to Auto Open the voting frame when available. The voting frame can otherwise be opened with /sl open. Note: This requires permission from the Master Looter."
 L["auto_pass_boe_desc"] = "Uncheck to never autopass Bind on Equip items."
 L["auto_pass_desc"] = "Check to enable autopassing of items your class cannot use."
 L["auto_start_desc"] = "Enables Auto Start, i.e. start a session with all eligible items. Disabling will show a editable item list before starting a session."
@@ -344,6 +344,6 @@ L["You can't start a session before all items are loaded!"] = true
 L["You cannot initiate a test while in a group without being the MasterLooter."] = true
 L["You cannot use the menu when the session has ended."] = true
 L["You cannot use this command without being the Master Looter"] = true
-L["You haven't set a council! You can edit your council by typing '/rc council'"] = true
+L["You haven't set a council! You can edit your council by typing '/sl council'"] = true
 L["You're already running a session."] = true
 L["Your note:"] = true

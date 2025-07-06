@@ -58,7 +58,7 @@ function ScroogeLootML:AddItem(item, bagged, slotIndex, index)
 	addon:DebugLog("ML:AddItem", item, bagged, slotIndex, index)
 	local name, link, rarity, ilvl, iMinLevel, type, subType, iStackCount, equipLoc, texture = GetItemInfo(item)
 	
-	-- Item isn't properly loaded, so update the data in 0.5 sec (Should only happen with /rc test)
+       -- Item isn't properly loaded, so update the data in 0.5 sec (Should only happen with /sl test)
 	if not name then
 		self:ScheduleTimer("Timer", 0.5, "AddItem", item, bagged, slotIndex, #self.lootTable)
 		GameTooltip:SetHyperlink("item:"..item) -- cace item asap

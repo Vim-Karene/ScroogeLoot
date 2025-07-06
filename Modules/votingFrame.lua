@@ -186,7 +186,7 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 				if db.autoOpen then
 					self:Show()
 				else
-					addon:Print(L['A new session has begun, type "/rc open" to open the voting frame.'])
+                                       addon:Print(L['A new session has begun, type "/sl open" to open the voting frame.'])
 				end
 				guildRanks = addon:GetGuildRanks() -- Just update it on every session
 
