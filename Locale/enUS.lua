@@ -344,3 +344,5 @@ L["You cannot use this command without being the Master Looter"] = true
 L["You haven't set a council! You can edit your council by typing '/rc council'"] = true
 L["You're already running a session."] = true
 L["Your note:"] = true
+L["Player Management"] = true
+L["Open Player Manager"] = true
