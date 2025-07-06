@@ -10,8 +10,6 @@ local LibDialog = LibStub("LibDialog-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
 local Deflate = LibStub("LibDeflate")
 
-local ROW_HEIGHT = 20;
-local NUM_ROWS = 15;
 local db
 local session = 1 -- The session we're viewing
 local lootTable = {} -- lib-st compatible, extracted from addon's lootTable
@@ -34,15 +32,13 @@ function SLVotingFrame:OnInitialize()
 		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
                 { name = L["Attendance"],       align = "CENTER",              sortnext = 4,            width = 60},    -- 4 Attendance %
 		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
-		{ name = L["ilvl"],														sortnext = 9,		width = 40},	-- 5 Total ilvl
-		{ name = L["Diff"],														sortnext = 5,		width = 40},	-- 6 ilvl difference
-		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 1
-		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 8 Current gear 2
-		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 9 Number of votes
-		{ name = L["Vote"],			align = "CENTER",							sortnext = 4,		width = 60},	-- 10 Vote button
-		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 11 Note icon
-		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 12 Roll
-                { name = L["Final"],                    align = "CENTER",      sortnext = 4,            width = 30},    -- 13 Final roll
+		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 6 Current gear 1
+		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 2
+		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 8 Number of votes
+		{ name = L["Vote"],			align = "CENTER",							sortnext = 4,		width = 60},	-- 9 Vote button
+		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 10 Note icon
+		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 11 Roll
+                { name = L["Final"],                    align = "CENTER",      sortnext = 4,            width = 30},    -- 12 Final roll
 	}
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	filterMenu = CreateFrame("Frame", "ScroogeLoot_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -258,9 +254,8 @@ function SLVotingFrame:Setup(table)
 				role = v.role,
 				response = "ANNOUNCED",
 				ilvl = "",
-				diff = "",
 				gear1 = nil,
-				gear2 = nil,
+                                gear2 = nil,
 				votes = 0,
 				note = nil,
 				roll = "",
@@ -385,8 +380,6 @@ function SLVotingFrame:BuildST()
 				{ value = "",	DoCellUpdate = self.SetCellRank,			name = "rank",},
                                 { value = "",   DoCellUpdate = self.SetCellAttendance,        name = "attendance",},
 				{ value = "",	DoCellUpdate = self.SetCellResponse,	name = "response",},
-				{ value = "",	DoCellUpdate = self.SetCellIlvl,			name = "ilvl",},
-				{ value = "",	DoCellUpdate = self.SetCellDiff,			name = "diff",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear1",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear2",},
 				{ value = 0,	DoCellUpdate = self.SetCellVotes, 		name = "votes",},
@@ -746,17 +739,6 @@ end
 
 ----------------------------------------------------------
 --	Lib-st data functions (not particular pretty, I know)
-----------------------------------------------------------
-function SLVotingFrame:GetDiffColor(num)
-	if num == "" then num = 0 end -- Can't compare empty string
-	local green, red, grey = {0,1,0,1},{1,0,0,1},{0.75,0.75,0.75,1}
-	if num > 0 then return green end
-	if num < 0 then return red end
-	return grey
-end
-
-function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
 	addon.SetCellClassIcon(rowFrame, frame, data, cols, row, realrow, column, fShow, table, lootTable[session].candidates[name].class)
 end
 
@@ -794,18 +776,6 @@ function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow
 	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
 end
 
-function SLVotingFrame.SetCellIlvl(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].ilvl)
-	data[realrow].cols[column].value = lootTable[session].candidates[name].ilvl
-end
-
-function SLVotingFrame.SetCellDiff(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].diff)
-	frame.text:SetTextColor(unpack(SLVotingFrame:GetDiffColor(lootTable[session].candidates[name].diff)))
-	data[realrow].cols[column].value = lootTable[session].candidates[name].diff
-end
 
 function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local gear = data[realrow].cols[column].name -- gear1 or gear2
