@@ -179,16 +179,17 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 				end
 				self:Update()
 
-			elseif command == "lootTable" and addon:UnitIsUnit(sender, addon.masterLooter) then
-				active = true
-				self:Setup(unpack(data))
-				if not addon.enabled then return end -- We just want things ready
-				if db.autoOpen then
-					self:Show()
-				else
+                        elseif command == "lootTable" and addon:UnitIsUnit(sender, addon.masterLooter) then
+                                print("Voting frame received lootTable session")
+                                active = true
+                                self:Setup(unpack(data))
+                                if not addon.enabled then return end -- We just want things ready
+                                if db.autoOpen then
+                                        self:Show()
+                                else
                                        addon:Print(L['A new session has begun, type "/sl open" to open the voting frame.'])
-				end
-				guildRanks = addon:GetGuildRanks() -- Just update it on every session
+                                end
+                                guildRanks = addon:GetGuildRanks() -- Just update it on every session
 
 			elseif command == "response" then
 				local session, name, t = unpack(data)

@@ -195,7 +195,8 @@ function ScroogeLootML:StartSession()
 	end
 
 	self.running = true
-	addon:SendCommand("group", "lootTable", self.lootTable)
+        addon:SendCommand("group", "lootTable", self.lootTable)
+        addon:Debug("Sent lootTable", #self.lootTable)
 
 	self:AnnounceItems()
 	-- Start a timer to set response as offline/not installed unless we receive an ack
