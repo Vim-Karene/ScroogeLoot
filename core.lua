@@ -459,8 +459,9 @@ function ScroogeLoot:ChatCommand(msg)
 		self:Print("Debug = "..tostring(self.debug))
 
 	elseif input == 'open' or input == L["open"] then
-		if self.isCouncil or self.mldb.observe or self.nnp then -- only the right people may see the window during a raid since they otherwise could watch the entire voting
-			self:GetActiveModule("votingframe"):Show()
+                if self.isCouncil or self.mldb.observe or self.nnp then -- only the right people may see the window during a raid since they otherwise could watch the entire voting
+                        self:CallModule("votingframe")
+                        self:GetActiveModule("votingframe"):Show()
 		else
 			self:Print(L["You are not allowed to see the Voting Frame right now."])
 		end
@@ -662,9 +663,11 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 
 					-- Show  the LootFrame
 					self:CallModule("lootframe")
-					self:GetActiveModule("lootframe"):Start(lootTable)
+                                        self:GetActiveModule("lootframe"):Start(lootTable)
 
-					-- The votingFrame handles lootTable itself
+                                        -- Ensure VotingFrame is active for auto open
+                                        self:CallModule("votingframe")
+                                        -- The votingFrame handles lootTable itself
 
 				else -- a non-ML send a lootTable?!
 					self:Debug(tostring(sender).." is not ML, but sent lootTable!")
