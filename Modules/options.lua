@@ -856,10 +856,11 @@ function addon:OptionsTable()
                                                 type = "group",
                                                 order = 10,
                                                 args = {
-                                                        open = {
-                                                                type = "execute",
-                                                                name = L["Open Player Manager"],
-                                                                func = function() SLPlayerManager:Show() end
+                                                        table = {
+                                                                type = "description",
+                                                                name = "",
+                                                                width = "full",
+                                                                dialogControl = "SLPlayerManager",
                                                         }
                                                 }
                                         },

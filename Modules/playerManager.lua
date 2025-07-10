@@ -50,47 +50,57 @@ function SLPlayerManager:OnInitialize()
     }
 end
 
-function SLPlayerManager:GetFrame()
-    if self.frame then return self.frame end
-    local f = addon:CreateFrame("SLPlayerManagerFrame", "playerManager", L["Player Management"], 900, 400)
-    local st = ST:CreateST(self.scrollCols, 10, ROW_HEIGHT, nil, f.content)
-    st.frame:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -40)
-    f:SetWidth(st.frame:GetWidth()+20)
-    f.st = st
-    f.rows = {}
+function SLPlayerManager:CreateUI(parent)
+    if parent.st then return end
+    local st = ST:CreateST(self.scrollCols, 10, ROW_HEIGHT, nil, parent)
+    st.frame:SetPoint("TOPLEFT", parent, "TOPLEFT", 10, -10)
+    parent.st = st
+    parent.rows = {}
 
-    local saveBtn = addon:CreateButton(L["Save"], f.content)
-    saveBtn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 10)
-    saveBtn:SetScript("OnClick", function() SLPlayerManager:Save() end)
+    local saveBtn = addon:CreateButton(L["Save"], parent)
+    saveBtn:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, 10)
+    saveBtn:SetScript("OnClick", function() SLPlayerManager:Save(parent) end)
 
-    local exportBtn = addon:CreateButton(L["Export"], f.content)
+    local exportBtn = addon:CreateButton(L["Export"], parent)
     exportBtn:SetPoint("RIGHT", saveBtn, "LEFT", -10, 0)
     exportBtn:SetScript("OnClick", function() SLPlayerManager:Export() end)
 
-    local importBtn = addon:CreateButton(L["Import"], f.content)
+    local importBtn = addon:CreateButton(L["Import"], parent)
     importBtn:SetPoint("RIGHT", exportBtn, "LEFT", -10, 0)
     importBtn:SetScript("OnClick", function() SLPlayerManager:ImportPrompt() end)
 
-    f.saveBtn = saveBtn
-    f.exportBtn = exportBtn
-    f.importBtn = importBtn
+    parent.saveBtn = saveBtn
+    parent.exportBtn = exportBtn
+    parent.importBtn = importBtn
+end
 
+function SLPlayerManager:GetFrame()
+    if self.frame then return self.frame end
+    local f = addon:CreateFrame("SLPlayerManagerFrame", "playerManager", L["Player Management"], 900, 400)
+    self:CreateUI(f.content)
+    f:SetWidth(f.content.st.frame:GetWidth()+20)
     return f
+end
+
+function SLPlayerManager:CreateOptionsUI(parent)
+    self.optionsFrame = parent
+    self:CreateUI(parent)
 end
 
 function SLPlayerManager:Show()
     self.frame = self:GetFrame()
-    self:LoadData()
+    self:LoadData(self.frame.content)
     self.frame:Show()
-    self.frame.st:SetData(self.frame.rows)
+    self.frame.content.st:SetData(self.frame.content.rows)
 end
 
 function SLPlayerManager:Hide()
     if self.frame then self.frame:Hide() end
 end
 
-function SLPlayerManager:LoadData()
-    self.frame.rows = {}
+function SLPlayerManager:LoadData(target)
+    local t = target or self.frame.content
+    t.rows = {}
     for name,data in pairs(addon.PlayerData) do
         local copy = {}
         for k,v in pairs(data) do copy[k] = v end
@@ -111,7 +121,7 @@ function SLPlayerManager:LoadData()
             {value=copy.item3},
             {value=copy.item3received},
         }
-        tinsert(self.frame.rows, row)
+        tinsert(t.rows, row)
     end
 end
 
@@ -146,9 +156,10 @@ function SLPlayerManager:SetCellCheck(rowFrame, frame, data, cols, row, realrow,
     frame.check:SetChecked(rowData[field])
 end
 
-function SLPlayerManager:Save()
+function SLPlayerManager:Save(target)
+    local t = target or self.frame.content
     wipe(addon.PlayerData)
-    for _,row in ipairs(self.frame.rows) do
+    for _,row in ipairs(t.rows) do
         local d = row.data
         local pd = {
             class = d.class,
@@ -231,7 +242,14 @@ function SLPlayerManager:ImportData(text)
     if next(newData) then
         addon.PlayerData = newData
         addon:BroadcastPlayerData()
-        self:Show()
+        if self.frame and self.frame.content then
+            self:LoadData(self.frame.content)
+            self.frame.content.st:SetData(self.frame.content.rows)
+        end
+        if self.optionsFrame then
+            self:LoadData(self.optionsFrame)
+            self.optionsFrame.st:SetData(self.optionsFrame.rows)
+        end
     end
 end
 
