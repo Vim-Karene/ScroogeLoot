@@ -8,7 +8,7 @@ local ROW_HEIGHT = 20
 
 function SLPlayerManager:OnInitialize()
     self.scrollCols = {
-        {name=L["Name"], width=100, DoCellUpdate=function(...) SLPlayerManager:SetCellName(...) end},
+        {name=L["Name"], width=100, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManager:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"name") end},
         {name=L["Class"], width=70, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManager:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"class") end},
         {name=L["Raider"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManager:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"raiderrank") end},
         {name="SP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManager:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"SP") end},
@@ -94,9 +94,10 @@ function SLPlayerManager:LoadData()
     for name,data in pairs(addon.PlayerData) do
         local copy = {}
         for k,v in pairs(data) do copy[k] = v end
+        copy.name = name
         local row = {name=name, data=copy}
         row.cols = {
-            {value=name},
+            {value=copy.name},
             {value=copy.class},
             {value=copy.raiderrank},
             {value=copy.SP},
@@ -112,10 +113,6 @@ function SLPlayerManager:LoadData()
         }
         tinsert(self.frame.rows, row)
     end
-end
-
-function SLPlayerManager:SetCellName(rowFrame, frame, data, cols, row, realrow, column, fShow, table)
-    frame.text:SetText(data[realrow].name)
 end
 
 function SLPlayerManager:SetCellEdit(rowFrame, frame, data, cols, row, realrow, column, fShow, table, field)
@@ -173,7 +170,9 @@ function SLPlayerManager:Save()
         else
             pd.attendance = 100
         end
-        addon.PlayerData[row.name] = pd
+        local name = d.name or row.name
+        addon.PlayerData[name] = pd
+        row.name = name
     end
     addon:BroadcastPlayerData()
     addon:Print(L["Player Management"]..": "..L["Save"].."!")
@@ -207,6 +206,7 @@ function SLPlayerManager:ImportData(text)
         local name = entry:match('name="([^"]*)"')
         if name then
             local d = {}
+            d.name = name
             d.class = entry:match('class="([^"]*)"') or ""
             d.raiderrank = entry:match('raider="([^"]*)"') == "true"
             d.SP = tonumber(entry:match('SP="([^"]*)"') or 0)

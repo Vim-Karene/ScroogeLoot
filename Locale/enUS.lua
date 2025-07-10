@@ -110,6 +110,7 @@ L["chat_commands"] = [=[
 - add [item]- Add an item to the session frame
 - award     - Start a session with items looted to your inventory
 - winners   - Display the winners of awarded items looted to your inventory
+- pm        - Open the Player Management window
 ]=]
 L["Check this to loot the items and distribute them later."] = true
 L["Check to append the realmname of a player from another realm"] = true

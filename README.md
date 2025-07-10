@@ -12,3 +12,9 @@ derived from `attended / (attended + absent)`.
 The master looter's copy is the source of truth. Whenever the master updates
 `PlayerData`, the new table is broadcast to the group using AceComm so that all
 clients stay in sync.
+
+### Editing PlayerData
+
+Use `/sl pm` in game to open the **Player Management** window. All fields of the
+`PlayerData` table can be edited directly in this window. Saving will broadcast
+the updated table to the raid.
