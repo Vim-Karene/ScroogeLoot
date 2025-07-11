@@ -165,8 +165,8 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 					self:SwitchSession(session) -- Use switch session to update awardstring
 				end
 
-			elseif command == "candidates" and addon:UnitIsUnit(sender, addon.masterLooter) then
-				candidates = unpack(data)
+                        elseif command == "candidates" and addon:UnitIsUnit(sender, addon.masterLooter) then
+                                self:UpdateCandidateList(unpack(data))
 
 			elseif command == "offline_timer" and addon:UnitIsUnit(sender, addon.masterLooter) then
 				for i = 1, #lootTable do
@@ -372,7 +372,47 @@ function SLVotingFrame:BuildST()
 		}
 		i = i + 1
 	end
-	self.frame.st:SetData(rows)
+        self.frame.st:SetData(rows)
+end
+
+-- Update candidate tables while a session is active
+function SLVotingFrame:UpdateCandidateList(new)
+        candidates = new
+        if not active or not lootTable or #lootTable == 0 then return end
+        for _, t in ipairs(lootTable) do
+                for name, data in pairs(new) do
+                        if not t.candidates[name] then
+                                t.candidates[name] = {
+                                        class = data.class,
+                                        rank = data.rank,
+                                        role = data.role,
+                                        raiderrank = data.raiderrank,
+                                        attendance = data.attendance,
+                                        response = "ANNOUNCED",
+                                        gear1 = nil,
+                                        gear2 = nil,
+                                        votes = 0,
+                                        note = nil,
+                                        roll = "",
+                                        voters = {},
+                                        haveVoted = false,
+                                }
+                        else
+                                t.candidates[name].class = data.class
+                                t.candidates[name].rank = data.rank
+                                t.candidates[name].role = data.role
+                                t.candidates[name].raiderrank = data.raiderrank
+                                t.candidates[name].attendance = data.attendance
+                        end
+                end
+                for name in pairs(t.candidates) do
+                        if not new[name] then
+                                t.candidates[name] = nil
+                        end
+                end
+        end
+        self:BuildST()
+        self:SwitchSession(session)
 end
 
 function SLVotingFrame:UpdateMoreInfo(row, data)
