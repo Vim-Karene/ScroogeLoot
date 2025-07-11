@@ -88,6 +88,9 @@ function SLPlayerManager:CreateOptionsUI(parent)
 end
 
 function SLPlayerManager:Show()
+    if not next(addon.PlayerData) then
+        addon:PopulatePlayerDataFromGroup()
+    end
     self.frame = self:GetFrame()
     self:LoadData(self.frame.content)
     self.frame:Show()

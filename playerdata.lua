@@ -23,6 +23,33 @@ local function EnsurePlayer(name)
     end
 end
 
+-- expose helper
+addon.EnsurePlayer = EnsurePlayer
+
+--- Populate PlayerData with members of the current group/raid
+function addon:PopulatePlayerDataFromGroup()
+    local function addUnit(unit)
+        local name = UnitName(unit)
+        if name then
+            local _, class = UnitClass(unit)
+            EnsurePlayer(name)
+            self.PlayerData[name].class = class
+        end
+    end
+
+    if self:IsInRaid() then
+        for i = 1, self:GetNumGroupMembers() do
+            addUnit("raid" .. i)
+        end
+    elseif self:IsInGroup() then
+        for i = 1, self:GetNumGroupMembers() do
+            addUnit("party" .. i)
+        end
+    end
+
+    addUnit("player")
+end
+
 -- Update an arbitrary field on a player. Only works for the master looter.
 function addon:SetPlayerField(name, field, value)
     if not self.isMasterLooter then return end
