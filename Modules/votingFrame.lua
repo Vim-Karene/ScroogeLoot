@@ -27,6 +27,70 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
+-- ensure a candidate exists in our tables
+local function EnsureCandidate(name)
+       if candidates[name] then return end
+
+       -- attempt to fetch class, rank and role from raid/party
+       local class, rank, role
+       if addon:IsInRaid() then
+               for i = 1, addon:GetNumGroupMembers() do
+                       local n, _, r, _, _, c = GetRaidRosterInfo(i)
+                       if n and addon:UnitIsUnit(n, name) then
+                               class = c
+                               rank = r
+                               role = addon:GetUnitRole(n)
+                               break
+                       end
+               end
+       elseif addon:IsInGroup() then
+               for i = 1, addon:GetNumGroupMembers() do
+                       local unit = i == 0 and "player" or "party"..i
+                       local n = UnitName(unit)
+                       if n and addon:UnitIsUnit(n, name) then
+                               class = select(2, UnitClass(unit))
+                               role = addon:GetUnitRole(unit)
+                               break
+                       end
+               end
+               rank = ""
+       elseif addon:UnitIsUnit(name, "player") then
+               class = addon.playerClass
+               rank = addon.guildRank
+               role = addon:GetPlayerRole()
+       end
+
+       candidates[name] = {
+               class = class or "",
+               rank = rank or "",
+               role = role or "DAMAGER",
+       }
+
+       -- add to existing sessions if any
+       for s, t in ipairs(lootTable) do
+               t.candidates = t.candidates or {}
+               if not t.candidates[name] then
+                       t.candidates[name] = {
+                               class = candidates[name].class,
+                               rank = candidates[name].rank,
+                               role = candidates[name].role,
+                               response = "ANNOUNCED",
+                               ilvl = "",
+                               diff = "",
+                               gear1 = nil,
+                               gear2 = nil,
+                               votes = 0,
+                               note = nil,
+                               roll = "",
+                               voters = {},
+                               haveVoted = false,
+                       }
+               end
+       end
+
+       SLVotingFrame:BuildST()
+end
+
 function SLVotingFrame:OnInitialize()
 	self.scrollCols = {
 		{ name = "",															sortnext = 2,		width = 20},	-- 1 Class
@@ -190,13 +254,18 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 				end
 				guildRanks = addon:GetGuildRanks() -- Just update it on every session
 
-			elseif command == "response" then
-				local session, name, t = unpack(data)
-				for k,v in pairs(t) do
-					self:SetCandidateData(session, name, k, v)
-				end
-				self:Update()
-			end
+                       elseif command == "response" then
+                               local session, name, t = unpack(data)
+                               if lootTable[session] then
+                                       if not lootTable[session].candidates[name] then
+                                               EnsureCandidate(name)
+                                       end
+                                       for k,v in pairs(t) do
+                                               self:SetCandidateData(session, name, k, v)
+                                       end
+                                       self:Update()
+                               end
+                       end
 		end
 	end
 end
