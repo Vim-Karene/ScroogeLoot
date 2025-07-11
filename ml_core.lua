@@ -165,8 +165,11 @@ function ScroogeLootML:UpdateGroup(ask)
 	for name, v in pairs(group_copy) do
 		if v then self:RemoveCandidate(name); updates = true end
 	end
-	if updates then
-		addon:SendCommand("group", "candidates", self.candidates) 
+        if updates then
+                -- keep PlayerData in sync with current group
+                addon:PopulatePlayerDataFromGroup()
+                addon:BroadcastPlayerData()
+                addon:SendCommand("group", "candidates", self.candidates)
 
 		local oldCouncil = self.council 
 		self.council = addon:GetCouncilInGroup()
