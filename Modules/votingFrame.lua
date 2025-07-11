@@ -27,78 +27,14 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
--- ensure a candidate exists in our tables
-local function EnsureCandidate(name)
-       if candidates[name] then return end
-
-       -- attempt to fetch class, rank and role from raid/party
-       local class, rank, role
-       if addon:IsInRaid() then
-               for i = 1, addon:GetNumGroupMembers() do
-                       local n, _, r, _, _, c = GetRaidRosterInfo(i)
-                       if n and addon:UnitIsUnit(n, name) then
-                               class = c
-                               rank = r
-                               role = addon:GetUnitRole(n)
-                               break
-                       end
-               end
-       elseif addon:IsInGroup() then
-               for i = 1, addon:GetNumGroupMembers() do
-                       local unit = i == 0 and "player" or "party"..i
-                       local n = UnitName(unit)
-                       if n and addon:UnitIsUnit(n, name) then
-                               class = select(2, UnitClass(unit))
-                               role = addon:GetUnitRole(unit)
-                               break
-                       end
-               end
-               rank = ""
-       elseif addon:UnitIsUnit(name, "player") then
-               class = addon.playerClass
-               rank = addon.guildRank
-               role = addon:GetPlayerRole()
-       end
-
-       candidates[name] = {
-               class = class or "",
-               rank = rank or "",
-               role = role or "DAMAGER",
-       }
-
-       -- add to existing sessions if any
-       for s, t in ipairs(lootTable) do
-               t.candidates = t.candidates or {}
-               if not t.candidates[name] then
-                       t.candidates[name] = {
-                               class = candidates[name].class,
-                               rank = candidates[name].rank,
-                               role = candidates[name].role,
-                               response = "ANNOUNCED",
-                               ilvl = "",
-                               diff = "",
-                               gear1 = nil,
-                               gear2 = nil,
-                               votes = 0,
-                               note = nil,
-                               roll = "",
-                               voters = {},
-                               haveVoted = false,
-                       }
-               end
-       end
-
-       SLVotingFrame:BuildST()
-end
-
 function SLVotingFrame:OnInitialize()
 	self.scrollCols = {
 		{ name = "",															sortnext = 2,		width = 20},	-- 1 Class
 		{ name = L["Name"],														sortnext = 4,		width = 80},	-- 2 Candidate Name
 		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
 		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
-		{ name = L["ilvl"],														sortnext = 9,		width = 40},	-- 5 Total ilvl
-		{ name = L["Diff"],														sortnext = 5,		width = 40},	-- 6 ilvl difference
+		{ name = L["Raider"],														sortnext = 6,		width = 60},	-- 5 Raider rank
+		{ name = L["Attendance"],														sortnext = 5,		width = 60},	-- 6 Attendance
 		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 1
 		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 8 Current gear 2
 		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 9 Number of votes
@@ -243,29 +179,25 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 				end
 				self:Update()
 
-			elseif command == "lootTable" and addon:UnitIsUnit(sender, addon.masterLooter) then
-				active = true
-				self:Setup(unpack(data))
-				if not addon.enabled then return end -- We just want things ready
-				if db.autoOpen then
-					self:Show()
-				else
-					addon:Print(L['A new session has begun, type "/rc open" to open the voting frame.'])
-				end
-				guildRanks = addon:GetGuildRanks() -- Just update it on every session
+                        elseif command == "lootTable" and addon:UnitIsUnit(sender, addon.masterLooter) then
+                                print("Voting frame received lootTable session")
+                                active = true
+                                self:Setup(unpack(data))
+                                if not addon.enabled then return end -- We just want things ready
+                                if db.autoOpen then
+                                        self:Show()
+                                else
+                                       addon:Print(L['A new session has begun, type "/sl open" to open the voting frame.'])
+                                end
+                                guildRanks = addon:GetGuildRanks() -- Just update it on every session
 
-                       elseif command == "response" then
-                               local session, name, t = unpack(data)
-                               if lootTable[session] then
-                                       if not lootTable[session].candidates[name] then
-                                               EnsureCandidate(name)
-                                       end
-                                       for k,v in pairs(t) do
-                                               self:SetCandidateData(session, name, k, v)
-                                       end
-                                       self:Update()
-                               end
-                       end
+			elseif command == "response" then
+				local session, name, t = unpack(data)
+				for k,v in pairs(t) do
+					self:SetCandidateData(session, name, k, v)
+				end
+				self:Update()
+			end
 		end
 	end
 end
@@ -297,15 +229,15 @@ function SLVotingFrame:Setup(table)
 		t.candidates = {}
 		for name, v in pairs(candidates) do
 			t.candidates[name] = {
-				class = v.class,
-				rank = v.rank,
-				role = v.role,
-				response = "ANNOUNCED",
-				ilvl = "",
-				diff = "",
-				gear1 = nil,
-				gear2 = nil,
-				votes = 0,
+                               class = v.class,
+                               rank = v.rank,
+                               role = v.role,
+                               raiderrank = v.raiderrank,
+                               attendance = v.attendance,
+                               response = "ANNOUNCED",
+                               gear1 = nil,
+                               gear2 = nil,
+                               votes = 0,
 				note = nil,
 				roll = "",
 				voters = {},
@@ -411,7 +343,7 @@ function SLVotingFrame:SwitchSession(s)
 	for i in ipairs(self.frame.st.cols) do
 		self.frame.st.cols[i].sort = nil
 	end
-	self.frame.st.cols[5].sort = "asc"
+	self.frame.st.cols[4].sort = "asc"
 	FauxScrollFrame_OnVerticalScroll(self.frame.st.scrollframe, 0, self.frame.st.rowHeight, function() self.frame.st:Refresh() end) -- Reset scrolling to 0
 	self:Update()
 	self:UpdatePeopleToVote()
@@ -428,8 +360,8 @@ function SLVotingFrame:BuildST()
 				{ value = "",	DoCellUpdate = self.SetCellName,			name = "name",},
 				{ value = "",	DoCellUpdate = self.SetCellRank,			name = "rank",},
 				{ value = "",	DoCellUpdate = self.SetCellResponse,	name = "response",},
-				{ value = "",	DoCellUpdate = self.SetCellIlvl,			name = "ilvl",},
-				{ value = "",	DoCellUpdate = self.SetCellDiff,			name = "diff",},
+				{ value = "",	DoCellUpdate = self.SetCellRaider,			name = "raiderrank",},
+				{ value = "",	DoCellUpdate = self.SetCellAttendance,			name = "attendance",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear1",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear2",},
 				{ value = 0,	DoCellUpdate = self.SetCellVotes, 		name = "votes",},
@@ -596,7 +528,8 @@ function SLVotingFrame:GetFrame()
 
 	local iTxt = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	iTxt:SetPoint("TOPLEFT", item, "TOPRIGHT", 10, 0)
-	iTxt:SetText(L["Something went wrong :'("]) -- Set text for reasons
+       -- Display a clearer message when no session is active
+       iTxt:SetText(L["No session running"]) -- Set text for reasons
 	f.itemText = iTxt
 
 	local ilvl = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -750,7 +683,7 @@ function SLVotingFrame:UpdateSessionButton(i, texture, link, awarded)
 		else
 			btn:SetPoint("TOP", sessionButtons[i-1], "BOTTOM", 0, -2)
 		end
-		btn:SetScript("Onclick", function() SLVotingFrame:SwitchSession(i); end)
+                btn:SetScript("OnClick", function() SLVotingFrame:SwitchSession(i); end)
 		btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 		btn:GetHighlightTexture():SetBlendMode("ADD")
 		btn:SetNormalTexture(texture or "Interface\\InventoryItems\\WoWUnknownItem01")
@@ -789,12 +722,9 @@ end
 ----------------------------------------------------------
 --	Lib-st data functions (not particular pretty, I know)
 ----------------------------------------------------------
-function SLVotingFrame:GetDiffColor(num)
-	if num == "" then num = 0 end -- Can't compare empty string
-	local green, red, grey = {0,1,0,1},{1,0,0,1},{0.75,0.75,0.75,1}
-	if num > 0 then return green end
-	if num < 0 then return red end
-	return grey
+-- Display boolean raiderrank as Yes/No
+local function RaiderText(flag)
+       return flag and L["Yes"] or L["No"]
 end
 
 function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -823,17 +753,18 @@ function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow
 	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
 end
 
-function SLVotingFrame.SetCellIlvl(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].ilvl)
-	data[realrow].cols[column].value = lootTable[session].candidates[name].ilvl
+function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+       local name = data[realrow].name
+       local val = lootTable[session].candidates[name].raiderrank
+       frame.text:SetText(RaiderText(val))
+       data[realrow].cols[column].value = val and 1 or 0
 end
 
-function SLVotingFrame.SetCellDiff(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].diff)
-	frame.text:SetTextColor(unpack(SLVotingFrame:GetDiffColor(lootTable[session].candidates[name].diff)))
-	data[realrow].cols[column].value = lootTable[session].candidates[name].diff
+function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+       local name = data[realrow].name
+       local val = lootTable[session].candidates[name].attendance or ""
+       frame.text:SetText(tostring(val))
+       data[realrow].cols[column].value = tonumber(val) or 0
 end
 
 function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -943,9 +874,18 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 end
 
 function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].roll)
-	data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+       local name = data[realrow].name
+       local info = lootTable[session].candidates[name].rollInfo or {}
+       frame.text:SetText(lootTable[session].candidates[name].roll)
+       frame:SetScript("OnEnter", function()
+               addon:CreateTooltip(
+                       "Base: "..tostring(info.base),
+                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
+                       "Final: "..tostring(info.final)
+               )
+       end)
+       frame:SetScript("OnLeave", addon.HideTooltip)
+       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
 end
 
 function SLVotingFrame.filterFunc(table, row)

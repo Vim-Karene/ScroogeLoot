@@ -10,11 +10,65 @@ local LibDialog = LibStub("LibDialog-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
 local LibToken = LibStub("LibArmorToken-1.0")
 
+ROLL_BUTTONS = {
+  { id = 1, name = "Scrooge", logic = "scrooge" },
+  { id = 2, name = "Drool", logic = "drool" },
+  { id = 3, name = "Deducktion", logic = "deducktion" },
+  { id = 4, name = "Main-Spec", logic = "main" },
+  { id = 5, name = "Off-Spec", logic = "off" },
+  { id = 6, name = "Transmog", logic = "transmog" },
+}
+
+
 local items = {} -- item.i = {name, link, lvl, texture} (i == session)
 local entries = {}
 local ENTRY_HEIGHT = 75
 local MAX_ENTRIES = 5
 local numRolled = 0
+
+-- Simple placeholder helper checks
+local function PlayerHasItemToken(p, item) return true end
+local function PlayerGotItem(p, item) return false end
+local function CanEquipItem(name, item) return true end
+
+-- Handles rolling logic for the custom buttons
+function HandleRollClick(playerName, rollType, sessionID, item)
+  local p = addon.PlayerData and addon.PlayerData[playerName]
+  if not p then return end
+
+  local baseRoll = math.random(100)
+  local finalRoll = baseRoll
+  local reason = ""
+
+  if rollType == 1 then
+    finalRoll = baseRoll + (p.SP or 0)
+    reason = "+SP"
+  elseif rollType == 2 then
+    finalRoll = baseRoll
+    reason = "No SP/DP"
+  elseif rollType == 3 or rollType == 4 or rollType == 5 then
+    finalRoll = baseRoll - (p.DP or 0)
+    reason = "-DP"
+  elseif rollType == 6 then
+    finalRoll = baseRoll
+    reason = "Transmog Roll"
+    SendChatMessage("Thank you for making a small totally optional donation to the guild bank ;)", "WHISPER", nil, playerName)
+  end
+
+  local vf = addon:GetModule("SLVotingFrame")
+  vf:SetCandidateData(sessionID, playerName, "roll", finalRoll)
+  vf:SetCandidateData(sessionID, playerName, "rollInfo", {
+    base = baseRoll,
+    final = finalRoll,
+    reason = reason,
+    SP = p.SP,
+    DP = p.DP,
+  })
+  if vf.frame and vf.frame.st then
+    vf.frame.st:Refresh()
+  end
+  vf:Update()
+end
 
 function LootFrame:Start(table)
 	addon:DebugLog("LootFrame:Start()")
@@ -180,14 +234,14 @@ function LootFrame:Update()
 end
 
 function LootFrame:OnRoll(entry, button)
-	addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
-	local index = entries[entry].realID
-	
-	addon:SendCommand("group", "response", addon:CreateResponse(items[index].session, items[index].link, items[index].ilvl, button, items[index].equipLoc, items[index].note))
+       addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
+       local index = entries[entry].realID
 
-	numRolled = numRolled + 1
-	items[index].rolled = true
-	self:Update()
+       HandleRollClick(UnitName("player"), button, items[index].session, items[index].link)
+
+       numRolled = numRolled + 1
+       items[index].rolled = true
+       self:Update()
 end
 
 function LootFrame:GetFrame()

@@ -692,7 +692,7 @@ function addon:OptionsTable()
 							},
 						},
 					},
-					councilTab = {
+                                        councilTab = {
 						order = 6,
 						type = "group",
 						name = L["Council"],
@@ -850,11 +850,24 @@ function addon:OptionsTable()
 								},
 							},
 						},
-					},
-				},
-			},
-		},
-	}
+                                        },
+                                        PlayerDataManagement = {
+                                                name = L["Player Management"],
+                                                type = "group",
+                                                order = 10,
+                                                args = {
+                                                        table = {
+                                                                type = "description",
+                                                                name = "",
+                                                                width = "full",
+                                                                dialogControl = "SLPlayerManager",
+                                                        }
+                                                }
+                                        },
+                                },
+                        },
+                },
+        }
 
 	-- #region Create options thats made with loops
 	-- Buttons
