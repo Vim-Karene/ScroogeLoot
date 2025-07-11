@@ -100,11 +100,12 @@ function ScroogeLoot:OnInitialize()
 
 	-- Option table defaults
 	self.defaults = {
-		global = {
-			logMaxEntries = 500,
-			log = {}, -- debug log
-			localizedSubTypes = {},
-		},
+               global = {
+                       logMaxEntries = 500,
+                       log = {}, -- debug log
+                       localizedSubTypes = {},
+                       playerData = {},
+               },
 		profile = {
 			usage = { -- State of enabledness
 				ml = false,				-- Enable when ML
@@ -243,8 +244,12 @@ function ScroogeLoot:OnInitialize()
 
 	-- add shortcuts
 	db = self.db.profile
-	historyDB = self.lootDB.factionrealm
-	debugLog = self.db.global.log
+       historyDB = self.lootDB.factionrealm
+       debugLog = self.db.global.log
+
+       -- Load persisted PlayerData
+       self.PlayerData = self.db.global.playerData or {}
+       ScroogeLoot.PlayerData = self.PlayerData
 
 	-- register the optionstable
 	self.options = self:OptionsTable()
