@@ -272,7 +272,8 @@ function ScroogeLoot:OnEnable()
 	-- register events
 	self:RegisterEvent("PARTY_LOOT_METHOD_CHANGED", "OnEvent")
 	self:RegisterEvent("GUILD_ROSTER_UPDATE","OnEvent")
-	self:RegisterEvent("RAID_INSTANCE_WELCOME","OnEvent")
+        self:RegisterEvent("RAID_INSTANCE_WELCOME","OnEvent")
+        self:RegisterEvent("RAID_ROSTER_UPDATE","OnEvent")
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", "EnterCombat")
 	self:RegisterEvent("PLAYER_REGEN_ENABLED", "LeaveCombat")
@@ -319,8 +320,11 @@ function ScroogeLoot:OnEnable()
 		self.db.global.log = {}
 	end
 
-	self.db.global.tVersion = self.tVersion;
-	GuildRoster()
+        self.db.global.tVersion = self.tVersion;
+        GuildRoster()
+
+        -- Initialize PlayerData for current group
+        self:PopulatePlayerDataFromGroup()
 
 	local filterFunc = function(_, event, msg, player, ...)
 		return strfind(msg, "[[ScroogeLoot]]:")
@@ -1253,9 +1257,13 @@ function ScroogeLoot:OnEvent(event, ...)
 		self:Debug("Event:", event, ...)
 		self:NewMLCheck()
 
-	elseif event == "RAID_ROSTER_UPDATE" then
-		self:Debug("Event:", event, ...)
-		self:NewMLCheck()
+        elseif event == "RAID_ROSTER_UPDATE" then
+                self:Debug("Event:", event, ...)
+                self:NewMLCheck()
+                local changed = self:PopulatePlayerDataFromGroup()
+                if changed then
+                        self:BroadcastPlayerData()
+                end
 
 	elseif event == "RAID_INSTANCE_WELCOME" then
 		self:Debug("Event:", event, ...)
