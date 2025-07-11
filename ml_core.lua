@@ -93,14 +93,17 @@ function ScroogeLootML:RemoveItem(session)
 end
 
 function ScroogeLootML:AddCandidate(name, class, role, rank, enchant, lvl)
-	addon:DebugLog("ML:AddCandidate",name, class, role, rank, enchant, lvl)
-	self.candidates[name] = {
-		["class"]		= class,
-		["role"]		= role or "DAMAGER",
-		["rank"]		= rank or "", -- Rank cannot be nil for votingFrame
-		["enchanter"] 	= enchant,
-		["enchant_lvl"]	= lvl,
-	}
+        addon:DebugLog("ML:AddCandidate", name, class, role, rank, enchant, lvl)
+        local pd = addon.PlayerData and addon.PlayerData[name] or {}
+        self.candidates[name] = {
+                ["class"]       = class,
+                ["role"]        = role or "DAMAGER",
+                ["rank"]        = rank or "", -- Rank cannot be nil for votingFrame
+                ["enchanter"]   = enchant,
+                ["enchant_lvl"] = lvl,
+                ["raiderrank"]  = pd.raiderrank,
+                ["attendance"]  = pd.attendance,
+        }
 end
 
 function ScroogeLootML:RemoveCandidate(name)

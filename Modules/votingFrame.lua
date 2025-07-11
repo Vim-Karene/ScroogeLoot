@@ -33,8 +33,8 @@ function SLVotingFrame:OnInitialize()
 		{ name = L["Name"],														sortnext = 4,		width = 80},	-- 2 Candidate Name
 		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
 		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
-		{ name = L["ilvl"],														sortnext = 9,		width = 40},	-- 5 Total ilvl
-		{ name = L["Diff"],														sortnext = 5,		width = 40},	-- 6 ilvl difference
+		{ name = L["Raider"],														sortnext = 6,		width = 60},	-- 5 Raider rank
+		{ name = L["Attendance"],														sortnext = 5,		width = 60},	-- 6 Attendance
 		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 1
 		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 8 Current gear 2
 		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 9 Number of votes
@@ -229,15 +229,15 @@ function SLVotingFrame:Setup(table)
 		t.candidates = {}
 		for name, v in pairs(candidates) do
 			t.candidates[name] = {
-				class = v.class,
-				rank = v.rank,
-				role = v.role,
-				response = "ANNOUNCED",
-				ilvl = "",
-				diff = "",
-				gear1 = nil,
-				gear2 = nil,
-				votes = 0,
+                               class = v.class,
+                               rank = v.rank,
+                               role = v.role,
+                               raiderrank = v.raiderrank,
+                               attendance = v.attendance,
+                               response = "ANNOUNCED",
+                               gear1 = nil,
+                               gear2 = nil,
+                               votes = 0,
 				note = nil,
 				roll = "",
 				voters = {},
@@ -343,7 +343,7 @@ function SLVotingFrame:SwitchSession(s)
 	for i in ipairs(self.frame.st.cols) do
 		self.frame.st.cols[i].sort = nil
 	end
-	self.frame.st.cols[5].sort = "asc"
+	self.frame.st.cols[4].sort = "asc"
 	FauxScrollFrame_OnVerticalScroll(self.frame.st.scrollframe, 0, self.frame.st.rowHeight, function() self.frame.st:Refresh() end) -- Reset scrolling to 0
 	self:Update()
 	self:UpdatePeopleToVote()
@@ -360,8 +360,8 @@ function SLVotingFrame:BuildST()
 				{ value = "",	DoCellUpdate = self.SetCellName,			name = "name",},
 				{ value = "",	DoCellUpdate = self.SetCellRank,			name = "rank",},
 				{ value = "",	DoCellUpdate = self.SetCellResponse,	name = "response",},
-				{ value = "",	DoCellUpdate = self.SetCellIlvl,			name = "ilvl",},
-				{ value = "",	DoCellUpdate = self.SetCellDiff,			name = "diff",},
+				{ value = "",	DoCellUpdate = self.SetCellRaider,			name = "raiderrank",},
+				{ value = "",	DoCellUpdate = self.SetCellAttendance,			name = "attendance",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear1",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear2",},
 				{ value = 0,	DoCellUpdate = self.SetCellVotes, 		name = "votes",},
@@ -528,7 +528,8 @@ function SLVotingFrame:GetFrame()
 
 	local iTxt = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	iTxt:SetPoint("TOPLEFT", item, "TOPRIGHT", 10, 0)
-	iTxt:SetText(L["Something went wrong :'("]) -- Set text for reasons
+       -- Display a clearer message when no session is active
+       iTxt:SetText(L["No session running"]) -- Set text for reasons
 	f.itemText = iTxt
 
 	local ilvl = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -721,12 +722,9 @@ end
 ----------------------------------------------------------
 --	Lib-st data functions (not particular pretty, I know)
 ----------------------------------------------------------
-function SLVotingFrame:GetDiffColor(num)
-	if num == "" then num = 0 end -- Can't compare empty string
-	local green, red, grey = {0,1,0,1},{1,0,0,1},{0.75,0.75,0.75,1}
-	if num > 0 then return green end
-	if num < 0 then return red end
-	return grey
+-- Display boolean raiderrank as Yes/No
+local function RaiderText(flag)
+       return flag and L["Yes"] or L["No"]
 end
 
 function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -755,17 +753,18 @@ function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow
 	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
 end
 
-function SLVotingFrame.SetCellIlvl(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].ilvl)
-	data[realrow].cols[column].value = lootTable[session].candidates[name].ilvl
+function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+       local name = data[realrow].name
+       local val = lootTable[session].candidates[name].raiderrank
+       frame.text:SetText(RaiderText(val))
+       data[realrow].cols[column].value = val and 1 or 0
 end
 
-function SLVotingFrame.SetCellDiff(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].diff)
-	frame.text:SetTextColor(unpack(SLVotingFrame:GetDiffColor(lootTable[session].candidates[name].diff)))
-	data[realrow].cols[column].value = lootTable[session].candidates[name].diff
+function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+       local name = data[realrow].name
+       local val = lootTable[session].candidates[name].attendance or ""
+       frame.text:SetText(tostring(val))
+       data[realrow].cols[column].value = tonumber(val) or 0
 end
 
 function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
