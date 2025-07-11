@@ -1576,11 +1576,11 @@ function ScroogeLoot:CreateFrame(name, cName, title, width, height)
 		old_setwidth(self, width)
 		self.content:SetWidth(width)
 	end
-	local old_setheight = f.SetHeight
-	f.SetHeight = function(self, height)
-		old_setheight(self, width)
-		self.content:SetHeight(height)
-	end
+       local old_setheight = f.SetHeight
+       f.SetHeight = function(self, height)
+               old_setheight(self, height)
+               self.content:SetHeight(height)
+       end
 	return f
 end
 

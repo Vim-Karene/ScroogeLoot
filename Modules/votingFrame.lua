@@ -682,7 +682,7 @@ function SLVotingFrame:UpdateSessionButton(i, texture, link, awarded)
 		else
 			btn:SetPoint("TOP", sessionButtons[i-1], "BOTTOM", 0, -2)
 		end
-		btn:SetScript("Onclick", function() SLVotingFrame:SwitchSession(i); end)
+                btn:SetScript("OnClick", function() SLVotingFrame:SwitchSession(i); end)
 		btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 		btn:GetHighlightTexture():SetBlendMode("ADD")
 		btn:SetNormalTexture(texture or "Interface\\InventoryItems\\WoWUnknownItem01")
