@@ -82,9 +82,12 @@ function ScroogeLoot:OnInitialize()
 		PASS				= { color = {0.7, 0.7,0.7,1},		sort = 800,		text = L["Pass"],},
 		AUTOPASS			= { color = {0.7,0.7,0.7,1},		sort = 801,		text = L["Autopass"], },
 		DISABLED			= { color = {0.3, 0.35, 0.5},		sort = 802,		text = L["Candidate has disabled ScroogeLoot"], },
-		--[[1]]			  { color = {0,1,0,1},				sort = 1,		text = L["Mainspec/Need"],},
-		--[[2]]			  { color = {1,0.5,0,1},			sort = 2,		text = L["Offspec/Greed"],	},
-		--[[3]]			  { color = {0,0.7,0.7,1},			sort = 3,		text = L["Minor Upgrade"],},
+		--[[1]]			  { color = {0,1,0,1},				sort = 1,		text = "Scrooge",},
+		--[[2]]			  { color = {1,0.5,0,1},			sort = 2,		text = "Drool",	},
+		--[[3]]			  { color = {0,0.7,0.7,1},			sort = 3,		text = "Deducktion",},
+                --[[4]]                   { color = {1,1,0,1},               sort = 4,                text = "Main-Spec",},
+                --[[5]]                   { color = {0.9,0.6,1,1},             sort = 5,                text = "Off-Spec",},
+                --[[6]]                   { color = {0.7,0.7,0.7,1},           sort = 6,                text = "Transmog",},
 	}
 	self.roleTable = {
 		TANK =		L["Tank"],
@@ -97,11 +100,12 @@ function ScroogeLoot:OnInitialize()
 
 	-- Option table defaults
 	self.defaults = {
-		global = {
-			logMaxEntries = 500,
-			log = {}, -- debug log
-			localizedSubTypes = {},
-		},
+               global = {
+                       logMaxEntries = 500,
+                       log = {}, -- debug log
+                       localizedSubTypes = {},
+                       playerData = {},
+               },
 		profile = {
 			usage = { -- State of enabledness
 				ml = false,				-- Enable when ML
@@ -171,12 +175,16 @@ function ScroogeLoot:OnInitialize()
 			council = {},
 
 			maxButtons = 10,
-			numButtons = 3,
+			numButtons = 6,
 			buttons = {
-				{	text = L["Need"],					whisperKey = L["whisperKey_need"], },	-- 1
-				{	text = L["Greed"],				whisperKey = L["whisperKey_greed"],},	-- 2
-				{	text = L["Minor Upgrade"],		whisperKey = L["whisperKey_minor"],},	-- 3
-			},
+				{       text = "Scrooge", whisperKey = "scrooge" },
+                                {       text = "Drool", whisperKey = "drool" },
+                                {       text = "Deducktion", whisperKey = "deducktion" },
+                                {       text = "Main-Spec", whisperKey = "main" },
+                                {       text = "Off-Spec", whisperKey = "off" },
+                                {       text = "Transmog", whisperKey = "transmog" },
+
+                        },
 			maxAwardReasons = 10,
 			numAwardReasons = 3,
 			awardReasons = {
@@ -219,8 +227,8 @@ function ScroogeLoot:OnInitialize()
 	end
 
 	-- register chat and comms
-	self:RegisterChatCommand("rc", "ChatCommand")
-  	self:RegisterChatCommand("rclc", "ChatCommand")
+       self:RegisterChatCommand("sl", "ChatCommand")
+       self:RegisterChatCommand("rclc", "ChatCommand")
 	self:RegisterComm("ScroogeLoot")
 	self:RegisterComm("ScroogeLoot_WotLK")
 	self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
@@ -236,8 +244,12 @@ function ScroogeLoot:OnInitialize()
 
 	-- add shortcuts
 	db = self.db.profile
-	historyDB = self.lootDB.factionrealm
-	debugLog = self.db.global.log
+       historyDB = self.lootDB.factionrealm
+       debugLog = self.db.global.log
+
+       -- Load persisted PlayerData
+       self.PlayerData = self.db.global.playerData or {}
+       ScroogeLoot.PlayerData = self.PlayerData
 
 	-- register the optionstable
 	self.options = self:OptionsTable()
@@ -337,7 +349,7 @@ function ScroogeLoot:OnEnable()
 					self.isMasterLooter = true
 					self.masterLooter = self.playerName
 					if #db.council == 0 then -- if there's no council
-						self:Print(L["You haven't set a council! You can edit your council by typing '/rc council'"])
+                                               self:Print(L["You haven't set a council! You can edit your council by typing '/sl council'"])
 					end
 					self:CallModule("masterlooter")
 					self:GetActiveModule("masterlooter"):NewML(self.masterLooter)
@@ -452,8 +464,9 @@ function ScroogeLoot:ChatCommand(msg)
 		self:Print("Debug = "..tostring(self.debug))
 
 	elseif input == 'open' or input == L["open"] then
-		if self.isCouncil or self.mldb.observe or self.nnp then -- only the right people may see the window during a raid since they otherwise could watch the entire voting
-			self:GetActiveModule("votingframe"):Show()
+                if self.isCouncil or self.mldb.observe or self.nnp then -- only the right people may see the window during a raid since they otherwise could watch the entire voting
+                        self:CallModule("votingframe")
+                        self:GetActiveModule("votingframe"):Show()
 		else
 			self:Print(L["You are not allowed to see the Voting Frame right now."])
 		end
@@ -470,8 +483,12 @@ function ScroogeLoot:ChatCommand(msg)
 	elseif input == 'version' or input == L["version"] or input == "v" or input == "ver" then
 		self:CallModule("version")
 
-	elseif input == "history" or input == L["history"] or input == "h" or input == "his" then
-		self:CallModule("history")
+        elseif input == "history" or input == L["history"] or input == "h" or input == "his" then
+                self:CallModule("history")
+
+        elseif input == "pm" or input == "playermanager" then
+                local pm = self:GetModule("SLPlayerManager", true)
+                if pm then pm:Show() end
 --@debug@
 	elseif input == "nnp" then
 		self.nnp = not self.nnp
@@ -655,9 +672,11 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 
 					-- Show  the LootFrame
 					self:CallModule("lootframe")
-					self:GetActiveModule("lootframe"):Start(lootTable)
+                                        self:GetActiveModule("lootframe"):Start(lootTable)
 
-					-- The votingFrame handles lootTable itself
+                                        -- Ensure VotingFrame is active for auto open
+                                        self:CallModule("votingframe")
+                                        -- The votingFrame handles lootTable itself
 
 				else -- a non-ML send a lootTable?!
 					self:Debug(tostring(sender).." is not ML, but sent lootTable!")
@@ -718,6 +737,12 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 			elseif command == "playerInfoRequest" then
 				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
 
+			elseif command == "playerData" then
+				-- Update local PlayerData from the master looter
+				if not self.isMasterLooter then
+					local incomingData = unpack(data)
+					self.PlayerData = incomingData
+				end
 			elseif command == "message" then
 				self:Print(unpack(data))
 
@@ -1551,11 +1576,11 @@ function ScroogeLoot:CreateFrame(name, cName, title, width, height)
 		old_setwidth(self, width)
 		self.content:SetWidth(width)
 	end
-	local old_setheight = f.SetHeight
-	f.SetHeight = function(self, height)
-		old_setheight(self, width)
-		self.content:SetHeight(height)
-	end
+       local old_setheight = f.SetHeight
+       f.SetHeight = function(self, height)
+               old_setheight(self, height)
+               self.content:SetHeight(height)
+       end
 	return f
 end
 

@@ -12,6 +12,7 @@ Locale\Locales.xml
 core.lua
 ml_core.lua
 compat.lua
+playerdata.lua
 Modules\Modules.xml
 
 Utils\tokenData.lua

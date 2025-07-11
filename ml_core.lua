@@ -58,7 +58,7 @@ function ScroogeLootML:AddItem(item, bagged, slotIndex, index)
 	addon:DebugLog("ML:AddItem", item, bagged, slotIndex, index)
 	local name, link, rarity, ilvl, iMinLevel, type, subType, iStackCount, equipLoc, texture = GetItemInfo(item)
 	
-	-- Item isn't properly loaded, so update the data in 0.5 sec (Should only happen with /rc test)
+       -- Item isn't properly loaded, so update the data in 0.5 sec (Should only happen with /sl test)
 	if not name then
 		self:ScheduleTimer("Timer", 0.5, "AddItem", item, bagged, slotIndex, #self.lootTable)
 		GameTooltip:SetHyperlink("item:"..item) -- cace item asap
@@ -93,14 +93,17 @@ function ScroogeLootML:RemoveItem(session)
 end
 
 function ScroogeLootML:AddCandidate(name, class, role, rank, enchant, lvl)
-	addon:DebugLog("ML:AddCandidate",name, class, role, rank, enchant, lvl)
-	self.candidates[name] = {
-		["class"]		= class,
-		["role"]		= role or "DAMAGER",
-		["rank"]		= rank or "", -- Rank cannot be nil for votingFrame
-		["enchanter"] 	= enchant,
-		["enchant_lvl"]	= lvl,
-	}
+        addon:DebugLog("ML:AddCandidate", name, class, role, rank, enchant, lvl)
+        local pd = addon.PlayerData and addon.PlayerData[name] or {}
+        self.candidates[name] = {
+                ["class"]       = class,
+                ["role"]        = role or "DAMAGER",
+                ["rank"]        = rank or "", -- Rank cannot be nil for votingFrame
+                ["enchanter"]   = enchant,
+                ["enchant_lvl"] = lvl,
+                ["raiderrank"]  = pd.raiderrank,
+                ["attendance"]  = pd.attendance,
+        }
 end
 
 function ScroogeLootML:RemoveCandidate(name)
@@ -195,7 +198,8 @@ function ScroogeLootML:StartSession()
 	end
 
 	self.running = true
-	addon:SendCommand("group", "lootTable", self.lootTable)
+        addon:SendCommand("group", "lootTable", self.lootTable)
+        addon:Debug("Sent lootTable", #self.lootTable)
 
 	self:AnnounceItems()
 	-- Start a timer to set response as offline/not installed unless we receive an ack
