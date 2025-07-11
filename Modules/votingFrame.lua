@@ -528,7 +528,8 @@ function SLVotingFrame:GetFrame()
 
 	local iTxt = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	iTxt:SetPoint("TOPLEFT", item, "TOPRIGHT", 10, 0)
-	iTxt:SetText(L["Something went wrong :'("]) -- Set text for reasons
+       -- Display a clearer message when no session is active
+       iTxt:SetText(L["No session running"]) -- Set text for reasons
 	f.itemText = iTxt
 
 	local ilvl = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
