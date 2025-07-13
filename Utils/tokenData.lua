@@ -1,10 +1,10 @@
-﻿-- Author      : Potdisc
+-- Author      : Potdisc
 -- Create Date : 3/11/2013 10:25:13 PM
 -- tokenData.lua
 -- Contains equip location and useable classes from tier tokens
 
 -- Equip locations
-RCTokenTable = {
+SLTokenTable = {
 	--[xxxxxx] = "ExampleSlot",
 
 	-- TIER 7 Naxx, OS, EoE
@@ -108,7 +108,7 @@ RCTokenTable = {
 	
 }
 
-RCTokenLevel = {
+SLTokenLevel = {
 	-- TIER 7
 	[40616] = 200,
 	[40631] = 213,
@@ -201,7 +201,7 @@ if AscensionUI then -- Ascension all tokens are used by everyone
 end
 
 -- Classes that can use the token
-RCTokenClasses = {
+SLTokenClasses = {
 	-- TIER 7
 	[40616] = CONQUEROR,
 	[40631] = CONQUEROR,

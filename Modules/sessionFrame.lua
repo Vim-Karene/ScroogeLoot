@@ -3,17 +3,17 @@
 -- DefaultModule - Requires ml_core.lua or similary functionality.
 -- sessionFrame.lua	Adds a frame listing the items to start a session with.
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
-local RCSessionFrame = addon:NewModule("RCSessionFrame", "AceTimer-3.0")
+local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
+local SLSessionFrame = addon:NewModule("SLSessionFrame", "AceTimer-3.0")
 local ST = LibStub("ScrollingTable")
-local L = LibStub("AceLocale-3.0"):GetLocale("RCLootCouncil")
+local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
 
 local ml;
 local ROW_HEIGHT = 40
 local awardLater = false
 local loadingItems = false
 
-function RCSessionFrame:OnInitialize()
+function SLSessionFrame:OnInitialize()
 	self.scrollCols = {
 		{ name = "", sortnext = 3,	width = 30 }, 			-- remove item
 		{ name = "", sortnext = 3,	width = ROW_HEIGHT },-- item icon
@@ -21,17 +21,17 @@ function RCSessionFrame:OnInitialize()
 	}
 end
 
-function RCSessionFrame:OnEnable()
+function SLSessionFrame:OnEnable()
 	ml = addon:GetActiveModule("masterlooter")
 end
 
-function RCSessionFrame:OnDisable()
+function SLSessionFrame:OnDisable()
 	self.frame:Hide()
 	self.frame.rows = {}
 	awardLater = false
 end
 
-function RCSessionFrame:Show(data)
+function SLSessionFrame:Show(data)
 	self.frame = self:GetFrame()
 	self.frame:Show()
 	if data then
@@ -42,12 +42,12 @@ function RCSessionFrame:Show(data)
 	end
 end
 
-function RCSessionFrame:Hide()
+function SLSessionFrame:Hide()
 	self.frame:Hide()
 end
 
 -- Data should be unmodified lootTable from ml_core
-function RCSessionFrame:ExtractData(data)
+function SLSessionFrame:ExtractData(data)
 	-- We could get an empty table if we haven't got GetItemInfo() from ml_core, so make sure we can handle it
 	--if not data or #data == 0 then data = {{link = false}} end
 	-- Clear any rowdata
@@ -66,36 +66,36 @@ function RCSessionFrame:ExtractData(data)
 	end
 end
 
-function RCSessionFrame:Update()
+function SLSessionFrame:Update()
 	self.frame.toggle:SetChecked(awardLater)
 end
 
-function RCSessionFrame:DeleteItem(index)
+function SLSessionFrame:DeleteItem(index)
 	addon:Debug("Delete row:", index)
 	ml:RemoveItem(index) -- remove the item from MLs lootTable
 	self:Show(ml.lootTable)
 end
 
-function RCSessionFrame.SetCellText(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function SLSessionFrame.SetCellText(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	if frame.text:GetFontObject() ~= GameFontNormal then
 		frame.text:SetFontObject("GameFontNormal") -- We want bigger font
 	end
 	if not data[realrow].link then
 		frame.text:SetText("--"..L["Waiting for item info"].."--")
 		loadingItems = true
-		RCSessionFrame:ScheduleTimer("Show", 1, ml.lootTable) -- Expect data to be available in 1 sec and then recreate the frame
+		SLSessionFrame:ScheduleTimer("Show", 1, ml.lootTable) -- Expect data to be available in 1 sec and then recreate the frame
 	else
 		frame.text:SetText(data[realrow].link)
 	end
 end
 
-function RCSessionFrame.SetCellDeleteBtn(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function SLSessionFrame.SetCellDeleteBtn(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	frame:SetNormalTexture("Interface/BUTTONS/UI-GroupLoot-Pass-Up.png")
-	frame:SetScript("OnClick", function() RCSessionFrame:DeleteItem(realrow) end)
+	frame:SetScript("OnClick", function() SLSessionFrame:DeleteItem(realrow) end)
 	frame:SetSize(20,20)
 end
 
-function RCSessionFrame.SetCellItemIcon(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function SLSessionFrame.SetCellItemIcon(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local texture = data[realrow].texture or "Interface/ICONS/INV_Sigil_Thorim.png"
 	local link = data[realrow].link
 	frame:SetNormalTexture(texture)
@@ -108,10 +108,10 @@ function RCSessionFrame.SetCellItemIcon(rowFrame, frame, data, cols, row, realro
 	end)
 end
 
-function RCSessionFrame:GetFrame()
+function SLSessionFrame:GetFrame()
 	if self.frame then return self.frame end
 
-	local f = addon:CreateFrame("DefaultRCSessionSetupFrame", "sessionframe", L["RCLootCouncil Session Setup"], 250)
+	local f = addon:CreateFrame("DefaultRCSessionSetupFrame", "sessionframe", L["ScroogeLoot Session Setup"], 250)
 
 	local tgl = CreateFrame("CheckButton", f:GetName().."Toggle", f.content, "ChatConfigCheckButtonTemplate")
 	getglobal(tgl:GetName().."Text"):SetText(L["Award later?"])
