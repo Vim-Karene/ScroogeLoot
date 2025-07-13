@@ -4,10 +4,10 @@
 --	votingFrame.lua	Displays everything related to handling loot for all members.
 --		Will only show certain aspects depending on addon.isMasterLooter, addon.isCouncil and addon.mldb.observe
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
-local SLVotingFrame = addon:NewModule("SLVotingFrame", "AceComm-3.0", "AceTimer-3.0")
+local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+local RCVotingFrame = addon:NewModule("RCVotingFrame", "AceComm-3.0", "AceTimer-3.0")
 local LibDialog = LibStub("LibDialog-1.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
+local L = LibStub("AceLocale-3.0"):GetLocale("RCLootCouncil")
 local Deflate = LibStub("LibDeflate")
 
 local ROW_HEIGHT = 20;
@@ -27,14 +27,14 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
-function SLVotingFrame:OnInitialize()
+function RCVotingFrame:OnInitialize()
 	self.scrollCols = {
 		{ name = "",															sortnext = 2,		width = 20},	-- 1 Class
 		{ name = L["Name"],														sortnext = 4,		width = 80},	-- 2 Candidate Name
 		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
 		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
-		{ name = L["Raider"],														sortnext = 6,		width = 60},	-- 5 Raider rank
-		{ name = L["Attendance"],														sortnext = 5,		width = 60},	-- 6 Attendance
+		{ name = L["ilvl"],														sortnext = 9,		width = 40},	-- 5 Total ilvl
+		{ name = L["Diff"],														sortnext = 5,		width = 40},	-- 6 ilvl difference
 		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 1
 		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 8 Current gear 2
 		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 9 Number of votes
@@ -42,23 +42,23 @@ function SLVotingFrame:OnInitialize()
 		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 11 Note icon
 		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 12 Roll
 	}
-	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
-	filterMenu = CreateFrame("Frame", "ScroogeLoot_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
-	enchanters = CreateFrame("Frame", "ScroogeLoot_VotingFrame_EnchantersMenu", UIParent, "Lib_UIDropDownMenuTemplate")
+	menuFrame = CreateFrame("Frame", "RCLootCouncil_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
+	filterMenu = CreateFrame("Frame", "RCLootCouncil_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
+	enchanters = CreateFrame("Frame", "RCLootCouncil_VotingFrame_EnchantersMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	Lib_UIDropDownMenu_Initialize(menuFrame, self.RightClickMenu, "MENU")
 	Lib_UIDropDownMenu_Initialize(filterMenu, self.FilterMenu)
 	Lib_UIDropDownMenu_Initialize(enchanters, self.EnchantersMenu)
 end
 
-function SLVotingFrame:OnEnable()
-	self:RegisterComm("ScroogeLoot")
+function RCVotingFrame:OnEnable()
+	self:RegisterComm("RCLootCouncil")
 	db = addon:Getdb()
 	active = true
-	moreInfo = db.modules["SLVotingFrame"].moreInfo
+	moreInfo = db.modules["RCVotingFrame"].moreInfo
 	self.frame = self:GetFrame()
 end
 
-function SLVotingFrame:OnDisable() -- We never really call this
+function RCVotingFrame:OnDisable() -- We never really call this
 	self:Hide()
 	self.frame:SetParent(nil)
 	self.frame = nil
@@ -68,13 +68,13 @@ function SLVotingFrame:OnDisable() -- We never really call this
 	self:UnregisterAllComm()
 end
 
-function SLVotingFrame:Hide()
+function RCVotingFrame:Hide()
 	addon:Debug("Hide VotingFrame")
 	self.frame.moreInfo:Hide()
 	self.frame:Hide()
 end
 
-function SLVotingFrame:Show()
+function RCVotingFrame:Show()
 	if self.frame then
 		councilInGroup = addon:GetCouncilInGroup()
 		self.frame:Show()
@@ -84,14 +84,14 @@ function SLVotingFrame:Show()
 	end
 end
 
-function SLVotingFrame:EndSession(hide)
+function RCVotingFrame:EndSession(hide)
 	active = false -- The session has ended, so deactivate
 	self:Update()
 	if hide then self:Hide() end -- Hide if need be
 end
 
-function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
-	if prefix == "ScroogeLoot" then
+function RCVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
+	if prefix == "RCLootCouncil" then
 		-- data is always a table to be unpacked
 		local decoded = Deflate:DecodeForPrint(serializedMsg)
 		if not decoded then 
@@ -179,17 +179,16 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 				end
 				self:Update()
 
-                        elseif command == "lootTable" and addon:UnitIsUnit(sender, addon.masterLooter) then
-                                print("Voting frame received lootTable session")
-                                active = true
-                                self:Setup(unpack(data))
-                                if not addon.enabled then return end -- We just want things ready
-                                if db.autoOpen then
-                                        self:Show()
-                                else
-                                       addon:Print(L['A new session has begun, type "/sl open" to open the voting frame.'])
-                                end
-                                guildRanks = addon:GetGuildRanks() -- Just update it on every session
+			elseif command == "lootTable" and addon:UnitIsUnit(sender, addon.masterLooter) then
+				active = true
+				self:Setup(unpack(data))
+				if not addon.enabled then return end -- We just want things ready
+				if db.autoOpen then
+					self:Show()
+				else
+					addon:Print(L['A new session has begun, type "/rc open" to open the voting frame.'])
+				end
+				guildRanks = addon:GetGuildRanks() -- Just update it on every session
 
 			elseif command == "response" then
 				local session, name, t = unpack(data)
@@ -204,7 +203,7 @@ end
 
 -- Getter/Setter for candidate data
 -- Handles errors
-function SLVotingFrame:SetCandidateData(session, candidate, data, val)
+function RCVotingFrame:SetCandidateData(session, candidate, data, val)
 	local function Set(session, candidate, data, val)
 		lootTable[session].candidates[candidate][data] = val
 	end
@@ -212,7 +211,7 @@ function SLVotingFrame:SetCandidateData(session, candidate, data, val)
 	if not ok then addon:Debug("Error in 'SetCandidateData':", arg, session, candidate, data, val) end
 end
 
-function SLVotingFrame:GetCandidateData(session, candidate, data)
+function RCVotingFrame:GetCandidateData(session, candidate, data)
 	local function Get(session, candidate, data)
 		return lootTable[session].candidates[candidate][data]
 	end
@@ -221,7 +220,7 @@ function SLVotingFrame:GetCandidateData(session, candidate, data)
 	else return arg end
 end
 
-function SLVotingFrame:Setup(table)
+function RCVotingFrame:Setup(table)
 	--lootTable[session] = {bagged, lootSlot, awarded, name, link, quality, ilvl, type, subType, equipLoc, texture, boe}
 	lootTable = table -- Extract all the data we get
 	for session, t in ipairs(lootTable) do -- and build the rest (candidates)
@@ -229,15 +228,15 @@ function SLVotingFrame:Setup(table)
 		t.candidates = {}
 		for name, v in pairs(candidates) do
 			t.candidates[name] = {
-                               class = v.class,
-                               rank = v.rank,
-                               role = v.role,
-                               raiderrank = v.raiderrank,
-                               attendance = v.attendance,
-                               response = "ANNOUNCED",
-                               gear1 = nil,
-                               gear2 = nil,
-                               votes = 0,
+				class = v.class,
+				rank = v.rank,
+				role = v.role,
+				response = "ANNOUNCED",
+				ilvl = "",
+				diff = "",
+				gear1 = nil,
+				gear2 = nil,
+				votes = 0,
 				note = nil,
 				roll = "",
 				voters = {},
@@ -261,7 +260,7 @@ function SLVotingFrame:Setup(table)
 	self:SwitchSession(session)
 end
 
-function SLVotingFrame:HandleVote(session, name, vote, voter)
+function RCVotingFrame:HandleVote(session, name, vote, voter)
 	-- Do the vote
 	if not lootTable or not lootTable[session] or not lootTable[session].candidates or not lootTable[session].candidates[name] then 
 		return 
@@ -283,7 +282,7 @@ function SLVotingFrame:HandleVote(session, name, vote, voter)
 	self:UpdatePeopleToVote()
 end
 
-function SLVotingFrame:DoRandomRolls(ses)
+function RCVotingFrame:DoRandomRolls(ses)
 	for _, v in pairs (lootTable[ses].candidates) do
 		v.roll = math.random(100)
 	end
@@ -293,7 +292,7 @@ end
 ------------------------------------------------------------------
 --	Visuals														--
 ------------------------------------------------------------------
-function SLVotingFrame:Update()
+function RCVotingFrame:Update()
 	self.frame.st:SortData()
 	-- update awardString
 	if lootTable[session] and lootTable[session].awarded then
@@ -316,7 +315,7 @@ function SLVotingFrame:Update()
 	end
 end
 
-function SLVotingFrame:SwitchSession(s)
+function RCVotingFrame:SwitchSession(s)
 	addon:Debug("SwitchSession", s)
 	-- Start with setting up some statics
 	local old = session
@@ -343,13 +342,13 @@ function SLVotingFrame:SwitchSession(s)
 	for i in ipairs(self.frame.st.cols) do
 		self.frame.st.cols[i].sort = nil
 	end
-	self.frame.st.cols[4].sort = "asc"
+	self.frame.st.cols[5].sort = "asc"
 	FauxScrollFrame_OnVerticalScroll(self.frame.st.scrollframe, 0, self.frame.st.rowHeight, function() self.frame.st:Refresh() end) -- Reset scrolling to 0
 	self:Update()
 	self:UpdatePeopleToVote()
 end
 
-function SLVotingFrame:BuildST()
+function RCVotingFrame:BuildST()
 	local rows = {}
 	local i = 1
 	for name in pairs(candidates) do
@@ -360,8 +359,8 @@ function SLVotingFrame:BuildST()
 				{ value = "",	DoCellUpdate = self.SetCellName,			name = "name",},
 				{ value = "",	DoCellUpdate = self.SetCellRank,			name = "rank",},
 				{ value = "",	DoCellUpdate = self.SetCellResponse,	name = "response",},
-				{ value = "",	DoCellUpdate = self.SetCellRaider,			name = "raiderrank",},
-				{ value = "",	DoCellUpdate = self.SetCellAttendance,			name = "attendance",},
+				{ value = "",	DoCellUpdate = self.SetCellIlvl,			name = "ilvl",},
+				{ value = "",	DoCellUpdate = self.SetCellDiff,			name = "diff",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear1",},
 				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear2",},
 				{ value = 0,	DoCellUpdate = self.SetCellVotes, 		name = "votes",},
@@ -375,7 +374,7 @@ function SLVotingFrame:BuildST()
 	self.frame.st:SetData(rows)
 end
 
-function SLVotingFrame:UpdateMoreInfo(row, data)
+function RCVotingFrame:UpdateMoreInfo(row, data)
 	addon:Debug("MoreInfo:", moreInfo)
 	local name
 	if data then
@@ -415,7 +414,7 @@ function SLVotingFrame:UpdateMoreInfo(row, data)
 			local historical_item_slot = select(9, GetItemInfo(itemid))
 
 			if not historical_item_slot or historical_item_slot == "" then 
-				historical_item_slot = SLTokenTable[itemid]
+				historical_item_slot = RCTokenTable[itemid]
 
 				if not addon.Slots_INVTYPE[item_slot] then -- when we are comparing a normal item with a token we won previously
 					local original = item_slot
@@ -478,11 +477,11 @@ function SLVotingFrame:UpdateMoreInfo(row, data)
 end
 
 
-function SLVotingFrame:GetFrame()
+function RCVotingFrame:GetFrame()
 	if self.frame then return self.frame end
 
 	-- Container and title
-	local f = addon:CreateFrame("DefaultScroogeLootFrame", "votingframe", L["ScroogeLoot Voting Frame"], 250, 420)
+	local f = addon:CreateFrame("DefaultRCLootCouncilFrame", "votingframe", L["RCLootCouncil Voting Frame"], 250, 420)
 	-- Scrolling table
 	local st = LibStub("ScrollingTable"):CreateST(self.scrollCols, NUM_ROWS, ROW_HEIGHT, { ["r"] = 1.0, ["g"] = 0.9, ["b"] = 0.0, ["a"] = 0.5 }, f.content)
 	st.frame:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 10)
@@ -502,7 +501,7 @@ function SLVotingFrame:GetFrame()
 			return false
 		end,
 	})
-	st:SetFilter(SLVotingFrame.filterFunc)
+	st:SetFilter(RCVotingFrame.filterFunc)
 	st:EnableSelection(true)
 	f.st = st
 	--[[------------------------------
@@ -528,8 +527,7 @@ function SLVotingFrame:GetFrame()
 
 	local iTxt = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	iTxt:SetPoint("TOPLEFT", item, "TOPRIGHT", 10, 0)
-       -- Display a clearer message when no session is active
-       iTxt:SetText(L["No session running"]) -- Set text for reasons
+	iTxt:SetText(L["Something went wrong :'("]) -- Set text for reasons
 	f.itemText = iTxt
 
 	local ilvl = f.content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -555,7 +553,7 @@ function SLVotingFrame:GetFrame()
 	local b1 = addon:CreateButton(L["Close"], f.content)
 	b1:SetPoint("TOPRIGHT", f, "TOPRIGHT", -10, -50)
 	if addon.isMasterLooter then
-		b1:SetScript("OnClick", function() if active then LibDialog:Spawn("SLLOOTCOUNCIL_CONFIRM_ABORT") else self:Hide() end end)
+		b1:SetScript("OnClick", function() if active then LibDialog:Spawn("RCLOOTCOUNCIL_CONFIRM_ABORT") else self:Hide() end end)
 	else
 		b1:SetScript("OnClick", function() self:Hide() end)
 	end
@@ -574,7 +572,7 @@ function SLVotingFrame:GetFrame()
 	end
 	b2:SetScript("OnClick", function(button)
 		moreInfo = not moreInfo
-		db.modules["SLVotingFrame"].moreInfo = moreInfo
+		db.modules["RCVotingFrame"].moreInfo = moreInfo
 		if moreInfo then -- show the more info frame
 			button:SetNormalTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Up");
 			button:SetPushedTexture("Interface\\Buttons\\UI-SpellbookIcon-PrevPage-Down");
@@ -588,7 +586,7 @@ function SLVotingFrame:GetFrame()
 	b2:SetScript("OnLeave", addon.HideTooltip)
 	f.moreInfoBtn = b2
 
-	f.moreInfo = CreateFrame( "GameTooltip", "SLVotingFrameMoreInfo", nil, "GameTooltipTemplate" )
+	f.moreInfo = CreateFrame( "GameTooltip", "RCVotingFrameMoreInfo", nil, "GameTooltipTemplate" )
 
 	-- Filter
 	local b3 = addon:CreateButton(L["Filter"], f.content)
@@ -642,7 +640,7 @@ function SLVotingFrame:GetFrame()
 	return f;
 end
 
-function SLVotingFrame:UpdatePeopleToVote()
+function RCVotingFrame:UpdatePeopleToVote()
 	local voters = {}
 	-- Find out who have voted
 	for name in pairs(lootTable[session].candidates) do
@@ -670,10 +668,10 @@ function SLVotingFrame:UpdatePeopleToVote()
 	self.frame.rollResult:SetWidth(self.frame.rollResult.text:GetStringWidth())
 end
 
-function SLVotingFrame:UpdateSessionButton(i, texture, link, awarded)
+function RCVotingFrame:UpdateSessionButton(i, texture, link, awarded)
 	local btn = sessionButtons[i]
 	if not btn then -- create the button
-		btn = CreateFrame("Button", "SLButton"..i, self.frame.sessionToggleFrame)
+		btn = CreateFrame("Button", "RCButton"..i, self.frame.sessionToggleFrame)
 		btn:SetSize(40,40)
 		--btn:SetText(i)
 		if i == 1 then
@@ -683,7 +681,7 @@ function SLVotingFrame:UpdateSessionButton(i, texture, link, awarded)
 		else
 			btn:SetPoint("TOP", sessionButtons[i-1], "BOTTOM", 0, -2)
 		end
-                btn:SetScript("OnClick", function() SLVotingFrame:SwitchSession(i); end)
+		btn:SetScript("Onclick", function() RCVotingFrame:SwitchSession(i); end)
 		btn:SetHighlightTexture("Interface\\Buttons\\ButtonHilight-Square")
 		btn:GetHighlightTexture():SetBlendMode("ADD")
 		btn:SetNormalTexture(texture or "Interface\\InventoryItems\\WoWUnknownItem01")
@@ -722,17 +720,20 @@ end
 ----------------------------------------------------------
 --	Lib-st data functions (not particular pretty, I know)
 ----------------------------------------------------------
--- Display boolean raiderrank as Yes/No
-local function RaiderText(flag)
-       return flag and L["Yes"] or L["No"]
+function RCVotingFrame:GetDiffColor(num)
+	if num == "" then num = 0 end -- Can't compare empty string
+	local green, red, grey = {0,1,0,1},{1,0,0,1},{0.75,0.75,0.75,1}
+	if num > 0 then return green end
+	if num < 0 then return red end
+	return grey
 end
 
-function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function RCVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
 	addon.SetCellClassIcon(rowFrame, frame, data, cols, row, realrow, column, fShow, table, lootTable[session].candidates[name].class)
 end
 
-function SLVotingFrame.SetCellName(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function RCVotingFrame.SetCellName(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
 	frame.text:SetText(name)
 	local c = addon:GetClassColor(lootTable[session].candidates[name].class)
@@ -740,34 +741,33 @@ function SLVotingFrame.SetCellName(rowFrame, frame, data, cols, row, realrow, co
 	data[realrow].cols[column].value = name
 end
 
-function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function RCVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
 	frame.text:SetText(lootTable[session].candidates[name].rank)
 	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
 	data[realrow].cols[column].value = lootTable[session].candidates[name].rank
 end
 
-function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function RCVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
 	frame.text:SetText(addon:GetResponseText(lootTable[session].candidates[name].response))
 	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
 end
 
-function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local val = lootTable[session].candidates[name].raiderrank
-       frame.text:SetText(RaiderText(val))
-       data[realrow].cols[column].value = val and 1 or 0
+function RCVotingFrame.SetCellIlvl(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+	local name = data[realrow].name
+	frame.text:SetText(lootTable[session].candidates[name].ilvl)
+	data[realrow].cols[column].value = lootTable[session].candidates[name].ilvl
 end
 
-function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local val = lootTable[session].candidates[name].attendance or ""
-       frame.text:SetText(tostring(val))
-       data[realrow].cols[column].value = tonumber(val) or 0
+function RCVotingFrame.SetCellDiff(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+	local name = data[realrow].name
+	frame.text:SetText(lootTable[session].candidates[name].diff)
+	frame.text:SetTextColor(unpack(RCVotingFrame:GetDiffColor(lootTable[session].candidates[name].diff)))
+	data[realrow].cols[column].value = lootTable[session].candidates[name].diff
 end
 
-function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function RCVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local gear = data[realrow].cols[column].name -- gear1 or gear2
 	local name = data[realrow].name
 	gear = lootTable[session].candidates[name][gear] -- Get the actual gear
@@ -782,7 +782,7 @@ function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, co
 	end
 end
 
-function SLVotingFrame.SetCellVotes(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function RCVotingFrame.SetCellVotes(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
 	frame:SetScript("OnEnter", function()
 		if not addon.mldb.anonymousVoting or (db.showForML and addon.isMasterLooter) then
@@ -801,7 +801,7 @@ function SLVotingFrame.SetCellVotes(rowFrame, frame, data, cols, row, realrow, c
 	end
 end
 
-function SLVotingFrame.SetCellVote(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function RCVotingFrame.SetCellVote(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
 	if not active or lootTable[session].awarded then -- Don't show the vote button if awarded or not active
 		if frame.voteBtn then
@@ -854,7 +854,7 @@ function SLVotingFrame.SetCellVote(rowFrame, frame, data, cols, row, realrow, co
 	end
 end
 
-function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+function RCVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
 	local note = lootTable[session].candidates[name].note
 	local f = frame.noteBtn or CreateFrame("Button", nil, frame)
@@ -873,28 +873,19 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 	frame.noteBtn = f
 end
 
-function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local info = lootTable[session].candidates[name].rollInfo or {}
-       frame.text:SetText(lootTable[session].candidates[name].roll)
-       frame:SetScript("OnEnter", function()
-               addon:CreateTooltip(
-                       "Base: "..tostring(info.base),
-                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
-                       "Final: "..tostring(info.final)
-               )
-       end)
-       frame:SetScript("OnLeave", addon.HideTooltip)
-       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+function RCVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+	local name = data[realrow].name
+	frame.text:SetText(lootTable[session].candidates[name].roll)
+	data[realrow].cols[column].value = lootTable[session].candidates[name].roll
 end
 
-function SLVotingFrame.filterFunc(table, row)
-	if not db.modules["SLVotingFrame"].filters then return true end -- db hasn't been initialized, so just show it
+function RCVotingFrame.filterFunc(table, row)
+	if not db.modules["RCVotingFrame"].filters then return true end -- db hasn't been initialized, so just show it
 	local response = lootTable[session].candidates[row.name].response
 	if response == "AUTOPASS" or response == "PASS" or type(response) == "number" then
-		return db.modules["SLVotingFrame"].filters[response]
+		return db.modules["RCVotingFrame"].filters[response]
 	else -- Filter out the status texts
-		return db.modules["SLVotingFrame"].filters["STATUS"]
+		return db.modules["RCVotingFrame"].filters["STATUS"]
 	end
 end
 
@@ -959,7 +950,7 @@ end
 do
 	local info = Lib_UIDropDownMenu_CreateInfo() -- Efficiency :)
 	-- NOTE Take care of info[] values when inserting new buttons
-	function SLVotingFrame.RightClickMenu(menu, level)
+	function RCVotingFrame.RightClickMenu(menu, level)
 		if not addon.isMasterLooter then return end
 
 		local candidateName = menu.name
@@ -978,7 +969,7 @@ do
 
 			info.text = L["Award"]
 			info.func = function()
-				LibDialog:Spawn("SLLOOTCOUNCIL_CONFIRM_AWARD", {
+				LibDialog:Spawn("RCLOOTCOUNCIL_CONFIRM_AWARD", {
 					session,
 				  	candidateName,
 					data.response,
@@ -1023,7 +1014,7 @@ do
 
 			info.text = L["Add rolls"]
 			info.notCheckable = true
-			info.func = function() SLVotingFrame:DoRandomRolls(session) end
+			info.func = function() RCVotingFrame:DoRandomRolls(session) end
 			Lib_UIDropDownMenu_AddButton(info, level)
 
 		elseif level == 2 then
@@ -1035,7 +1026,7 @@ do
 					info.text = v.text
 					info.notCheckable = true
 					info.func = function()
-						LibDialog:Spawn("SLLOOTCOUNCIL_CONFIRM_AWARD", {
+						LibDialog:Spawn("RCLOOTCOUNCIL_CONFIRM_AWARD", {
 							session,
 						  	candidateName,
 							nil,
@@ -1107,21 +1098,21 @@ do
 		end
 	end
 
-	function SLVotingFrame.FilterMenu(menu, level)
+	function RCVotingFrame.FilterMenu(menu, level)
 		if level == 1 then -- Redundant
 			-- Build the data table:
 			local data = {["STATUS"] = true, ["PASS"] = true, ["AUTOPASS"] = true}
 			for i = 1, addon.mldb.numButtons or db.numButtons do
 				data[i] = i
 			end
-			if not db.modules["SLVotingFrame"].filters then -- Create the db entry
+			if not db.modules["RCVotingFrame"].filters then -- Create the db entry
 				addon:DebugLog("Created VotingFrame filters")
-				db.modules["SLVotingFrame"].filters = {}
+				db.modules["RCVotingFrame"].filters = {}
 			end
 			for k in pairs(data) do -- Update the db entry to make sure we have all buttons in it
-				if type(db.modules["SLVotingFrame"].filters[k]) ~= "boolean" then
+				if type(db.modules["RCVotingFrame"].filters[k]) ~= "boolean" then
 					addon:Debug("Didn't contain "..k)
-					db.modules["SLVotingFrame"].filters[k] = true -- Default as true
+					db.modules["RCVotingFrame"].filters[k] = true -- Default as true
 				end
 			end
 			info.text = L["Filter"]
@@ -1136,10 +1127,10 @@ do
 				info.colorCode = "|cff"..addon:RGBToHex(addon:GetResponseColor(k))
 				info.func = function()
 					addon:Debug("Update Filter")
-					db.modules["SLVotingFrame"].filters[k] = not db.modules["SLVotingFrame"].filters[k]
-					SLVotingFrame:Update()
+					db.modules["RCVotingFrame"].filters[k] = not db.modules["RCVotingFrame"].filters[k]
+					RCVotingFrame:Update()
 				end
-				info.checked = db.modules["SLVotingFrame"].filters[k]
+				info.checked = db.modules["RCVotingFrame"].filters[k]
 				Lib_UIDropDownMenu_AddButton(info, level)
 			end
 			for k in pairs(data) do -- A bit redundency, but it makes sure these "specials" comes last
@@ -1153,17 +1144,17 @@ do
 					end
 					info.func = function()
 						addon:Debug("Update Filter")
-						db.modules["SLVotingFrame"].filters[k] = not db.modules["SLVotingFrame"].filters[k]
-						SLVotingFrame:Update()
+						db.modules["RCVotingFrame"].filters[k] = not db.modules["RCVotingFrame"].filters[k]
+						RCVotingFrame:Update()
 					end
-					info.checked = db.modules["SLVotingFrame"].filters[k]
+					info.checked = db.modules["RCVotingFrame"].filters[k]
 					Lib_UIDropDownMenu_AddButton(info, level)
 				end
 			end
 		end
 	end
 
-	function SLVotingFrame.EnchantersMenu(menu, level)
+	function RCVotingFrame.EnchantersMenu(menu, level)
 		if level == 1 then
 			local added = false
 			info = Lib_UIDropDownMenu_CreateInfo()
@@ -1178,7 +1169,7 @@ do
 					info.func = function()
 						for k,v in ipairs(db.awardReasons) do
 							if v.disenchant then
-								LibDialog:Spawn("SLLOOTCOUNCIL_CONFIRM_AWARD", {
+								LibDialog:Spawn("RCLOOTCOUNCIL_CONFIRM_AWARD", {
 									session,
 								  	name,
 									nil,
@@ -1202,7 +1193,7 @@ do
 	end
 end
 
-function SLVotingFrame:GetItemStatus(item)
+function RCVotingFrame:GetItemStatus(item)
 	--addon:DebugLog("GetitemStatus", item)
 	if not item then return "" end
 	GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")

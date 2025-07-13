@@ -1,5 +1,5 @@
 -- get num group members backport
-local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
+local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
 
 function addon:IsInRaid() 
     return GetNumRaidMembers() > 0

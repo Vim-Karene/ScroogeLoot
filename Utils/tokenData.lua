@@ -4,7 +4,7 @@
 -- Contains equip location and useable classes from tier tokens
 
 -- Equip locations
-SLTokenTable = {
+RCTokenTable = {
 	--[xxxxxx] = "ExampleSlot",
 
 	-- TIER 7 Naxx, OS, EoE
@@ -108,7 +108,7 @@ SLTokenTable = {
 	
 }
 
-SLTokenLevel = {
+RCTokenLevel = {
 	-- TIER 7
 	[40616] = 200,
 	[40631] = 213,
@@ -201,7 +201,7 @@ if AscensionUI then -- Ascension all tokens are used by everyone
 end
 
 -- Classes that can use the token
-SLTokenClasses = {
+RCTokenClasses = {
 	-- TIER 7
 	[40616] = CONQUEROR,
 	[40631] = CONQUEROR,

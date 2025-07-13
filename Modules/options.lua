@@ -1,13 +1,13 @@
 ﻿-- Author      : Potdisc
 -- Create Date : 5/24/2012 6:24:55 PM
--- options.lua - option frame in BlizOptions for ScroogeLoot
+-- options.lua - option frame in BlizOptions for RCLootCouncil
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
-local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
+local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+local L = LibStub("AceLocale-3.0"):GetLocale("RCLootCouncil")
 ------ Options ------
 function addon:OptionsTable()
 	local options = {
-		name = "ScroogeLoot",
+		name = "RCLootCouncil",
 		type = "group",
 		handler = addon,
 		get = "DBGet",
@@ -33,15 +33,15 @@ function addon:OptionsTable()
 							usage = {
 								order = 1,
 								name = L["Usage"],
-								desc = L["Choose when to use ScroogeLoot"],
+								desc = L["Choose when to use RCLootCouncil"],
 								type = "select",
 								width = "double",
 								values = {
-									ml 			= L["Always use ScroogeLoot when I'm Master Looter"],
-								--	leader 		= "Always use ScroogeLoot when I'm the group leader and enter a raid",
+									ml 			= L["Always use RCLootCouncil when I'm Master Looter"],
+								--	leader 		= "Always use RCLootCouncil when I'm the group leader and enter a raid",
 									ask_ml		= L["Ask me every time I become Master Looter"],
 								--	ask_leader	= "Ask me every time I'm the group leader and enter a raid",
-									never			= L["Never use ScroogeLoot"],
+									never			= L["Never use RCLootCouncil"],
 								},
 								set = function(_, key)
 									for k in pairs(self.db.profile.usage) do
@@ -356,7 +356,7 @@ function addon:OptionsTable()
 										pattern = "%d",
 										usage = L["ignore_input_usage"],
 										get = function() return "\"itemID\"" end,
-										set = function(info, val) tinsert(self.db.profile.ignore, val); LibStub("AceConfigRegistry-3.0"):NotifyChange("ScroogeLoot") end,
+										set = function(info, val) tinsert(self.db.profile.ignore, val); LibStub("AceConfigRegistry-3.0"):NotifyChange("RCLootCouncil") end,
 									},
 									ignoreList = {
 										order = 3,
@@ -692,7 +692,7 @@ function addon:OptionsTable()
 							},
 						},
 					},
-                                        councilTab = {
+					councilTab = {
 						order = 6,
 						type = "group",
 						name = L["Council"],
@@ -850,24 +850,11 @@ function addon:OptionsTable()
 								},
 							},
 						},
-                                        },
-                                        PlayerDataManagement = {
-                                                name = L["Player Management"],
-                                                type = "group",
-                                                order = 10,
-                                                args = {
-                                                        table = {
-                                                                type = "description",
-                                                                name = "",
-                                                                width = "full",
-                                                                dialogControl = "SLPlayerManager",
-                                                        }
-                                                }
-                                        },
-                                },
-                        },
-                },
-        }
+					},
+				},
+			},
+		},
+	}
 
 	-- #region Create options thats made with loops
 	-- Buttons
@@ -1004,11 +991,11 @@ function addon:OptionsTable()
 	return options
 end
 
-function ScroogeLoot:DBGet(info)
+function RCLootCouncil:DBGet(info)
 	return self.db.profile[info[#info]]
 end
 
-function ScroogeLoot:DBSet(info, val)
+function RCLootCouncil:DBSet(info, val)
 	self.db.profile[info[#info]] = val
 	self:ConfigTableChanged(info[#info])
 end

@@ -1,4 +1,4 @@
---[[	ScroogeLoot by Potdisc
+--[[	RCLootCouncil by Potdisc
 core.lua	Contains core elements of the addon
 
 --------------------------------
@@ -13,9 +13,9 @@ CHANGELOG
 	-- SEE CHANGELOG.TXT
 ]]
 
-ScroogeLoot = LibStub("AceAddon-3.0"):NewAddon("ScroogeLoot", "AceConsole-3.0", "AceEvent-3.0", "AceComm-3.0", "AceSerializer-3.0", "AceHook-3.0", "AceTimer-3.0");
+RCLootCouncil = LibStub("AceAddon-3.0"):NewAddon("RCLootCouncil", "AceConsole-3.0", "AceEvent-3.0", "AceComm-3.0", "AceSerializer-3.0", "AceHook-3.0", "AceTimer-3.0");
 local LibDialog = LibStub("LibDialog-1.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
+local L = LibStub("AceLocale-3.0"):GetLocale("RCLootCouncil")
 local lwin = LibStub("LibWindow-1.1")
 local Deflate = LibStub("LibDeflate")
 local LibGroupTalents = LibStub("LibGroupTalents-1.0")
@@ -23,18 +23,18 @@ local LibGroupTalents = LibStub("LibGroupTalents-1.0")
 local GUILD_DEMOTE_PATTERN = "^".._G.ERR_GUILD_DEMOTE_SSS:gsub('%%s', '(.+)').."$"
 local GUILD_PROMOTE_PATTERN = "^".._G.ERR_GUILD_PROMOTE_SSS:gsub('%%s', '(.+)').."$"
 
-ScroogeLoot:SetDefaultModuleState(false)
+RCLootCouncil:SetDefaultModuleState(false)
 
 -- Init shorthands
 local db, historyDB, debugLog;-- = self.db.profile, self.lootDB.factionrealm, self.db.global.log
 -- init modules
 local defaultModules = {
-	masterlooter =	"ScroogeLootML",
-	lootframe =		"SLLootFrame",
-	history =		"SLLootHistory",
-	version =		"SLVersionCheck",
-	sessionframe =	"SLSessionFrame",
-	votingframe =	"SLVotingFrame",
+	masterlooter =	"RCLootCouncilML",
+	lootframe =		"RCLootFrame",
+	history =		"RCLootHistory",
+	version =		"RCVersionCheck",
+	sessionframe =	"RCSessionFrame",
+	votingframe =	"RCVotingFrame",
 }
 local userModules = {
 	masterlooter = nil,
@@ -45,11 +45,11 @@ local userModules = {
 	votingframe = nil,
 }
 
-local frames = {} -- Contains all frames created by ScroogeLoot:CreateFrame()
+local frames = {} -- Contains all frames created by RCLootCouncil:CreateFrame()
 local unregisterGuildEvent = false
 local player_relogged = true -- Determines if we potentially need data from the ML due to /rl
 
-function ScroogeLoot:OnInitialize()
+function RCLootCouncil:OnInitialize()
 	--IDEA Consider if we want everything on self, or just whatever modules could need.
   	self.version = "2.0.4" -- hard code the version so reload ui updates will report correct version
 	self.nnp = false
@@ -78,16 +78,13 @@ function ScroogeLoot:OnInitialize()
 		WAIT				= { color = {1,1,0,1},				sort = 503,		text = L["Candidate is selecting response, please wait"], },
 		TIMEOUT			= { color = {1,0,0,1},				sort = 504,		text = L["Candidate didn't respond on time"], },
 		REMOVED			= { color = {0.8,0.5,0,1},			sort = 505,		text = L["Candidate removed"], },
-		NOTHING			= { color = {0.5,0.5,0.5,1},		sort = 505,		text = L["Offline or ScroogeLoot not installed"], },
+		NOTHING			= { color = {0.5,0.5,0.5,1},		sort = 505,		text = L["Offline or RCLootCouncil not installed"], },
 		PASS				= { color = {0.7, 0.7,0.7,1},		sort = 800,		text = L["Pass"],},
 		AUTOPASS			= { color = {0.7,0.7,0.7,1},		sort = 801,		text = L["Autopass"], },
-		DISABLED			= { color = {0.3, 0.35, 0.5},		sort = 802,		text = L["Candidate has disabled ScroogeLoot"], },
-		--[[1]]			  { color = {0,1,0,1},				sort = 1,		text = "Scrooge",},
-		--[[2]]			  { color = {1,0.5,0,1},			sort = 2,		text = "Drool",	},
-		--[[3]]			  { color = {0,0.7,0.7,1},			sort = 3,		text = "Deducktion",},
-                --[[4]]                   { color = {1,1,0,1},               sort = 4,                text = "Main-Spec",},
-                --[[5]]                   { color = {0.9,0.6,1,1},             sort = 5,                text = "Off-Spec",},
-                --[[6]]                   { color = {0.7,0.7,0.7,1},           sort = 6,                text = "Transmog",},
+		DISABLED			= { color = {0.3, 0.35, 0.5},		sort = 802,		text = L["Candidate has disabled RCLootCouncil"], },
+		--[[1]]			  { color = {0,1,0,1},				sort = 1,		text = L["Mainspec/Need"],},
+		--[[2]]			  { color = {1,0.5,0,1},			sort = 2,		text = L["Offspec/Greed"],	},
+		--[[3]]			  { color = {0,0.7,0.7,1},			sort = 3,		text = L["Minor Upgrade"],},
 	}
 	self.roleTable = {
 		TANK =		L["Tank"],
@@ -100,12 +97,11 @@ function ScroogeLoot:OnInitialize()
 
 	-- Option table defaults
 	self.defaults = {
-               global = {
-                       logMaxEntries = 500,
-                       log = {}, -- debug log
-                       localizedSubTypes = {},
-                       playerData = {},
-               },
+		global = {
+			logMaxEntries = 500,
+			log = {}, -- debug log
+			localizedSubTypes = {},
+		},
 		profile = {
 			usage = { -- State of enabledness
 				ml = false,				-- Enable when ML
@@ -175,16 +171,12 @@ function ScroogeLoot:OnInitialize()
 			council = {},
 
 			maxButtons = 10,
-			numButtons = 6,
+			numButtons = 3,
 			buttons = {
-				{       text = "Scrooge", whisperKey = "scrooge" },
-                                {       text = "Drool", whisperKey = "drool" },
-                                {       text = "Deducktion", whisperKey = "deducktion" },
-                                {       text = "Main-Spec", whisperKey = "main" },
-                                {       text = "Off-Spec", whisperKey = "off" },
-                                {       text = "Transmog", whisperKey = "transmog" },
-
-                        },
+				{	text = L["Need"],					whisperKey = L["whisperKey_need"], },	-- 1
+				{	text = L["Greed"],				whisperKey = L["whisperKey_greed"],},	-- 2
+				{	text = L["Minor Upgrade"],		whisperKey = L["whisperKey_minor"],},	-- 3
+			},
 			maxAwardReasons = 10,
 			numAwardReasons = 3,
 			awardReasons = {
@@ -227,12 +219,12 @@ function ScroogeLoot:OnInitialize()
 	end
 
 	-- register chat and comms
-       self:RegisterChatCommand("sl", "ChatCommand")
-       self:RegisterChatCommand("rclc", "ChatCommand")
-	self:RegisterComm("ScroogeLoot")
-	self:RegisterComm("ScroogeLoot_WotLK")
-	self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
-	self.lootDB = LibStub("AceDB-3.0"):New("ScroogeLootLootDB")
+	self:RegisterChatCommand("rc", "ChatCommand")
+  	self:RegisterChatCommand("rclc", "ChatCommand")
+	self:RegisterComm("RCLootCouncil")
+	self:RegisterComm("RCLootCouncil_WotLK")
+	self.db = LibStub("AceDB-3.0"):New("RCLootCouncilDB", self.defaults, true)
+	self.lootDB = LibStub("AceDB-3.0"):New("RCLootCouncilLootDB")
 	--[[ Format:
 	"playerName" = {
 		[#] = {"lootWon", "date (d/m/y)", "time (h:m:s)", "instance", "boss", "votes", "itemReplaced1", "itemReplaced2", "response", "responseID", "color", "class", "isAwardReason"}
@@ -244,26 +236,22 @@ function ScroogeLoot:OnInitialize()
 
 	-- add shortcuts
 	db = self.db.profile
-       historyDB = self.lootDB.factionrealm
-       debugLog = self.db.global.log
-
-       -- Load persisted PlayerData
-       self.PlayerData = self.db.global.playerData or {}
-       ScroogeLoot.PlayerData = self.PlayerData
+	historyDB = self.lootDB.factionrealm
+	debugLog = self.db.global.log
 
 	-- register the optionstable
 	self.options = self:OptionsTable()
 	self.options.args.settings.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
-	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("ScroogeLoot", self.options)
+	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("RCLootCouncil", self.options)
 
 	-- add it to blizz options
-	self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("ScroogeLoot", "ScroogeLoot", nil, "settings")
-	self.optionsFrame.ml = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("ScroogeLoot", "Master Looter", "ScroogeLoot", "mlSettings")
+	self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RCLootCouncil", "RCLootCouncil", nil, "settings")
+	self.optionsFrame.ml = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("RCLootCouncil", "Master Looter", "RCLootCouncil", "mlSettings")
 	-- Add logged in message in the log
 	self:DebugLog("Logged In")
 end
 
-function ScroogeLoot:OnEnable()
+function RCLootCouncil:OnEnable()
 	-- Register the player's name
 	self.realmName = GetRealmName()
 	self.playerName = UnitName("player")
@@ -323,7 +311,7 @@ function ScroogeLoot:OnEnable()
 	GuildRoster()
 
 	local filterFunc = function(_, event, msg, player, ...)
-		return strfind(msg, "[[ScroogeLoot]]:")
+		return strfind(msg, "[[RCLootCouncil]]:")
 	end
 	ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", filterFunc)
 
@@ -331,7 +319,7 @@ function ScroogeLoot:OnEnable()
 
 	----------PopUp setups --------------
 	-------------------------------------
-	LibDialog:Register("SLLOOTCOUNCIL_CONFIRM_USAGE", {
+	LibDialog:Register("RCLOOTCOUNCIL_CONFIRM_USAGE", {
 		text = L["confirm_usage_text"],
 		buttons = {
 			{	text = L["Yes"],
@@ -349,7 +337,7 @@ function ScroogeLoot:OnEnable()
 					self.isMasterLooter = true
 					self.masterLooter = self.playerName
 					if #db.council == 0 then -- if there's no council
-                                               self:Print(L["You haven't set a council! You can edit your council by typing '/sl council'"])
+						self:Print(L["You haven't set a council! You can edit your council by typing '/rc council'"])
 					end
 					self:CallModule("masterlooter")
 					self:GetActiveModule("masterlooter"):NewML(self.masterLooter)
@@ -357,7 +345,7 @@ function ScroogeLoot:OnEnable()
 			},
 			{	text = L["No"],
 				on_click = function()
-					ScroogeLoot:Print(L[" is not active in this raid."])
+					RCLootCouncil:Print(L[" is not active in this raid."])
 				end,
 			},
 		},
@@ -366,7 +354,7 @@ function ScroogeLoot:OnEnable()
 	})
 end
 
-function ScroogeLoot:OnDisable()
+function RCLootCouncil:OnDisable()
 	self:Debug("OnDisable()")
 	--NOTE (not really needed as we probably never call .Disable() on the addon)
 		-- delete all windows
@@ -374,19 +362,19 @@ function ScroogeLoot:OnDisable()
 	self:UnregisterAllEvents()
 end
 
-function ScroogeLoot:RefreshConfig(event, database, profile)
+function RCLootCouncil:RefreshConfig(event, database, profile)
 	self:Debug("RefreshConfig",event, database, profile)
 	self.db.profile = database.profile
 	db = database.profile
 end
 
-function ScroogeLoot:ConfigTableChanged(val)
+function RCLootCouncil:ConfigTableChanged(val)
 	--[[ NOTE By default only ml_core needs to know about changes to the config table,
 		  but we'll use AceEvent incase future modules also wants to know ]]
-	self:SendMessage("SLConfigTableChanged", val)
+	self:SendMessage("RCConfigTableChanged", val)
 end
 
-function ScroogeLoot:CheckGuildUpdate(_, msg)
+function RCLootCouncil:CheckGuildUpdate(_, msg)
 	local _, _, _, rank_name = strfind(msg, GUILD_PROMOTE_PATTERN) -- update on promotion
 	if rank_name == nil then 
 		rank_name = select(4, strfind(msg, GUILD_DEMOTE_PATTERN))
@@ -398,7 +386,7 @@ function ScroogeLoot:CheckGuildUpdate(_, msg)
 	end
 end
 
-function ScroogeLoot:AddGuildRanksToCouncil(rank)
+function RCLootCouncil:AddGuildRanksToCouncil(rank)
 	self.checkUpdateTimer = nil
 	rank = rank or self.db.profile.minRank
 	self.db.profile.council = {}
@@ -411,14 +399,14 @@ function ScroogeLoot:AddGuildRanksToCouncil(rank)
 	self:CouncilChanged()
 end
 
-function ScroogeLoot:CouncilChanged()
+function RCLootCouncil:CouncilChanged()
 	if self.isMasterLooter then 
 		self:GetActiveModule("masterlooter"):CouncilChanged()
 	end
 end
 
 --- Returns a table containing the the council members in the group
-function ScroogeLoot:GetCouncilInGroup()
+function RCLootCouncil:GetCouncilInGroup()
 	local council = {}
 	if self:IsInRaid() then
 		for k,v in ipairs(db.council) do
@@ -442,7 +430,7 @@ function ScroogeLoot:GetCouncilInGroup()
 	return council
 end
 
-function ScroogeLoot:ChatCommand(msg)
+function RCLootCouncil:ChatCommand(msg)
 	local input, arg1, arg2 = self:GetArgs(msg,3)
 	input = strlower(input or "")
 	if not input or input:trim() == "" or input == "help" or input == L["help"] then
@@ -457,23 +445,22 @@ function ScroogeLoot:ChatCommand(msg)
 		-- Call it twice, because reasons..
 		--InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
 		--InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-		LibStub("AceConfigDialog-3.0"):Open("ScroogeLoot")
+		LibStub("AceConfigDialog-3.0"):Open("RCLootCouncil")
 
 	elseif input == 'debug' or input == 'd' then
 		self.debug = not self.debug
 		self:Print("Debug = "..tostring(self.debug))
 
 	elseif input == 'open' or input == L["open"] then
-                if self.isCouncil or self.mldb.observe or self.nnp then -- only the right people may see the window during a raid since they otherwise could watch the entire voting
-                        self:CallModule("votingframe")
-                        self:GetActiveModule("votingframe"):Show()
+		if self.isCouncil or self.mldb.observe or self.nnp then -- only the right people may see the window during a raid since they otherwise could watch the entire voting
+			self:GetActiveModule("votingframe"):Show()
 		else
 			self:Print(L["You are not allowed to see the Voting Frame right now."])
 		end
 
 	elseif input == 'council' or input == L["council"] then
-		LibStub("AceConfigDialog-3.0"):Open("ScroogeLoot")
-		LibStub("AceConfigDialog-3.0"):SelectGroup("ScroogeLoot", "mlSettings", "councilTab")
+		LibStub("AceConfigDialog-3.0"):Open("RCLootCouncil")
+		LibStub("AceConfigDialog-3.0"):SelectGroup("RCLootCouncil", "mlSettings", "councilTab")
 
 
 	elseif input == 'test' or input == L["test"] then
@@ -483,12 +470,8 @@ function ScroogeLoot:ChatCommand(msg)
 	elseif input == 'version' or input == L["version"] or input == "v" or input == "ver" then
 		self:CallModule("version")
 
-        elseif input == "history" or input == L["history"] or input == "h" or input == "his" then
-                self:CallModule("history")
-
-        elseif input == "pm" or input == "playermanager" then
-                local pm = self:GetModule("SLPlayerManager", true)
-                if pm then pm:Show() end
+	elseif input == "history" or input == L["history"] or input == "h" or input == "his" then
+		self:CallModule("history")
 --@debug@
 	elseif input == "nnp" then
 		self.nnp = not self.nnp
@@ -557,12 +540,12 @@ function ScroogeLoot:ChatCommand(msg)
 end
 
 local deflate_level = {level = 9}
---- Send a ScroogeLoot Comm Message using AceComm-3.0
--- See ScroogeLoot:OnCommReceived() on how to receive these messages.
+--- Send a RCLootCouncil Comm Message using AceComm-3.0
+-- See RCLootCouncil:OnCommReceived() on how to receive these messages.
 -- @param target The receiver of the message. Can be "group", "guild" or "playerName".
 -- @param command The command to send.
 -- @param vararg Any number of arguments to send along. Will be packaged as a table.
-function ScroogeLoot:SendCommand(target, command, ...)
+function RCLootCouncil:SendCommand(target, command, ...)
 	-- send all data as a table, and let receiver unpack it
 	local serialized = self:Serialize(command, {...})
 	local compressed = Deflate:CompressDeflate(serialized, deflate_level)
@@ -576,51 +559,51 @@ function ScroogeLoot:SendCommand(target, command, ...)
 
 	if target == "group" then
 		if self:IsInRaid() then
-			self:SendCommMessage("ScroogeLoot", toSend, "RAID", nil, prio)
+			self:SendCommMessage("RCLootCouncil", toSend, "RAID", nil, prio)
 		elseif self:IsInGroup() then 
-			self:SendCommMessage("ScroogeLoot", toSend, "PARTY", nil, prio)
+			self:SendCommMessage("RCLootCouncil", toSend, "PARTY", nil, prio)
 		--[[elseif num > 0 then -- Party
-			self:SendCommMessage("ScroogeLoot", toSend, "PARTY")]]
+			self:SendCommMessage("RCLootCouncil", toSend, "PARTY")]]
 		else--if self.testMode then -- Alone (testing)
-			self:SendCommMessage("ScroogeLoot", toSend, "WHISPER", self.playerName, prio)
+			self:SendCommMessage("RCLootCouncil", toSend, "WHISPER", self.playerName, prio)
 		end
 
 	elseif target == "guild" then
-		self:SendCommMessage("ScroogeLoot", toSend, "GUILD")
+		self:SendCommMessage("RCLootCouncil", toSend, "GUILD")
 
 	else
 		if self:UnitIsUnit(target,"player") then -- If target == "player"
-			self:SendCommMessage("ScroogeLoot", toSend, "WHISPER", self.playerName)
+			self:SendCommMessage("RCLootCouncil", toSend, "WHISPER", self.playerName)
 		elseif target then
 			-- We cannot send "WHISPER" to a crossrealm player
 			if target:find("-") then
 				if target:find(self.realmName) then -- Our own realm, just send it
-					self:SendCommMessage("ScroogeLoot", toSend, "WHISPER", target)
+					self:SendCommMessage("RCLootCouncil", toSend, "WHISPER", target)
 				else -- Get creative
 					-- Remake command to be "xrealm" and put target and command in the table
-					-- See "ScroogeLoot:HandleXRealmComms()" for more info
+					-- See "RCLootCouncil:HandleXRealmComms()" for more info
 					toSend = self:Serialize("xrealm", {target, command, ...})
-					self:SendCommMessage("ScroogeLoot", toSend, "RAID")
+					self:SendCommMessage("RCLootCouncil", toSend, "RAID")
 				end
 
 			else -- Should also be our own realm
-				self:SendCommMessage("ScroogeLoot", toSend, "WHISPER", target)
+				self:SendCommMessage("RCLootCouncil", toSend, "WHISPER", target)
 			end
 		end
 	end
 end
 
---- Receives ScroogeLoot commands
+--- Receives RCLootCouncil commands
 -- Params are delivered by AceComm-3.0, but we need to extract our data created with the
--- ScroogeLoot:SendCommand function.
+-- RCLootCouncil:SendCommand function.
 -- @usage
 -- To extract the original data using AceSerializer-3.0:
 -- -- local success, command, data = self:Deserialize(serializedMsg)
--- 'data' is a table containing the varargs delivered to ScroogeLoot:SendCommand().
+-- 'data' is a table containing the varargs delivered to RCLootCouncil:SendCommand().
 -- To ensure correct handling of x-realm commands, include this line aswell:
--- -- if ScroogeLoot:HandleXRealmComms(self, command, data, sender) then return end
-function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
-	if prefix == "ScroogeLoot" then
+-- -- if RCLootCouncil:HandleXRealmComms(self, command, data, sender) then return end
+function RCLootCouncil:OnCommReceived(prefix, serializedMsg, distri, sender)
+	if prefix == "RCLootCouncil" then
 		-- data is always a table to be unpacked
 		local decoded = Deflate:DecodeForPrint(serializedMsg)
 		if not decoded then 
@@ -672,11 +655,9 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 
 					-- Show  the LootFrame
 					self:CallModule("lootframe")
-                                        self:GetActiveModule("lootframe"):Start(lootTable)
+					self:GetActiveModule("lootframe"):Start(lootTable)
 
-                                        -- Ensure VotingFrame is active for auto open
-                                        self:CallModule("votingframe")
-                                        -- The votingFrame handles lootTable itself
+					-- The votingFrame handles lootTable itself
 
 				else -- a non-ML send a lootTable?!
 					self:Debug(tostring(sender).." is not ML, but sent lootTable!")
@@ -737,12 +718,6 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 			elseif command == "playerInfoRequest" then
 				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
 
-			elseif command == "playerData" then
-				-- Update local PlayerData from the master looter
-				if not self.isMasterLooter then
-					local incomingData = unpack(data)
-					self.PlayerData = incomingData
-				end
 			elseif command == "message" then
 				self:Print(unpack(data))
 
@@ -768,7 +743,7 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 			end
 			self:Debug("Error in deserializing comm:", command, data);
 		end
-	elseif prefix == "ScroogeLoot_WotLK" then 
+	elseif prefix == "RCLootCouncil_WotLK" then 
 		local decoded_msg = Deflate:DecodeForPrint(serializedMsg)
     	local decompressed_msg = Deflate:DecompressDeflate(decoded_msg)
 		local ok, command, data = self:Deserialize(decompressed_msg)
@@ -779,7 +754,7 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 				local serialized_data = self:Serialize("verTestReply", sendData)
 				local compressed_data = Deflate:CompressDeflate(serialized_data, deflate_level)
 				local encoded = Deflate:EncodeForPrint(compressed_data)
-				self:SendCommMessage("ScroogeLoot_WotLK", encoded, "WHISPER", sender)
+				self:SendCommMessage("RCLootCouncil_WotLK", encoded, "WHISPER", sender)
 			end
 		end
 		
@@ -788,20 +763,20 @@ end
 
 -- Used to make sure "WHISPER" type xrealm comms is handled properly.
 -- Include this right after unpacking messages. Assumes you use "OnCommReceived" as comm handler:
--- if ScroogeLoot:HandleXRealmComms(self, command, data, sender) then return end
-function ScroogeLoot:HandleXRealmComms(mod, command, data, sender)
+-- if RCLootCouncil:HandleXRealmComms(self, command, data, sender) then return end
+function RCLootCouncil:HandleXRealmComms(mod, command, data, sender)
 	if command == "xrealm" then
 		local target = tremove(data, 1)
 		if self:UnitIsUnit(target, "player") then
 			local command = tremove(data, 1)
-			mod:OnCommReceived("ScroogeLoot", self:Serialize(command, data), "WHISPER", sender)
+			mod:OnCommReceived("RCLootCouncil", self:Serialize(command, data), "WHISPER", sender)
 		end
 		return true
 	end
 	return false
 end
 
-function ScroogeLoot:Debug(msg, ...)
+function RCLootCouncil:Debug(msg, ...)
 	if self.debug then
 		if select("#", ...) > 0 then
 			self:Print("|cffcb6700debug:|r "..tostring(msg).."|cffff6767", ...)
@@ -809,11 +784,11 @@ function ScroogeLoot:Debug(msg, ...)
 			self:Print("|cffcb6700debug:|r "..tostring(msg).."|r")
 		end
 	end
-	ScroogeLoot:DebugLog(msg, ...)
+	RCLootCouncil:DebugLog(msg, ...)
 end
 
 local date_to_debug_log = true
-function ScroogeLoot:DebugLog(msg, ...)
+function RCLootCouncil:DebugLog(msg, ...)
 	if date_to_debug_log then tinsert(debugLog, date("%x")); date_to_debug_log = false; end
 	local time = date("%X", time())
 	msg = time.." - ".. tostring(msg)
@@ -824,7 +799,7 @@ function ScroogeLoot:DebugLog(msg, ...)
 	tinsert(debugLog, msg)
 end
 
-function ScroogeLoot:Test(num)
+function RCLootCouncil:Test(num)
 	self:Debug("Test", num)
 	local testItems = {}
 	for i = 1, 18 do 
@@ -859,7 +834,7 @@ function ScroogeLoot:Test(num)
 end
 
 local interface_options_old_cancel = InterfaceOptionsFrameCancel:GetScript("OnClick")
-function ScroogeLoot:EnterCombat()
+function RCLootCouncil:EnterCombat()
 	-- Hack to remove CompactRaidGroup taint
 	-- Make clicking cancel the same as clicking okay
 	InterfaceOptionsFrameCancel:SetScript("OnClick", function()
@@ -876,7 +851,7 @@ function ScroogeLoot:EnterCombat()
 	end
 end
 
-function ScroogeLoot:LeaveCombat()
+function RCLootCouncil:LeaveCombat()
 	-- Revert
 	InterfaceOptionsFrameCancel:SetScript("OnClick", interface_options_old_cancel)
 	self.inCombat = false
@@ -894,7 +869,7 @@ end
 	Used by getCurrentGear to determine slot types
 	Inspired by EPGPLootMaster
 --]]
-ScroogeLoot.INVTYPE_Slots = {
+RCLootCouncil.INVTYPE_Slots = {
 		INVTYPE_HEAD		    = "HeadSlot",
 		INVTYPE_NECK		    = "NeckSlot",
 		INVTYPE_SHOULDER	    = "ShoulderSlot",
@@ -920,7 +895,7 @@ ScroogeLoot.INVTYPE_Slots = {
 		INVTYPE_RELIC			= {"RangedSlot"}
 }
 
-ScroogeLoot.Slots_INVTYPE = {
+RCLootCouncil.Slots_INVTYPE = {
 	["HeadSlot"]			= INVTYPE_HEAD,
 	["NeckSlot"]			= INVTYPE_NECK,
 	["ShoulderSlot"]		= INVTYPE_SHOULDER,
@@ -952,18 +927,18 @@ ScroogeLoot.Slots_INVTYPE = {
 	["RangedSlot"]			= INVTYPE_RELIC,
 }
 
-function ScroogeLoot:GetPlayersGear(link, equipLoc)
+function RCLootCouncil:GetPlayersGear(link, equipLoc)
 	local itemID = self:GetItemIDFromLink(link) -- Convert to itemID
 	self:DebugLog("GetPlayersGear", itemID, equipLoc)
 	if not itemID then return nil, nil; end
 	local item1, item2;
 	-- check if the item is a token, and if it is, return the matching current gear
-	if SLTokenTable[itemID] then
-		if SLTokenTable[itemID] == "Trinket" then -- We need to return both trinkets
+	if RCTokenTable[itemID] then
+		if RCTokenTable[itemID] == "Trinket" then -- We need to return both trinkets
 			item1 = GetInventoryItemLink("player", GetInventorySlotInfo("TRINKET0SLOT"))
 			item2 = GetInventoryItemLink("player", GetInventorySlotInfo("TRINKET1SLOT"))
 		else	-- Just return the slot from the tokentable
-			item1 = GetInventoryItemLink("player", GetInventorySlotInfo(SLTokenTable[itemID]))
+			item1 = GetInventoryItemLink("player", GetInventorySlotInfo(RCTokenTable[itemID]))
 		end
 		return item1, item2
 	end
@@ -989,7 +964,7 @@ function ScroogeLoot:GetPlayersGear(link, equipLoc)
 	return item1, item2;
 end
 
-function ScroogeLoot:Timer(type, ...)
+function RCLootCouncil:Timer(type, ...)
 	self:Debug("Timer "..type.." passed")
 	if type == "LocalizeSubTypes" then
 		self:LocalizeSubTypes()
@@ -1070,21 +1045,21 @@ local autopassOverride = {
 	"INVTYPE_CLOAK",
 }
 
-function ScroogeLoot:AutoPassCheck(subType, equipLoc, link)
+function RCLootCouncil:AutoPassCheck(subType, equipLoc, link)
 	if not tContains(autopassOverride, equipLoc) then
 		if subType and autopassTable[self.db.global.localizedSubTypes[subType]] then
 			return tContains(autopassTable[self.db.global.localizedSubTypes[subType]], self.playerClass)
 		end
 		-- The item wasn't a type we check for, but it might be a token
 		local id = type(link) == "number" and link or self:GetItemIDFromLink(link) -- Convert to id if needed
-		if SLTokenClasses[id] then -- It's a token
-			return not tContains(SLTokenClasses[id], self.playerClass)
+		if RCTokenClasses[id] then -- It's a token
+			return not tContains(RCTokenClasses[id], self.playerClass)
 		end
 	end
 	return false
 end
 
-function ScroogeLoot:LocalizeSubTypes()
+function RCLootCouncil:LocalizeSubTypes()
 	if self.db.global.localizedSubTypes.created then return end -- We only need to create it once
 	-- Get the item info
 	for _, item in pairs(subTypeLookup) do
@@ -1108,7 +1083,7 @@ function ScroogeLoot:LocalizeSubTypes()
 	end
 end
 
-function ScroogeLoot:IsItemBoE(item)
+function RCLootCouncil:IsItemBoE(item)
 	if not item then return false end
 	GameTooltip:SetOwner(UIParent, "ANCHOR_NONE")
 	GameTooltip:SetHyperlink(item)
@@ -1135,7 +1110,7 @@ end
 -- @param equipLoc	The item in the session's equipLoc
 -- @param note			The player's note
 -- @returns A formatted table that can be passed directly to :SendCommand("group", "response", -return-)
-function ScroogeLoot:CreateResponse(session, link, ilvl, response, equipLoc, note)
+function RCLootCouncil:CreateResponse(session, link, ilvl, response, equipLoc, note)
 	self:DebugLog("CreateResponse", session, link, ilvl, response, equipLoc, note)
 	local g1, g2 = self:GetPlayersGear(link, equipLoc)
 	local diff = nil
@@ -1170,7 +1145,7 @@ function ScroogeLoot:CreateResponse(session, link, ilvl, response, equipLoc, not
 		}
 end
 
-function ScroogeLoot:GetPlayersGuildRank()
+function RCLootCouncil:GetPlayersGuildRank()
 	self:DebugLog("GetPlayersGuildRank()")
 	GuildRoster() -- let the event trigger this func
 	if IsInGuild() then
@@ -1187,14 +1162,14 @@ function ScroogeLoot:GetPlayersGuildRank()
 	end
 end
 
-function ScroogeLoot:GetPlayerInfo()
+function RCLootCouncil:GetPlayerInfo()
 	-- Check if the player has enchanting
 	local enchant, lvl = IsSpellKnown(13262), 0 -- disenchant spell 
 	if enchant then lvl = 450 end -- assume max enchanting idc
 	return self.playerName, self.playerClass, self:GetPlayerRole(), self.guildRank, enchant, lvl
 end
 
-function ScroogeLoot:GetUnitRole(unit)
+function RCLootCouncil:GetUnitRole(unit)
 	local gtrole = LibGroupTalents:GetUnitRole(unit)
 	local role = "DAMAGER"
 	
@@ -1207,18 +1182,18 @@ function ScroogeLoot:GetUnitRole(unit)
 	return role
 end
 
-function ScroogeLoot:GetPlayerRole()
+function RCLootCouncil:GetPlayerRole()
 	return self:GetUnitRole("player")	
 end
 
-function ScroogeLoot.TranslateRole(role) -- reasons
-	return (role and role ~= "") and ScroogeLoot.roleTable[role] or ""
+function RCLootCouncil.TranslateRole(role) -- reasons
+	return (role and role ~= "") and RCLootCouncil.roleTable[role] or ""
 end
 
 --- GetGuildRanks
 -- Returns a lookup table containing GuildRankNames and their index
 -- @return table "GuildRankName" = rankIndex
-function ScroogeLoot:GetGuildRanks()
+function RCLootCouncil:GetGuildRanks()
 	if not IsInGuild() then return {} end
 	self:DebugLog("GetGuildRankNum()")
 	GuildRoster()
@@ -1230,7 +1205,7 @@ function ScroogeLoot:GetGuildRanks()
 	return t;
 end
 
-function ScroogeLoot:GetNumberOfDaysFromNow(oldDate)
+function RCLootCouncil:GetNumberOfDaysFromNow(oldDate)
 	local d, m, y = strsplit("/", oldDate, 3)
 	local sinceEpoch = time({year = "20"..y, month = m, day = d}) -- convert from string to seconds since epoch
 	local diff = date("*t", time() - sinceEpoch) -- get the difference as a table
@@ -1238,7 +1213,7 @@ function ScroogeLoot:GetNumberOfDaysFromNow(oldDate)
 	return diff.day - 1, diff.month - 1, diff.year - 1970
 end
 
-function ScroogeLoot:ConvertDateToString(day, month, year)
+function RCLootCouncil:ConvertDateToString(day, month, year)
 	local text = format(L["x days"], day)
 	if year > 0 then
 		text = format(L["days, x months, y years"], text, month, year)
@@ -1248,7 +1223,7 @@ function ScroogeLoot:ConvertDateToString(day, month, year)
 	return text;
 end
 
-function ScroogeLoot:OnEvent(event, ...)
+function RCLootCouncil:OnEvent(event, ...)
 	if event == "PARTY_LOOT_METHOD_CHANGED" then
 		self:Debug("Event:", event, ...)
 		self:NewMLCheck()
@@ -1288,7 +1263,7 @@ function ScroogeLoot:OnEvent(event, ...)
 	end
 end
 
-function ScroogeLoot:NewMLCheck()
+function RCLootCouncil:NewMLCheck()
 	local old_ml = self.masterLooter
 	self.isMasterLooter, self.masterLooter = self:GetML()
 	self:Debug("isMasterLooter", self.isMasterLooter, "masterLooter", self.masterLooter)
@@ -1311,18 +1286,18 @@ function ScroogeLoot:NewMLCheck()
 
 	-- We're ML and must ask the player for usage
 	elseif self.isMasterLooter and db.usage.ask_ml then
-		return LibDialog:Spawn("SLLOOTCOUNCIL_CONFIRM_USAGE")
+		return LibDialog:Spawn("RCLOOTCOUNCIL_CONFIRM_USAGE")
 	end
 end
 
-function ScroogeLoot:OnRaidEnter(arg)
+function RCLootCouncil:OnRaidEnter(arg)
 	-- NOTE: We shouldn't need to call GetML() as it's most likely called on "LOOT_METHOD_CHANGED"
 	-- There's no ML, and lootmethod ~= ML, but we are the group leader
 	if not self.masterLooter and UnitIsGroupLeader("player") then
 		-- We don't need to ask the player for usage, so change loot method to master, and make the player ML
 		if db.usage.leader then
 			SetLootMethod("master", self.playerName)
-			self:Print(L[" you are now the Master Looter and ScroogeLoot is now handling looting."])
+			self:Print(L[" you are now the Master Looter and RCLootCouncil is now handling looting."])
 			if db.autoAward and GetLootThreshold() ~= 2 and GetLootThreshold() > db.autoAwardLowerThreshold  then
 				self:Print(L["Changing loot threshold to enable Auto Awarding"])
 				SetLootThreshold(db.autoAwardLowerThreshold >= 2 and db.autoAwardLowerThreshold or 2)
@@ -1333,13 +1308,13 @@ function ScroogeLoot:OnRaidEnter(arg)
 
 		-- We must ask the player for usage
 		elseif db.usage.ask_leader then
-			return LibDialog:Spawn("SLLOOTCOUNCIL_CONFIRM_USAGE")
+			return LibDialog:Spawn("RCLOOTCOUNCIL_CONFIRM_USAGE")
 		end
 	end
 end
 
 -- Returns boolean, mlName. (true if the player is ML), (nil if there's no ML)
-function ScroogeLoot:GetML()
+function RCLootCouncil:GetML()
 	self:DebugLog("GetML()")
 	if self:GetNumGroupMembers() == 0 and (self.testMode or self.nnp) then -- always the player when testing alone
 		return true, self.playerName
@@ -1363,7 +1338,7 @@ function ScroogeLoot:GetML()
 	return false, nil;
 end
 
-function ScroogeLoot:IsCouncil(name)
+function RCLootCouncil:IsCouncil(name)
 	local ret = tContains(self.council, name)
 	if self:UnitIsUnit(name, self.playerName) and self.isMasterLooter or self.nnp then ret = true end -- ML and nnp is always council
 	self:DebugLog(tostring(ret).." =", "IsCouncil", name)
@@ -1371,16 +1346,16 @@ function ScroogeLoot:IsCouncil(name)
 end
 
 
-function ScroogeLoot:SessionError(...)
+function RCLootCouncil:SessionError(...)
 	self:Print(L["session_error"])
 	self:Debug(...)
 end
 
-function ScroogeLoot:Getdb()
+function RCLootCouncil:Getdb()
 	return db
 end
 
-function ScroogeLoot:GetHistoryDB()
+function RCLootCouncil:GetHistoryDB()
 	if self.isMasterLooter or (not self:IsInGroup() and not self:IsInRaid()) then 
 		return self.lootDB.factionrealm
 	else 
@@ -1388,18 +1363,18 @@ function ScroogeLoot:GetHistoryDB()
 	end
 end
 
-function ScroogeLoot:GetAnnounceChannel(channel)
+function RCLootCouncil:GetAnnounceChannel(channel)
 	return channel == "group" and (self:IsInRaid() and "RAID" or "PARTY") or channel
 end
 
-function ScroogeLoot:GetItemIDFromLink(link)
+function RCLootCouncil:GetItemIDFromLink(link)
 	return tonumber(strmatch(link, "item:(%d+):"))
 end
 
 --- Custom, better UnitIsUnit() function
 -- Blizz UnitIsUnit() doesn't know how to compare unit-realm with unit
 -- Seems to be because unit-realm isn't a valid unitid
-function ScroogeLoot:UnitIsUnit(unit1, unit2)
+function RCLootCouncil:UnitIsUnit(unit1, unit2)
 	if not unit1 or not unit2 then return false end
 	-- Remove realm names, if any
 	if strfind(unit1, "-", nil, true) ~= nil then
@@ -1418,7 +1393,7 @@ end
 --- Enables a userModule if set, defaultModule otherwise
 -- @paramsig module
 -- @param module String, must correspond to a index in self.defaultModules
-function ScroogeLoot:CallModule(module)
+function RCLootCouncil:CallModule(module)
 	if not self.enabled then return end -- Don't call modules unless enabled
 	self:EnableModule(userModules[module] or defaultModules[module])
 end
@@ -1428,7 +1403,7 @@ end
 -- @paramsig module
 -- @param module String, must correspond to a index in self.defaultModules
 -- @return The module object of the active module or nil if not found. Prioritises userModules if set
-function ScroogeLoot:GetActiveModule(module)
+function RCLootCouncil:GetActiveModule(module)
 	return self:GetModule(userModules[module] or defaultModules[module], false)
 end
 
@@ -1436,7 +1411,7 @@ end
 -- The custom module must have all functions that a default module can be called with
 -- @param type Index (string) in userModules
 -- @param The name passed to AceAddon:NewModule()
-function ScroogeLoot:RegisterUserModule(type, name)
+function RCLootCouncil:RegisterUserModule(type, name)
 	assert(defaultModules[type], format("Module \"%s\" is not a default module.", tostring(type)))
 	userModules[type] = name
 end
@@ -1449,11 +1424,11 @@ end
 ---------------------------------------------------------------------------
 
 --- Used as a "DoCellUpdate" function for lib-st
-function ScroogeLoot.SetCellClassIcon(rowFrame, frame, data, cols, row, realrow, column, fShow, table, class)
+function RCLootCouncil.SetCellClassIcon(rowFrame, frame, data, cols, row, realrow, column, fShow, table, class)
 	local celldata = data[realrow].cols and data[realrow].cols[column] or data[realrow][column]
 	local class = celldata.args and celldata.args[1] or class
 	if class then
-		frame:SetNormalTexture("Interface\\GLUES\\CHARACTESLREATE\\UI-CHARACTESLREATE-CLASSES"); -- this is the image containing all class icons
+		frame:SetNormalTexture("Interface\\GLUES\\CHARACTERCREATE\\UI-CHARACTERCREATE-CLASSES"); -- this is the image containing all class icons
 		local coords = CLASS_ICON_TCOORDS[class]; -- get the coordinates of the class icon we want
 		frame:GetNormalTexture():SetTexCoord(unpack(coords)); -- cut out the region with our class icon according to coords
 	else -- if there's no class
@@ -1462,7 +1437,7 @@ function ScroogeLoot.SetCellClassIcon(rowFrame, frame, data, cols, row, realrow,
 end
 
 --- Returns a color table for use with lib-st
-function ScroogeLoot:GetClassColor(class)
+function RCLootCouncil:GetClassColor(class)
 	local color = RAID_CLASS_COLORS[class]
 	if not color then
 		-- if class not found, return epic color.
@@ -1473,11 +1448,11 @@ function ScroogeLoot:GetClassColor(class)
 	end
 end
 
-function ScroogeLoot:RGBToHex(r,g,b)
+function RCLootCouncil:RGBToHex(r,g,b)
 	return string.format("%02x%02x%02x",255*r, 255*g, 255*b)
 end
 
---- Creates a standard frame for ScroogeLoot with title, minimizuing, positioning and zoom support.
+--- Creates a standard frame for RCLootCouncil with title, minimizuing, positioning and zoom support.
 --		Adds Minimize(), Maximize() and IsMinimized() functions on the frame, and registers it for hide on combat.
 --		SetWidth/SetHeight called on frame will also be called on frame.content
 --		Minimizing is done by double clicking the title. The returned frame and frame.title is NOT minimized.
@@ -1489,7 +1464,7 @@ end
 -- @param width The width of the titleframe, defaults to 250
 -- @param height Height of the frame, defaults to 325
 -- @return The frame object
-function ScroogeLoot:CreateFrame(name, cName, title, width, height)
+function RCLootCouncil:CreateFrame(name, cName, title, width, height)
 	local f = CreateFrame("Frame", name, nil) -- LibWindow seems to work better with nil parent
 	f:Hide()
 	f:SetFrameStrata("HIGH")
@@ -1576,19 +1551,19 @@ function ScroogeLoot:CreateFrame(name, cName, title, width, height)
 		old_setwidth(self, width)
 		self.content:SetWidth(width)
 	end
-       local old_setheight = f.SetHeight
-       f.SetHeight = function(self, height)
-               old_setheight(self, height)
-               self.content:SetHeight(height)
-       end
+	local old_setheight = f.SetHeight
+	f.SetHeight = function(self, height)
+		old_setheight(self, width)
+		self.content:SetHeight(height)
+	end
 	return f
 end
 
---- Creates a standard button for ScroogeLoot
+--- Creates a standard button for RCLootCouncil
 -- @param text The button's text
 -- @param parent The frame that should hold the button
 -- @return The button object
-function ScroogeLoot:CreateButton(text, parent)
+function RCLootCouncil:CreateButton(text, parent)
 	local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
 	b:SetText(text)
 	b:SetSize(100,25)
@@ -1598,7 +1573,7 @@ end
 --- Displays a tooltip anchored to the mouse
 -- @paramsig ...
 -- @param ... Lines to be added.
-function ScroogeLoot:CreateTooltip(...)
+function RCLootCouncil:CreateTooltip(...)
 	GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
 	for i = 1, select("#", ...) do
 		GameTooltip:AddLine(select(i, ...),1,1,1)
@@ -1609,14 +1584,14 @@ end
 --- Displays a hyperlink tooltip
 -- @paramsig link
 -- @param link The link to display
-function ScroogeLoot:CreateHypertip(link)
+function RCLootCouncil:CreateHypertip(link)
 	if not link or link == "" then return end
 	GameTooltip:SetOwner(UIParent, "ANCHOR_CURSOR")
 	GameTooltip:SetHyperlink(link)
 end
 
 --- Hide the tooltip created with :CreateTooltip()
-function ScroogeLoot:HideTooltip()
+function RCLootCouncil:HideTooltip()
 	GameTooltip:Hide()
 end
 
@@ -1624,28 +1599,28 @@ end
 --- Returns the text of a button, returning settings from mldb, or default buttons
 -- @paramsig index
 -- @param index The button's index
-function ScroogeLoot:GetButtonText(i)
+function RCLootCouncil:GetButtonText(i)
 	return (self.mldb.buttons and self.mldb.buttons[i]) and self.mldb.buttons[i].text or db.buttons[i] and db.buttons[i].text or "Unknown"
 end
 
 --- The following functions returns the text, sort or color of a response, returning a result from mldb if possible, otherwise the default responses.
 -- @paramsig response
 -- @param response Index in db.responses
-function ScroogeLoot:GetResponseText(response)
+function RCLootCouncil:GetResponseText(response)
 	return (self.mldb.responses and self.mldb.responses[response]) and self.mldb.responses[response].text or db.responses[response] and db.responses[response].text or "Unknown Response"
 end
 
-function ScroogeLoot:GetResponseColor(response)
+function RCLootCouncil:GetResponseColor(response)
 	local color = (self.mldb.responses and self.mldb.responses[response]) and self.mldb.responses[response].color or db.responses[response] and db.responses[response].color or {1, 1, 1, 1}
 	return unpack(color)
 end
 
-function ScroogeLoot:GetResponseColorTable(response)
+function RCLootCouncil:GetResponseColorTable(response)
 	local color = (self.mldb.responses and self.mldb.responses[response]) and self.mldb.responses[response].color or db.responses[response] and db.responses[response].color or {1, 1, 1, 1}
 	return color
 end
 
-function ScroogeLoot:GetResponseSort(response)
+function RCLootCouncil:GetResponseSort(response)
 	return (self.mldb.responses and self.mldb.responses[response]) and self.mldb.responses[response].sort or db.responses[response].sort
 end
 

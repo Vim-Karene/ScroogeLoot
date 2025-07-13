@@ -1,4 +1,4 @@
-﻿--[[	ScroogeLoot by Potdisc
+﻿--[[	RCLootCouncil by Potdisc
 ml_core.lua	Contains core elements for the MasterLooter
 	-	Although possible, this module shouldn't be replaced unless closely replicated as other default modules depend on it.
 	-	Assumes several functions in SessionFrame and VotingFrame
@@ -7,19 +7,19 @@ ml_core.lua	Contains core elements for the MasterLooter
 		- SendMessage() on AddItem() to let userModules know it's safe to add to lootTable. Might have to do it other places too.
 ]]
 
-local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
-ScroogeLootML = addon:NewModule("ScroogeLootML", "AceEvent-3.0", "AceBucket-3.0", "AceComm-3.0", "AceTimer-3.0", "AceHook-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
+local addon = LibStub("AceAddon-3.0"):GetAddon("RCLootCouncil")
+RCLootCouncilML = addon:NewModule("RCLootCouncilML", "AceEvent-3.0", "AceBucket-3.0", "AceComm-3.0", "AceTimer-3.0", "AceHook-3.0")
+local L = LibStub("AceLocale-3.0"):GetLocale("RCLootCouncil")
 local LibDialog = LibStub("LibDialog-1.0")
 local Deflate = LibStub("LibDeflate")
 
 local db;
 
-function ScroogeLootML:OnInitialize()
+function RCLootCouncilML:OnInitialize()
 	addon:Debug("ML initialized!")
 end
 
-function ScroogeLootML:OnDisable()
+function RCLootCouncilML:OnDisable()
 	addon:Debug("ML Disabled")
 	self:UnregisterAllEvents()
 	self:UnregisterAllBuckets()
@@ -28,7 +28,7 @@ function ScroogeLootML:OnDisable()
 	self:UnhookAll()
 end
 
-function ScroogeLootML:OnEnable()
+function RCLootCouncilML:OnEnable()
 	addon:Debug("ML Enabled")
 	db = addon:Getdb()
 	self.candidates = {} 	-- candidateName = { class, role, rank }
@@ -40,12 +40,12 @@ function ScroogeLootML:OnEnable()
 	self.lootOpen = false 	-- is the ML lootWindow open or closed?
 	self.running = false		-- true if we're handling a session
 
-	self:RegisterComm("ScroogeLoot", "OnCommReceived")
+	self:RegisterComm("RCLootCouncil", "OnCommReceived")
 	self:RegisterEvent("LOOT_OPENED","OnEvent")
 	self:RegisterEvent("LOOT_CLOSED","OnEvent")
 	self:RegisterBucketEvent("RAID_ROSTER_UPDATE", 10, "UpdateGroup") -- Bursts in group creation, and we should have plenty of time to handle it
 	self:RegisterEvent("CHAT_MSG_WHISPER","OnEvent")
-	self:RegisterBucketMessage("SLConfigTableChanged", 2, "ConfigTableChanged") -- The messages can burst
+	self:RegisterBucketMessage("RCConfigTableChanged", 2, "ConfigTableChanged") -- The messages can burst
 end
 
 --- Add an item to the lootTable
@@ -54,11 +54,11 @@ end
 -- @param bagged True if the item is in the ML's inventory
 -- @param slotIndex Index of the lootSlot, or nil if none - either this or 'bagged' needs to be supplied
 -- @param index Index in self.lootTable, used to set data in a specific session
-function ScroogeLootML:AddItem(item, bagged, slotIndex, index)
+function RCLootCouncilML:AddItem(item, bagged, slotIndex, index)
 	addon:DebugLog("ML:AddItem", item, bagged, slotIndex, index)
 	local name, link, rarity, ilvl, iMinLevel, type, subType, iStackCount, equipLoc, texture = GetItemInfo(item)
 	
-       -- Item isn't properly loaded, so update the data in 0.5 sec (Should only happen with /sl test)
+	-- Item isn't properly loaded, so update the data in 0.5 sec (Should only happen with /rc test)
 	if not name then
 		self:ScheduleTimer("Timer", 0.5, "AddItem", item, bagged, slotIndex, #self.lootTable)
 		GameTooltip:SetHyperlink("item:"..item) -- cace item asap
@@ -66,9 +66,9 @@ function ScroogeLootML:AddItem(item, bagged, slotIndex, index)
 		return
 	end
 
-	if SLTokenTable[item] then 
-		ilvl = SLTokenLevel[item] 
-		equipLoc = SLTokenTable[item]
+	if RCTokenTable[item] then 
+		ilvl = RCTokenLevel[item] 
+		equipLoc = RCTokenTable[item]
 	end
 
 	self.lootTable[index or #self.lootTable + 1] = {
@@ -88,32 +88,29 @@ end
 
 --- Removes a session from the lootTable
 -- @param session The session (index) in lootTable to remove
-function ScroogeLootML:RemoveItem(session)
+function RCLootCouncilML:RemoveItem(session)
 	tremove(self.lootTable, session)
 end
 
-function ScroogeLootML:AddCandidate(name, class, role, rank, enchant, lvl)
-        addon:DebugLog("ML:AddCandidate", name, class, role, rank, enchant, lvl)
-        local pd = addon.PlayerData and addon.PlayerData[name] or {}
-        self.candidates[name] = {
-                ["class"]       = class,
-                ["role"]        = role or "DAMAGER",
-                ["rank"]        = rank or "", -- Rank cannot be nil for votingFrame
-                ["enchanter"]   = enchant,
-                ["enchant_lvl"] = lvl,
-                ["raiderrank"]  = pd.raiderrank,
-                ["attendance"]  = pd.attendance,
-        }
+function RCLootCouncilML:AddCandidate(name, class, role, rank, enchant, lvl)
+	addon:DebugLog("ML:AddCandidate",name, class, role, rank, enchant, lvl)
+	self.candidates[name] = {
+		["class"]		= class,
+		["role"]		= role or "DAMAGER",
+		["rank"]		= rank or "", -- Rank cannot be nil for votingFrame
+		["enchanter"] 	= enchant,
+		["enchant_lvl"]	= lvl,
+	}
 end
 
-function ScroogeLootML:RemoveCandidate(name)
+function RCLootCouncilML:RemoveCandidate(name)
 	addon:DebugLog("ML:RemoveCandidate", name)
 	self.candidates[name] = nil
 end
 
-function ScroogeLootML:UpdateGroup(ask)
+function RCLootCouncilML:UpdateGroup(ask)
 	if self == nil then 
-		self = ScroogeLootML -- why?
+		self = RCLootCouncilML -- why?
 	end
 	addon:DebugLog("UpdateGroup", ask)
 	if type(ask) ~= "boolean" then ask = false end
@@ -188,7 +185,7 @@ function ScroogeLootML:UpdateGroup(ask)
 	end
 end
 
-function ScroogeLootML:StartSession()
+function RCLootCouncilML:StartSession()
 	addon:Debug("ML:StartSession()")
 	self.council = addon:GetCouncilInGroup()
 	-- ensure we are ready
@@ -198,22 +195,21 @@ function ScroogeLootML:StartSession()
 	end
 
 	self.running = true
-        addon:SendCommand("group", "lootTable", self.lootTable)
-        addon:Debug("Sent lootTable", #self.lootTable)
+	addon:SendCommand("group", "lootTable", self.lootTable)
 
 	self:AnnounceItems()
 	-- Start a timer to set response as offline/not installed unless we receive an ack
 	self:ScheduleTimer("Timer", 10, "LootSend")
 end
 
-function ScroogeLootML:AddUserItem(item)
+function RCLootCouncilML:AddUserItem(item)
 	if self.running then return addon:Print(L["You're already running a session."]) end
 	self:AddItem(item, true)
 	addon:CallModule("sessionframe")
 	addon:GetActiveModule("sessionframe"):Show(self.lootTable)
 end
 
-function ScroogeLootML:SessionFromBags()
+function RCLootCouncilML:SessionFromBags()
 	if self.running then return addon:Print(L["You're already running a session."]) end
 	if #self.lootInBags == 0 then return addon:Print(L["No items to award later registered"]) end
 	for i, link in ipairs(self.lootInBags) do self:AddItem(link, true) end
@@ -226,7 +222,7 @@ function ScroogeLootML:SessionFromBags()
 end
 
 -- TODO awardedInBags should be kept in db incase the player logs out
-function ScroogeLootML:PrintAwardedInBags()
+function RCLootCouncilML:PrintAwardedInBags()
 	if #self.awardedInBags == 0 then return addon:Print(L["No winners registered"]) end
 	addon:Print(L["Following winners was registered:"])
 	for _, v in ipairs(self.awardedInBags) do
@@ -241,7 +237,7 @@ function ScroogeLootML:PrintAwardedInBags()
 	-- IDEA Do we delete awardedInBags here or keep it?
 end
 
-function ScroogeLootML:ConfigTableChanged(val)
+function RCLootCouncilML:ConfigTableChanged(val)
 	-- The db was changed, so check if we should make a new mldb
 	-- We can do this by checking if the changed value is a key in mldb
 	if not addon.mldb then return self:UpdateMLdb() end -- mldb isn't made, so just make it
@@ -253,7 +249,7 @@ function ScroogeLootML:ConfigTableChanged(val)
 end
 
 
-function ScroogeLootML:CouncilChanged()
+function RCLootCouncilML:CouncilChanged()
 	-- The council was changed, so send out the council
 	self.council = addon:GetCouncilInGroup()
 	addon:SendCommand("group", "council", self.council)
@@ -261,14 +257,14 @@ function ScroogeLootML:CouncilChanged()
 	addon:SendCommand("group", "candidates", self.candidates)
 end
 
-function ScroogeLootML:UpdateMLdb()
+function RCLootCouncilML:UpdateMLdb()
 	-- The db has changed, so update the mldb and send the changes
 	addon:Debug("UpdateMLdb")
 	addon.mldb = self:BuildMLdb()
 	addon:SendCommand("group", "MLdb", addon.mldb)
 end
 
-function ScroogeLootML:BuildMLdb()
+function RCLootCouncilML:BuildMLdb()
 	-- Extract changes to responses
 	local changedResponses = {};
 	for i = 1, db.numButtons do
@@ -304,7 +300,7 @@ function ScroogeLootML:BuildMLdb()
 	}
 end
 
-function ScroogeLootML:NewML(newML)
+function RCLootCouncilML:NewML(newML)
 	addon:DebugLog("ML:NewML", newML)
 	if addon:UnitIsUnit(newML, "player") then -- we are the the ML
 		addon:SendCommand("group", "playerInfoRequest")
@@ -319,7 +315,7 @@ function ScroogeLootML:NewML(newML)
 	end
 end
 
-function ScroogeLootML:Timer(type, ...)
+function RCLootCouncilML:Timer(type, ...)
 	if type == "AddItem" then
 		self:AddItem(...)
 
@@ -331,8 +327,8 @@ function ScroogeLootML:Timer(type, ...)
 	end
 end
 
-function ScroogeLootML:OnCommReceived(prefix, serializedMsg, distri, sender)
-	if prefix == "ScroogeLoot" then
+function RCLootCouncilML:OnCommReceived(prefix, serializedMsg, distri, sender)
+	if prefix == "RCLootCouncil" then
 		-- data is always a table
 		local decoded = Deflate:DecodeForPrint(serializedMsg)
 		if not decoded then 
@@ -380,7 +376,7 @@ function ScroogeLootML:OnCommReceived(prefix, serializedMsg, distri, sender)
 	end
 end
 
-function ScroogeLootML:OnEvent(event, ...)
+function RCLootCouncilML:OnEvent(event, ...)
 	addon:DebugLog("ML event", event)
 	if event == "LOOT_OPENED" then -- IDEA Check if event LOOT_READY is useful here (also check GetLootInfo() for this)
 		self.lootOpen = true
@@ -402,7 +398,7 @@ function ScroogeLootML:OnEvent(event, ...)
 	end
 end
 
-function ScroogeLootML:LootOpened()
+function RCLootCouncilML:LootOpened()
 	if addon.isMasterLooter and GetNumLootItems() > 0 then
 		addon.target = GetUnitName("target") or L["Unknown/Chest"] -- capture the boss name
 		for i = 1, GetNumLootItems() do
@@ -451,7 +447,7 @@ function ScroogeLootML:LootOpened()
 	end
 end
 
-function ScroogeLootML:CanWeLootItem(item, quality)
+function RCLootCouncilML:CanWeLootItem(item, quality)
 	local ret = false
 	if db.autoLoot and (IsEquippableItem(item) or db.autolootEverything) and quality >= GetLootThreshold() and not self:IsItemIgnored(item) then -- it's something we're allowed to loot
 		-- Let's check if it's BoE
@@ -462,7 +458,7 @@ function ScroogeLootML:CanWeLootItem(item, quality)
 	return ret
 end
 
-function ScroogeLootML:HookLootButton(i)
+function RCLootCouncilML:HookLootButton(i)
 	local lootButton = getglobal("LootButton"..i)
 	if XLoot then -- hook XLoot
 		lootButton = getglobal("XLootButton"..i)
@@ -480,7 +476,7 @@ function ScroogeLootML:HookLootButton(i)
 	end
 end
 
-function ScroogeLootML:LootOnClick(button)
+function RCLootCouncilML:LootOnClick(button)
 	if not IsAltKeyDown() or not db.altClickLooting or IsShiftKeyDown() or IsControlKeyDown() then return; end
 	addon:DebugLog("LootAltClick()", button)
 
@@ -506,7 +502,7 @@ end
 --@param response	The candidates response, index in db.responses
 --@param reason	Entry in db.awardReasons
 --@returns True if awarded successfully
-function ScroogeLootML:Award(session, winner, response, reason)
+function RCLootCouncilML:Award(session, winner, response, reason)
 	addon:DebugLog("ML:Award", session, winner, response, reason)
 	if addon.testMode then
 		if winner then
@@ -591,7 +587,7 @@ function ScroogeLootML:Award(session, winner, response, reason)
 	return false
 end
 
-function ScroogeLootML:AnnounceItems()
+function RCLootCouncilML:AnnounceItems()
 	if not db.announceItems then return end
 	addon:DebugLog("ML:AnnounceItems()")
 	SendChatMessage(db.announceText, addon:GetAnnounceChannel(db.announceChannel))
@@ -600,7 +596,7 @@ function ScroogeLootML:AnnounceItems()
 	end
 end
 
-function ScroogeLootML:AnnounceAward(name, link, text)
+function RCLootCouncilML:AnnounceAward(name, link, text)
 	if db.announceAward then
 		for k,v in pairs(db.awardText) do
 			if v.channel ~= "NONE" then
@@ -613,7 +609,7 @@ function ScroogeLootML:AnnounceAward(name, link, text)
 	end
 end
 
-function ScroogeLootML:ShouldAutoAward(item, quality)
+function RCLootCouncilML:ShouldAutoAward(item, quality)
 	if db.autoAward and quality >= db.autoAwardLowerThreshold and quality <= db.autoAwardUpperThreshold then
 		if db.autoAwardLowerThreshold >= GetLootThreshold() or db.autoAwardLowerThreshold < 2 then
 			if UnitInRaid(db.autoAwardTo) or UnitInParty(db.autoAwardTo) then -- TEST perhaps use self.group?
@@ -629,7 +625,7 @@ function ScroogeLootML:ShouldAutoAward(item, quality)
 	return false
 end
 
-function ScroogeLootML:AutoAward(lootIndex, item, quality, name, reason, boss)
+function RCLootCouncilML:AutoAward(lootIndex, item, quality, name, reason, boss)
 	addon:DebugLog("ML:AutoAward", lootIndex, item, quality, name, reason, boss)
 	local awarded = false
 	if db.autoAwardLowerThreshold < 2 and quality < 2 then
@@ -662,7 +658,7 @@ function ScroogeLootML:AutoAward(lootIndex, item, quality, name, reason, boss)
 end
 
 local history_table = {}
-function ScroogeLootML:TrackAndLogLoot(name, item, response, boss, votes, itemReplaced1, itemReplaced2, reason)
+function RCLootCouncilML:TrackAndLogLoot(name, item, response, boss, votes, itemReplaced1, itemReplaced2, reason)
 	if reason and not reason.log then return end -- Reason says don't log
 	if not (db.sendHistory or db.enableHistory) then return end -- No reason to do stuff when we won't use it
 	if addon.testMode and not addon.nnp then return end -- We shouldn't track testing awards.
@@ -689,7 +685,7 @@ function ScroogeLootML:TrackAndLogLoot(name, item, response, boss, votes, itemRe
 	end
 end
 
-function ScroogeLootML:HasAllItemsBeenAwarded()
+function RCLootCouncilML:HasAllItemsBeenAwarded()
 	local moreItems = true
 	for i = 1, #self.lootTable do
 		if not self.lootTable[i].awarded then
@@ -699,7 +695,7 @@ function ScroogeLootML:HasAllItemsBeenAwarded()
 	return moreItems
 end
 
-function ScroogeLootML:EndSession()
+function RCLootCouncilML:EndSession()
 	addon:DebugLog("ML:EndSession()")
 	self.lootTable = {}
 	addon:SendCommand("group", "session_end")
@@ -713,7 +709,7 @@ function ScroogeLootML:EndSession()
 end
 
 -- Initiates a session with the items handed
-function ScroogeLootML:Test(items)
+function RCLootCouncilML:Test(items)
 	-- check if we're added in self.group
 	-- (We might not be on solo test)
 	if not tContains(self.candidates, addon.playerName) then
@@ -733,12 +729,12 @@ function ScroogeLootML:Test(items)
 end
 
 -- Returns true if we are ignoring the item
-function ScroogeLootML:IsItemIgnored(link)
+function RCLootCouncilML:IsItemIgnored(link)
 	local itemID = addon:GetItemIDFromLink(link) -- extract itemID
 	return tContains(db.ignore, itemID)
 end
 
-function ScroogeLootML:GetItemsFromMessage(msg, sender)
+function RCLootCouncilML:GetItemsFromMessage(msg, sender)
 	addon:Debug("GetItemsFromMessage()", msg, sender)
 	if not addon.isMasterLooter then return end
 
@@ -781,15 +777,15 @@ function ScroogeLootML:GetItemsFromMessage(msg, sender)
 	addon:SendCommand("group", "response", ses, sender, toSend)
 	-- Let people know we've done stuff
 	addon:Print(format(L["Item received and added from 'player'"], sender))
-	SendChatMessage("[ScroogeLoot]: "..format(L["Acknowledged as 'response'"], db.responses[response].text ), "WHISPER", nil, sender)
+	SendChatMessage("[RCLootCouncil]: "..format(L["Acknowledged as 'response'"], db.responses[response].text ), "WHISPER", nil, sender)
 end
 
-function ScroogeLootML:SendWhisperHelp(target)
+function RCLootCouncilML:SendWhisperHelp(target)
 	addon:DebugLog("SendWhisperHelp", target)
 	local msg
 	SendChatMessage(L["whisper_guide"], "WHISPER", nil, target)
 	for i = 1, db.numButtons do
-		msg = "[ScroogeLoot]: "..db.buttons[i]["text"]..":  " -- i.e. MainSpec/Need:
+		msg = "[RCLootCouncil]: "..db.buttons[i]["text"]..":  " -- i.e. MainSpec/Need:
 		msg = msg..""..db.buttons[i]["whisperKey"].."." -- need, mainspec, etc
 		SendChatMessage(msg, "WHISPER", nil, target)
 	end
@@ -798,13 +794,13 @@ function ScroogeLootML:SendWhisperHelp(target)
 end
 
 --------ML Popups ------------------
-LibDialog:Register("SLLOOTCOUNCIL_CONFIRM_ABORT", {
+LibDialog:Register("RCLOOTCOUNCIL_CONFIRM_ABORT", {
 	text = L["Are you sure you want to abort?"],
 	buttons = {
 		{	text = L["Yes"],
 			on_click = function(self)
 				addon:DebugLog("ML aborted session")
-				ScroogeLootML:EndSession()
+				RCLootCouncilML:EndSession()
 				CloseLoot() -- close the lootlist
 				addon:GetActiveModule("votingframe"):EndSession(true)
 			end,
@@ -815,26 +811,26 @@ LibDialog:Register("SLLOOTCOUNCIL_CONFIRM_ABORT", {
 	hide_on_escape = true,
 	show_while_dead = true,
 })
-LibDialog:Register("SLLOOTCOUNCIL_CONFIRM_AWARD", {
+LibDialog:Register("RCLOOTCOUNCIL_CONFIRM_AWARD", {
 	text = "something_went_wrong",
 	icon = "",
 	on_show = function(self, data)
 		local session, player = unpack(data)
-		self.text:SetText(format(L["Are you sure you want to give #item to #player?"], ScroogeLootML.lootTable[session].link, player))
-		self.icon:SetTexture(ScroogeLootML.lootTable[session].texture)
+		self.text:SetText(format(L["Are you sure you want to give #item to #player?"], RCLootCouncilML.lootTable[session].link, player))
+		self.icon:SetTexture(RCLootCouncilML.lootTable[session].texture)
 	end,
 	buttons = {
 		{	text = L["Yes"],
 			on_click = function(self, data)
 				-- IDEA Perhaps come up with a better way of handling this
 				local session, player, response, reason, votes, item1, item2 = unpack(data,1,7)
-				local item = ScroogeLootML.lootTable[session].link -- Store it now as we wipe lootTable after Award()
-				local awarded = ScroogeLootML:Award(session, player, response, reason)
+				local item = RCLootCouncilML.lootTable[session].link -- Store it now as we wipe lootTable after Award()
+				local awarded = RCLootCouncilML:Award(session, player, response, reason)
 				if awarded then -- log it
-					ScroogeLootML:TrackAndLogLoot(player, item, response, addon.target, votes, item1, item2, reason)
+					RCLootCouncilML:TrackAndLogLoot(player, item, response, addon.target, votes, item1, item2, reason)
 				end
 				-- We need to delay the test mode disabling so comms have a chance to be send first!
-				if addon.testMode and ScroogeLootML:HasAllItemsBeenAwarded() then ScroogeLootML:EndSession() end
+				if addon.testMode and RCLootCouncilML:HasAllItemsBeenAwarded() then RCLootCouncilML:EndSession() end
 			end,
 		},
 		{	text = L["No"],
