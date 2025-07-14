@@ -325,6 +325,11 @@ function ScroogeLoot:OnEnable()
 
         -- Initialize PlayerData for current group
         self:PopulatePlayerDataFromGroup()
+        -- Ensure the current player has an entry saved
+        if not self.PlayerData[self.playerName] then
+                self:EnsurePlayer(self.playerName)
+                self:BroadcastPlayerData()
+        end
 
 	local filterFunc = function(_, event, msg, player, ...)
 		return strfind(msg, "[[ScroogeLoot]]:")

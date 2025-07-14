@@ -20,3 +20,8 @@ Use `/sl pm` in game to open the **Player Management** window. All fields of the
 `PlayerData` table can be edited directly in this window. Saving will broadcast
 the updated table to the raid. Player data is stored in saved variables so any
 changes persist between sessions.
+
+The saved data is written to `ScroogeLootDB` which lives in your
+`WTF/Account/<ACCOUNT>/SavedVariables/ScroogeLoot.lua` file. If the file or your
+character entry does not exist, the addon will create it the first time you log
+in and automatically add your character to the table.
