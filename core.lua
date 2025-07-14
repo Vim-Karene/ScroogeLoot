@@ -231,8 +231,9 @@ function ScroogeLoot:OnInitialize()
        self:RegisterChatCommand("rclc", "ChatCommand")
 	self:RegisterComm("ScroogeLoot")
 	self:RegisterComm("ScroogeLoot_WotLK")
-	self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
-	self.lootDB = LibStub("AceDB-3.0"):New("ScroogeLootLootDB")
+       self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
+       self.lootDB = LibStub("AceDB-3.0"):New("ScroogeLootLootDB")
+       self.playerDB = LibStub("AceDB-3.0"):New("ScroogeLootPlayerDB", {global={playerData={}}})
 	--[[ Format:
 	"playerName" = {
 		[#] = {"lootWon", "date (d/m/y)", "time (h:m:s)", "instance", "boss", "votes", "itemReplaced1", "itemReplaced2", "response", "responseID", "color", "class", "isAwardReason"}
@@ -248,7 +249,7 @@ function ScroogeLoot:OnInitialize()
        debugLog = self.db.global.log
 
        -- Load persisted PlayerData
-       self.PlayerData = self.db.global.playerData or {}
+       self.PlayerData = self.playerDB.global.playerData or {}
        ScroogeLoot.PlayerData = self.PlayerData
 
 	-- register the optionstable
@@ -748,10 +749,13 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 
 			elseif command == "playerData" then
 				-- Update local PlayerData from the master looter
-				if not self.isMasterLooter then
-					local incomingData = unpack(data)
-					self.PlayerData = incomingData
-				end
+                                if not self.isMasterLooter then
+                                        local incomingData = unpack(data)
+                                        self.PlayerData = incomingData
+                                        if self.playerDB and self.playerDB.global then
+                                                self.playerDB.global.playerData = incomingData
+                                        end
+                                end
 			elseif command == "message" then
 				self:Print(unpack(data))
 

@@ -89,8 +89,8 @@ end
 
 -- Broadcast the complete PlayerData table to the raid.
 function addon:BroadcastPlayerData()
-    if self.db and self.db.global then
-        self.db.global.playerData = self.PlayerData
+    if self.playerDB and self.playerDB.global then
+        self.playerDB.global.playerData = self.PlayerData
     end
     if not self.isMasterLooter then return end
     -- Send to everyone in the current group/raid
