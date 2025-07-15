@@ -261,8 +261,9 @@ function ScroogeLoot:OnInitialize()
 	LibStub("AceConfigRegistry-3.0"):RegisterOptionsTable("ScroogeLoot", self.options)
 
 	-- add it to blizz options
-	self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("ScroogeLoot", "ScroogeLoot", nil, "settings")
-	self.optionsFrame.ml = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("ScroogeLoot", "Master Looter", "ScroogeLoot", "mlSettings")
+    self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("ScroogeLoot", "ScroogeLoot", nil, "settings")
+    self.optionsFrame.ml = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("ScroogeLoot", "Master Looter", "ScroogeLoot", "mlSettings")
+    self.optionsFrame.pm = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("ScroogeLoot", L["Player Management"], "ScroogeLoot", "mlSettings", "PlayerDataManagement")
 	-- Add logged in message in the log
 	self:DebugLog("Logged In")
 end
