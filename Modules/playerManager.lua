@@ -165,6 +165,7 @@ function SLPlayerManager:Save(target)
     for _,row in ipairs(t.rows) do
         local d = row.data
         local pd = {
+            name = d.name or row.name,
             class = d.class,
             raiderrank = d.raiderrank,
             SP = tonumber(d.SP) or 0,
@@ -184,7 +185,7 @@ function SLPlayerManager:Save(target)
         else
             pd.attendance = 100
         end
-        local name = d.name or row.name
+        local name = pd.name
         addon.PlayerData[name] = pd
         row.name = name
     end
@@ -202,8 +203,9 @@ end
 function SLPlayerManager:Export()
     local xml = "<PlayerData>\n"
     for name,data in pairs(addon.PlayerData) do
+        local n = data.name or name
         xml = xml .. string.format('<Player name="%s" class="%s" raider="%s" SP="%s" DP="%s" attended="%s" absent="%s" item1="%s" item1received="%s" item2="%s" item2received="%s" item3="%s" item3received="%s"/>\n',
-            Escape(name), Escape(data.class), tostring(data.raiderrank or false), tostring(data.SP or 0), tostring(data.DP or 0), tostring(data.attended or 0), tostring(data.absent or 0), Escape(data.item1), tostring(data.item1received or false), Escape(data.item2), tostring(data.item2received or false), Escape(data.item3), tostring(data.item3received or false))
+            Escape(n), Escape(data.class), tostring(data.raiderrank or false), tostring(data.SP or 0), tostring(data.DP or 0), tostring(data.attended or 0), tostring(data.absent or 0), Escape(data.item1), tostring(data.item1received or false), Escape(data.item2), tostring(data.item2received or false), Escape(data.item3), tostring(data.item3received or false))
     end
     xml = xml .. "</PlayerData>"
     StaticPopup_Show("SLPLAYERMANAGER_EXPORT", nil, nil, xml)
@@ -244,6 +246,9 @@ function SLPlayerManager:ImportData(text)
     end
     if next(newData) then
         addon.PlayerData = newData
+        if addon.EnsureNameFields then
+            addon:EnsureNameFields()
+        end
         addon:BroadcastPlayerData()
         if self.frame and self.frame.content then
             self:LoadData(self.frame.content)

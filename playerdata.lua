@@ -9,6 +9,7 @@ addon.PlayerData = addon.PlayerData or {}
 local function EnsurePlayer(name)
     if not addon.PlayerData[name] then
         addon.PlayerData[name] = {
+            name = name,
             class = "",
             raiderrank = false,
             SP = 0,
@@ -20,6 +21,17 @@ local function EnsurePlayer(name)
             item2 = nil, item2received = false,
             item3 = nil, item3received = false,
         }
+    elseif not addon.PlayerData[name].name then
+        addon.PlayerData[name].name = name
+    end
+end
+
+-- Ensure all entries have their name field set
+function addon:EnsureNameFields()
+    for n, data in pairs(self.PlayerData) do
+        if not data.name then
+            data.name = n
+        end
     end
 end
 

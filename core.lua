@@ -251,6 +251,9 @@ function ScroogeLoot:OnInitialize()
        -- Load persisted PlayerData
        self.PlayerData = self.playerDB.global.playerData or {}
        ScroogeLoot.PlayerData = self.PlayerData
+       if self.EnsureNameFields then
+               self:EnsureNameFields()
+       end
 
 	-- register the optionstable
 	self.options = self:OptionsTable()
@@ -752,6 +755,9 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
                                 if not self.isMasterLooter then
                                         local incomingData = unpack(data)
                                         self.PlayerData = incomingData
+                                        if self.EnsureNameFields then
+                                                self:EnsureNameFields()
+                                        end
                                         if self.playerDB and self.playerDB.global then
                                                 self.playerDB.global.playerData = incomingData
                                         end
