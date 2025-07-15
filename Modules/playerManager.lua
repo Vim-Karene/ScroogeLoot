@@ -57,6 +57,11 @@ function SLPlayerManager:CreateUI(parent)
     parent.st = st
     parent.rows = {}
 
+    local addBtn = addon:CreateButton(L["Add"], parent)
+    addBtn:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 10, 10)
+    addBtn:SetScript("OnClick", function() SLPlayerManager:AddRow(parent) end)
+    parent.addBtn = addBtn
+
     local saveBtn = addon:CreateButton(L["Save"], parent)
     saveBtn:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, 10)
     saveBtn:SetScript("OnClick", function() SLPlayerManager:Save(parent) end)
@@ -157,6 +162,36 @@ function SLPlayerManager:SetCellCheck(rowFrame, frame, data, cols, row, realrow,
         frame.check = cb
     end
     frame.check:SetChecked(rowData[field])
+end
+
+function SLPlayerManager:AddRow(target)
+    local t = target or self.frame.content
+    local row = {
+        name = "",
+        data = {
+            name = "",
+            class = "",
+            raiderrank = false,
+            SP = 0,
+            DP = 0,
+            attended = 0,
+            absent = 0,
+            item1 = nil,
+            item1received = false,
+            item2 = nil,
+            item2received = false,
+            item3 = nil,
+            item3received = false,
+        },
+    }
+    row.cols = {
+        {value=""},{value=""},{value=false},{value=0},{value=0},{value=0},{value=0},
+        {value=nil},{value=false},{value=nil},{value=false},{value=nil},{value=false},
+    }
+    tinsert(t.rows, row)
+    if t.st then
+        t.st:SetData(t.rows)
+    end
 end
 
 function SLPlayerManager:Save(target)

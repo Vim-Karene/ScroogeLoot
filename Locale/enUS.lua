@@ -23,6 +23,7 @@ L["Acknowledged as 'response'"] = "Acknowledged as \" %s \""
 L["Active"] = true
 L["active_desc"] = "Uncheck to disable ScroogeLoot. Useful if you're in a raid group, but not actually participating. Note: This resets on every logout."
 L["Add Item"] = true
+L["Add"] = true
 L["Add Note"] = true
 L["Add ranks"] = true
 L["Add rolls"] = true
