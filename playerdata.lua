@@ -9,6 +9,7 @@ addon.PlayerData = addon.PlayerData or {}
 local function EnsurePlayer(name)
     if not addon.PlayerData[name] then
         addon.PlayerData[name] = {
+            name = name,
             class = "",
             raiderrank = false,
             SP = 0,
@@ -20,6 +21,17 @@ local function EnsurePlayer(name)
             item2 = nil, item2received = false,
             item3 = nil, item3received = false,
         }
+    elseif not addon.PlayerData[name].name then
+        addon.PlayerData[name].name = name
+    end
+end
+
+-- Ensure all entries have their name field set
+function addon:EnsureNameFields()
+    for n, data in pairs(self.PlayerData) do
+        if not data.name then
+            data.name = n
+        end
     end
 end
 
@@ -28,11 +40,16 @@ addon.EnsurePlayer = EnsurePlayer
 
 --- Populate PlayerData with members of the current group/raid
 function addon:PopulatePlayerDataFromGroup()
+    local changed = false
+
     local function addUnit(unit)
         local name = UnitName(unit)
         if name then
             local _, class = UnitClass(unit)
-            EnsurePlayer(name)
+            if not self.PlayerData[name] then
+                EnsurePlayer(name)
+                changed = true
+            end
             self.PlayerData[name].class = class
         end
     end
@@ -48,6 +65,8 @@ function addon:PopulatePlayerDataFromGroup()
     end
 
     addUnit("player")
+
+    return changed
 end
 
 -- Update an arbitrary field on a player. Only works for the master looter.
@@ -82,8 +101,8 @@ end
 
 -- Broadcast the complete PlayerData table to the raid.
 function addon:BroadcastPlayerData()
-    if self.db and self.db.global then
-        self.db.global.playerData = self.PlayerData
+    if self.playerDB and self.playerDB.global then
+        self.playerDB.global.playerData = self.PlayerData
     end
     if not self.isMasterLooter then return end
     -- Send to everyone in the current group/raid
