@@ -109,3 +109,71 @@ function addon:BroadcastPlayerData()
     self:SendCommand("group", "playerData", self.PlayerData)
 end
 
+
+-- Simple player registration and attendance update
+local addonName = ...
+scroogelootplayerDB = scroogelootplayerDB or {}
+
+local function InitializePlayerData(playerName, class)
+    if not scroogelootplayerDB[playerName] then
+        scroogelootplayerDB[playerName] = {
+            name = playerName,
+            class = class,
+            raiderrank = false,
+            SP = 0,
+            DP = 0,
+            attended = 0,
+            absent = 0,
+            attendance = 0,
+            item1 = "",
+            item1received = false,
+            item2 = "",
+            item2received = false,
+            item3 = "",
+            item3received = false,
+        }
+    else
+        local player = scroogelootplayerDB[playerName]
+        local keepFields = {
+            name = true, class = true, raiderrank = true,
+            SP = true, DP = true, attended = true, absent = true, attendance = true,
+            item1 = true, item1received = true,
+            item2 = true, item2received = true,
+            item3 = true, item3received = true,
+        }
+        for k in pairs(player) do
+            if not keepFields[k] then
+                player[k] = nil
+            end
+        end
+        -- Fill missing fields
+        for k in pairs(keepFields) do
+            if player[k] == nil then
+                InitializePlayerData(playerName, class)
+                return
+            end
+        end
+    end
+end
+
+local function UpdateAttendance(playerName)
+    local player = scroogelootplayerDB[playerName]
+    if not player then return end
+    local total = player.attended + player.absent
+    player.attendance = (total > 0) and math.floor((player.attended / total) * 100) or 0
+end
+
+function RegisterPlayer(name, class)
+    InitializePlayerData(name, class)
+    UpdateAttendance(name)
+end
+
+-- Command for testing
+SLASH_SCROOGELOOT1 = "/scrooge"
+SlashCmdList["SCROOGELOOT"] = function(msg)
+    local name, class = UnitName("player"), select(2, UnitClass("player"))
+    RegisterPlayer(name, class)
+    print("Registered:", name)
+    print("Attendance:", scroogelootplayerDB[name].attendance .. "%")
+end
+
