@@ -261,5 +261,36 @@ function SLPlayerManager:ImportData(text)
     end
 end
 
+-- AceGUI widget for embedding the player manager in the options UI
+local AceGUI = LibStub("AceGUI-3.0")
+do
+    local Type, Version = "SLPlayerManager", 1
+
+    local function Constructor()
+        local frame = CreateFrame("Frame")
+        SLPlayerManager:CreateOptionsUI(frame)
+        SLPlayerManager:LoadData(frame)
+        if frame.st then
+            frame.st:SetData(frame.rows)
+        end
+        frame:SetScript("OnShow", function()
+            SLPlayerManager:LoadData(frame)
+            if frame.st then
+                frame.st:SetData(frame.rows)
+            end
+        end)
+
+        local widget = {
+            frame = frame,
+            content = frame,
+            type = Type,
+        }
+
+        return AceGUI:RegisterAsContainer(widget)
+    end
+
+    AceGUI:RegisterWidgetType(Type, Constructor, Version)
+end
+
 return SLPlayerManager
 
