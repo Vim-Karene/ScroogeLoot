@@ -53,7 +53,7 @@ function HandleRollClick(playerName, rollType, sessionID, item)
   elseif rollType == 6 then
     finalRoll = baseRoll
     reason = "Transmog Roll"
-    SendChatMessage("Thank you for making a small totally optional donation to the guild bank ;)", "WHISPER", nil, playerName)
+    addon:Print("Thank you for making a small totally optional donation to the guild bank ;)")
   end
 
   local vf = addon:GetModule("SLVotingFrame")
