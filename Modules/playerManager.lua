@@ -3,6 +3,7 @@ local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
 local SLPlayerManager = addon:NewModule("SLPlayerManager")
 local ST = LibStub("ScrollingTable")
 local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
+local AceGUI = LibStub("AceGUI-3.0")
 
 local ROW_HEIGHT = 20
 
@@ -258,6 +259,26 @@ function SLPlayerManager:ImportData(text)
             self:LoadData(self.optionsFrame)
             self.optionsFrame.st:SetData(self.optionsFrame.rows)
         end
+    end
+end
+
+-- AceGUI widget to embed the player manager in options
+do
+    local Type, Version = "SLPlayerManager", 1
+    if not AceGUI:GetWidgetVersion(Type) or AceGUI:GetWidgetVersion(Type) < Version then
+        local function Constructor()
+            local widget = AceGUI:Create("SimpleGroup")
+            widget:SetFullWidth(true)
+            widget:SetFullHeight(true)
+            widget:SetLayout("Fill")
+
+            SLPlayerManager:CreateOptionsUI(widget.frame)
+            SLPlayerManager:LoadData(widget.frame)
+            widget.frame.st:SetData(widget.frame.rows)
+
+            return widget
+        end
+        AceGUI:RegisterWidgetType(Type, Constructor, Version)
     end
 end
 
