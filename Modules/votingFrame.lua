@@ -1218,3 +1218,39 @@ function SLVotingFrame:GetItemStatus(item)
 	GameTooltip:Hide()
 	return text
 end
+ 
+-- Simple Voting Frame display for /scroogevote command
+local frame = CreateFrame("Frame", "VotingFrame", UIParent, "BasicFrameTemplateWithInset")
+frame:SetSize(300, 200)
+frame:SetPoint("CENTER")
+frame:SetMovable(true)
+frame:EnableMouse(true)
+frame:RegisterForDrag("LeftButton")
+frame:SetScript("OnDragStart", frame.StartMoving)
+frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+frame:Hide()
+
+frame.title = frame:CreateFontString(nil, "OVERLAY")
+frame.title:SetFontObject("GameFontHighlight")
+frame.title:SetPoint("CENTER", frame.TitleBg, "CENTER", 0, 0)
+frame.title:SetText("Scrooge Voting Frame")
+
+frame.scrollText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+frame.scrollText:SetPoint("TOPLEFT", 15, -40)
+frame.scrollText:SetJustifyH("LEFT")
+frame.scrollText:SetText("")
+
+function UpdateVotingFrameDisplay()
+    local display = ""
+    for playerName, data in pairs(scroogelootplayerDB) do
+        display = display .. string.format("%s: Roll %d (%d%% Att)\n", playerName, math.random(1, 100), data.attendance or 0)
+    end
+    frame.scrollText:SetText(display)
+end
+
+SLASH_SCROOGEVOTE1 = "/scroogevote"
+SlashCmdList["SCROOGEVOTE"] = function()
+    UpdateVotingFrameDisplay()
+    VotingFrame:Show()
+end
+
