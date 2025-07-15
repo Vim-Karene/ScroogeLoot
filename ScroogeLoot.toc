@@ -14,5 +14,8 @@ ml_core.lua
 compat.lua
 playerdata.lua
 Modules\Modules.xml
+ScroogeLoot.lua
+VotingFrame.lua
+Config.lua
 
 Utils\tokenData.lua
