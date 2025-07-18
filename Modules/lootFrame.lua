@@ -31,44 +31,38 @@ local function PlayerHasItemToken(p, item) return true end
 local function PlayerGotItem(p, item) return false end
 local function CanEquipItem(name, item) return true end
 
--- Handles rolling logic for the custom buttons
-function HandleRollClick(playerName, rollType, sessionID, item)
-  addon.EnsurePlayer(playerName)
-  local p = addon.PlayerData and addon.PlayerData[playerName]
-  if not p then return end
+-- Send the chosen roll option to the master looter. When executed by the master
+-- it will also generate and broadcast the roll result to the voting frame.
+local function OnRollOptionClick(playerName, rollType, sessionID)
+    if not addon.isMasterLooter then
+        addon:SendCommand(addon.masterLooter, "roll_choice", sessionID, playerName, rollType)
+        return
+    end
 
-  local baseRoll = math.random(100)
-  local finalRoll = baseRoll
-  local reason = ""
+    local playerData = PlayerDB and PlayerDB[playerName]
+    if not playerData then return end
 
-  if rollType == 1 then
-    finalRoll = baseRoll + (p.SP or 0)
-    reason = "+SP"
-  elseif rollType == 2 then
-    finalRoll = baseRoll
-    reason = "No SP/DP"
-  elseif rollType == 3 or rollType == 4 or rollType == 5 then
-    finalRoll = baseRoll - (p.DP or 0)
-    reason = "-DP"
-  elseif rollType == 6 then
-    finalRoll = baseRoll
-    reason = "Transmog Roll"
-    addon:Print("If you win, consider making a small totally optional donation to the guild bank ;)")
-  end
+    local baseRoll = math.random(1, 100)
+    local modifiedRoll = baseRoll
 
-  local vf = addon:GetModule("SLVotingFrame")
-  vf:SetCandidateData(sessionID, playerName, "roll", finalRoll)
-  vf:SetCandidateData(sessionID, playerName, "rollInfo", {
-    base = baseRoll,
-    final = finalRoll,
-    reason = reason,
-    SP = p.SP,
-    DP = p.DP,
-  })
-  if vf.frame and vf.frame.st then
-    vf.frame.st:Refresh()
-  end
-  vf:Update()
+    if rollType == "SP" then
+        modifiedRoll = baseRoll + (playerData.SP or 0)
+    elseif rollType == "DP" then
+        modifiedRoll = baseRoll - (playerData.DP or 0)
+    end
+
+    local vf = addon:GetModule("SLVotingFrame")
+    vf:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
+    vf:SetCandidateData(sessionID, playerName, "rollInfo", {
+        base = baseRoll,
+        final = modifiedRoll,
+        SP = playerData.SP,
+        DP = playerData.DP,
+    })
+    if vf.frame and vf.frame.st then
+        vf.frame.st:Refresh()
+    end
+    vf:Update()
 end
 
 function LootFrame:Start(table)
@@ -238,7 +232,13 @@ function LootFrame:OnRoll(entry, button)
        addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
        local index = entries[entry].realID
 
-       HandleRollClick(UnitName("player"), button, items[index].session, items[index].link)
+       local rollType
+       if button == 1 then
+               rollType = "SP"
+       elseif button == 3 or button == 4 or button == 5 then
+               rollType = "DP"
+       end
+       OnRollOptionClick(UnitName("player"), rollType, items[index].session)
 
        numRolled = numRolled + 1
        items[index].rolled = true
@@ -299,7 +299,9 @@ function LootFrame:GetEntry(entry)
 		else
 			f.buttons[i]:SetPoint("LEFT", f.buttons[i-1], "RIGHT", 5, 0)
 		end
-		f.buttons[i]:SetScript("OnClick", function() LootFrame:OnRoll(entry, i) end)
+               f.buttons[i]:SetScript("OnClick", function()
+                       LootFrame:OnRoll(entry, i)
+               end)
 	end
 	-- Pass button
 	f.buttons[addon.mldb.numButtons + 1] = addon:CreateButton(L["Pass"], f)

@@ -27,6 +27,61 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
+-- Calculate a player's attendance percentage
+local function CalculateAttendance(attended, absent)
+    local total = (attended or 0) + (absent or 0)
+    if total == 0 then return 0 end
+    return math.floor((attended / total) * 100)
+end
+
+-- Update a single voting row using PlayerDB data
+local function UpdateVotingRow(playerName)
+    local data = PlayerDB and PlayerDB[playerName]
+    if not data or not SLVotingFrame.frame then return end
+
+    local attendance = CalculateAttendance(data.attended, data.absent)
+
+    local st = SLVotingFrame.frame.st
+    if not st then return end
+    for i, row in ipairs(st.data or {}) do
+        if row.name == playerName then
+            row.cols[2].value = playerName
+            row.cols[3].value = data.raiderrank and 1 or 0
+            row.cols[6].value = attendance
+            st:Refresh()
+            break
+        end
+    end
+end
+
+-- Master looter only: handle an incoming roll choice and update the table
+local function HandleRollChoice(sessionID, playerName, rollType)
+    local playerData = PlayerDB and PlayerDB[playerName]
+    if not playerData or not sessionID then return end
+
+    local baseRoll = math.random(1, 100)
+    local modifiedRoll = baseRoll
+
+    if rollType == "SP" then
+        modifiedRoll = baseRoll + (playerData.SP or 0)
+    elseif rollType == "DP" then
+        modifiedRoll = baseRoll - (playerData.DP or 0)
+    end
+
+    SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
+    SLVotingFrame:SetCandidateData(sessionID, playerName, "rollInfo", {
+        base = baseRoll,
+        final = modifiedRoll,
+        SP = playerData.SP,
+        DP = playerData.DP,
+    })
+    if SLVotingFrame.frame and SLVotingFrame.frame.st then
+        SLVotingFrame.frame.st:Refresh()
+    end
+    UpdateVotingRow(playerName)
+    SLVotingFrame:Update()
+end
+
 function SLVotingFrame:OnInitialize()
 	self.scrollCols = {
 		{ name = "",															sortnext = 2,		width = 20},	-- 1 Class
@@ -145,12 +200,16 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 				local entry_name, data = unpack(data) 
 				addon.mlhistory[entry_name] = data
 			
-			elseif command == "change_response" and addon:UnitIsUnit(sender, addon.masterLooter) then
-				local ses, name, response = unpack(data)
-				self:SetCandidateData(ses, name, "response", response)
-				self:Update()
+                       elseif command == "change_response" and addon:UnitIsUnit(sender, addon.masterLooter) then
+                               local ses, name, response = unpack(data)
+                               self:SetCandidateData(ses, name, "response", response)
+                               self:Update()
 
-			elseif command == "lootAck" then
+                       elseif command == "roll_choice" and addon.isMasterLooter then
+                               local ses, name, rType = unpack(data)
+                               HandleRollChoice(ses, name, rType)
+
+                       elseif command == "lootAck" then
 				local name = unpack(data)
 				for i = 1, #lootTable do
 					self:SetCandidateData(i, name, "response", "WAIT")
@@ -232,8 +291,9 @@ function SLVotingFrame:Setup(table)
                                class = v.class,
                                rank = v.rank,
                                role = v.role,
-                               raiderrank = addon:GetPlayerData(name).raiderrank,
-                               attendance = addon:GetPlayerData(name).attendance,
+                               raiderrank = PlayerDB[name] and PlayerDB[name].raiderrank,
+                               attendance = CalculateAttendance(PlayerDB[name] and PlayerDB[name].attended or 0,
+                                                            PlayerDB[name] and PlayerDB[name].absent or 0),
                                response = "ANNOUNCED",
                                gear1 = nil,
                                gear2 = nil,
@@ -283,12 +343,7 @@ function SLVotingFrame:HandleVote(session, name, vote, voter)
 	self:UpdatePeopleToVote()
 end
 
-function SLVotingFrame:DoRandomRolls(ses)
-	for _, v in pairs (lootTable[ses].candidates) do
-		v.roll = math.random(100)
-	end
-	self:Update()
-end
+
 
 ------------------------------------------------------------------
 --	Visuals														--
@@ -755,14 +810,16 @@ end
 
 function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
        local name = data[realrow].name
-       local val = addon:GetPlayerData(name).raiderrank
+       local db = PlayerDB and PlayerDB[name]
+       local val = db and db.raiderrank
        frame.text:SetText(RaiderText(val))
        data[realrow].cols[column].value = val and 1 or 0
 end
 
 function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
        local name = data[realrow].name
-       local val = addon:GetPlayerData(name).attendance or ""
+       local db = PlayerDB and PlayerDB[name]
+       local val = db and CalculateAttendance(db.attended, db.absent) or 0
        frame.text:SetText(tostring(val))
        data[realrow].cols[column].value = tonumber(val) or 0
 end
@@ -1021,10 +1078,7 @@ do
 			end
 			Lib_UIDropDownMenu_AddButton(info, level)
 
-			info.text = L["Add rolls"]
-			info.notCheckable = true
-			info.func = function() SLVotingFrame:DoRandomRolls(session) end
-			Lib_UIDropDownMenu_AddButton(info, level)
+
 
 		elseif level == 2 then
 			local value = LIB_UIDROPDOWNMENU_MENU_VALUE
