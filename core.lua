@@ -233,7 +233,7 @@ function ScroogeLoot:OnInitialize()
 	self:RegisterComm("ScroogeLoot_WotLK")
        self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
        self.lootDB = LibStub("AceDB-3.0"):New("ScroogeLootLootDB")
-       self.playerDB = LibStub("AceDB-3.0"):New("ScroogeLootPlayerDB", {global={playerData={}}})
+       self.playerDB = LibStub("AceDB-3.0"):New("PlayerDB", {global={playerData={}}})
 	--[[ Format:
 	"playerName" = {
 		[#] = {"lootWon", "date (d/m/y)", "time (h:m:s)", "instance", "boss", "votes", "itemReplaced1", "itemReplaced2", "response", "responseID", "color", "class", "isAwardReason"}
