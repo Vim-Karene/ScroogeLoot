@@ -112,11 +112,11 @@ end
 
 -- Simple player registration and attendance update
 local addonName = ...
-scroogelootplayerDB = scroogelootplayerDB or {}
+PlayerDB = PlayerDB or {}
 
 local function InitializePlayerData(playerName, class)
-    if not scroogelootplayerDB[playerName] then
-        scroogelootplayerDB[playerName] = {
+    if not PlayerDB[playerName] then
+        PlayerDB[playerName] = {
             name = playerName,
             class = class,
             raiderrank = false,
@@ -133,7 +133,7 @@ local function InitializePlayerData(playerName, class)
             item3received = false,
         }
     else
-        local player = scroogelootplayerDB[playerName]
+        local player = PlayerDB[playerName]
         local keepFields = {
             name = true, class = true, raiderrank = true,
             SP = true, DP = true, attended = true, absent = true, attendance = true,
@@ -157,7 +157,7 @@ local function InitializePlayerData(playerName, class)
 end
 
 local function UpdateAttendance(playerName)
-    local player = scroogelootplayerDB[playerName]
+    local player = PlayerDB[playerName]
     if not player then return end
     local total = player.attended + player.absent
     player.attendance = (total > 0) and math.floor((player.attended / total) * 100) or 0
@@ -174,6 +174,6 @@ SlashCmdList["SCROOGELOOT"] = function(msg)
     local name, class = UnitName("player"), select(2, UnitClass("player"))
     RegisterPlayer(name, class)
     print("Registered:", name)
-    print("Attendance:", scroogelootplayerDB[name].attendance .. "%")
+    print("Attendance:", PlayerDB[name].attendance .. "%")
 end
 
