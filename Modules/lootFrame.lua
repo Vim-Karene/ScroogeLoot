@@ -34,7 +34,7 @@ local function CanEquipItem(name, item) return true end
 -- Handles rolling logic for the custom buttons
 function HandleRollClick(playerName, rollType, sessionID, item)
   addon.EnsurePlayer(playerName)
-  local p = addon.PlayerData and addon.PlayerData[playerName]
+  local p = addon.PlayerDB and addon.PlayerDB[playerName]
   if not p then return end
 
   local baseRoll = math.random(100)

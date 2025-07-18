@@ -1,4 +1,4 @@
--- PlayerManager module for editing PlayerData
+-- PlayerManager module for editing PlayerDB
 local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
 local SLPlayerManager = addon:NewModule("SLPlayerManager")
 local ST = LibStub("ScrollingTable")
@@ -88,8 +88,8 @@ function SLPlayerManager:CreateOptionsUI(parent)
 end
 
 function SLPlayerManager:Show()
-    if not next(addon.PlayerData) then
-        addon:PopulatePlayerDataFromGroup()
+    if not next(addon.PlayerDB) then
+        addon:PopulatePlayerDBFromGroup()
     end
     self.frame = self:GetFrame()
     self:LoadData(self.frame.content)
@@ -104,7 +104,7 @@ end
 function SLPlayerManager:LoadData(target)
     local t = target or self.frame.content
     t.rows = {}
-    for name,data in pairs(addon.PlayerData) do
+    for name,data in pairs(addon.PlayerDB) do
         local copy = {}
         for k,v in pairs(data) do copy[k] = v end
         copy.name = name
@@ -161,7 +161,7 @@ end
 
 function SLPlayerManager:Save(target)
     local t = target or self.frame.content
-    wipe(addon.PlayerData)
+    wipe(addon.PlayerDB)
     for _,row in ipairs(t.rows) do
         local d = row.data
         local pd = {
@@ -186,10 +186,10 @@ function SLPlayerManager:Save(target)
             pd.attendance = 100
         end
         local name = pd.name
-        addon.PlayerData[name] = pd
+        addon.PlayerDB[name] = pd
         row.name = name
     end
-    addon:BroadcastPlayerData()
+    addon:BroadcastPlayerDB()
     addon:Print(L["Player Management"]..": "..L["Save"].."!")
 end
 
@@ -201,13 +201,13 @@ local function Escape(str)
 end
 
 function SLPlayerManager:Export()
-    local xml = "<PlayerData>\n"
-    for name,data in pairs(addon.PlayerData) do
+    local xml = "<PlayerDB>\n"
+    for name,data in pairs(addon.PlayerDB) do
         local n = data.name or name
         xml = xml .. string.format('<Player name="%s" class="%s" raider="%s" SP="%s" DP="%s" attended="%s" absent="%s" item1="%s" item1received="%s" item2="%s" item2received="%s" item3="%s" item3received="%s"/>\n',
             Escape(n), Escape(data.class), tostring(data.raiderrank or false), tostring(data.SP or 0), tostring(data.DP or 0), tostring(data.attended or 0), tostring(data.absent or 0), Escape(data.item1), tostring(data.item1received or false), Escape(data.item2), tostring(data.item2received or false), Escape(data.item3), tostring(data.item3received or false))
     end
-    xml = xml .. "</PlayerData>"
+    xml = xml .. "</PlayerDB>"
     StaticPopup_Show("SLPLAYERMANAGER_EXPORT", nil, nil, xml)
 end
 
@@ -245,11 +245,11 @@ function SLPlayerManager:ImportData(text)
         end
     end
     if next(newData) then
-        addon.PlayerData = newData
+        addon.PlayerDB = newData
         if addon.EnsureNameFields then
             addon:EnsureNameFields()
         end
-        addon:BroadcastPlayerData()
+        addon:BroadcastPlayerDB()
         if self.frame and self.frame.content then
             self:LoadData(self.frame.content)
             self.frame.content.st:SetData(self.frame.content.rows)

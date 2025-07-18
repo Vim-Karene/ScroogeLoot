@@ -248,9 +248,9 @@ function ScroogeLoot:OnInitialize()
        historyDB = self.lootDB.factionrealm
        debugLog = self.db.global.log
 
-       -- Load persisted PlayerData
-       self.PlayerData = self.playerDB.global.playerData or {}
-       ScroogeLoot.PlayerData = self.PlayerData
+       -- Load persisted PlayerDB
+       self.PlayerDB = self.playerDB.global.playerData or {}
+       ScroogeLoot.PlayerDB = self.PlayerDB
        if self.EnsureNameFields then
                self:EnsureNameFields()
        end
@@ -327,12 +327,12 @@ function ScroogeLoot:OnEnable()
         self.db.global.tVersion = self.tVersion;
         GuildRoster()
 
-        -- Initialize PlayerData for current group
-        self:PopulatePlayerDataFromGroup()
+        -- Initialize PlayerDB for current group
+        self:PopulatePlayerDBFromGroup()
         -- Ensure the current player has an entry saved
-        if not self.PlayerData[self.playerName] then
+        if not self.PlayerDB[self.playerName] then
                 self:EnsurePlayer(self.playerName)
-                self:BroadcastPlayerData()
+                self:BroadcastPlayerDB()
         end
 
 	local filterFunc = function(_, event, msg, player, ...)
@@ -751,10 +751,10 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
 
 			elseif command == "playerData" then
-				-- Update local PlayerData from the master looter
+				-- Update local PlayerDB from the master looter
                                 if not self.isMasterLooter then
                                         local incomingData = unpack(data)
-                                        self.PlayerData = incomingData
+                                        self.PlayerDB = incomingData
                                         if self.EnsureNameFields then
                                                 self:EnsureNameFields()
                                         end
@@ -1275,9 +1275,9 @@ function ScroogeLoot:OnEvent(event, ...)
         elseif event == "RAID_ROSTER_UPDATE" then
                 self:Debug("Event:", event, ...)
                 self:NewMLCheck()
-                local changed = self:PopulatePlayerDataFromGroup()
+                local changed = self:PopulatePlayerDBFromGroup()
                 if changed then
-                        self:BroadcastPlayerData()
+                        self:BroadcastPlayerDB()
                 end
 
 	elseif event == "RAID_INSTANCE_WELCOME" then

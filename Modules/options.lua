@@ -851,7 +851,7 @@ function addon:OptionsTable()
 							},
 						},
                                         },
-                                        PlayerDataManagement = {
+                                        PlayerDBManagement = {
                                                 name = L["Player Management"],
                                                 type = "group",
                                                 order = 10,
