@@ -232,8 +232,8 @@ function SLVotingFrame:Setup(table)
                                class = v.class,
                                rank = v.rank,
                                role = v.role,
-                               raiderrank = addon:GetPlayerData(name).raiderrank,
-                               attendance = addon:GetPlayerData(name).attendance,
+                               raiderrank = addon:GetPlayerDB(name).raiderrank,
+                               attendance = addon:GetPlayerDB(name).attendance,
                                response = "ANNOUNCED",
                                gear1 = nil,
                                gear2 = nil,
@@ -755,14 +755,14 @@ end
 
 function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
        local name = data[realrow].name
-       local val = addon:GetPlayerData(name).raiderrank
+       local val = addon:GetPlayerDB(name).raiderrank
        frame.text:SetText(RaiderText(val))
        data[realrow].cols[column].value = val and 1 or 0
 end
 
 function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
        local name = data[realrow].name
-       local val = addon:GetPlayerData(name).attendance or ""
+       local val = addon:GetPlayerDB(name).attendance or ""
        frame.text:SetText(tostring(val))
        data[realrow].cols[column].value = tonumber(val) or 0
 end
