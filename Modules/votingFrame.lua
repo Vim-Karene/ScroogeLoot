@@ -37,6 +37,13 @@ end
 -- Update a single voting row using PlayerDB data
 local function UpdateVotingRow(playerName)
     local data = PlayerDB and PlayerDB[playerName]
+    if not data then
+        local _, class = UnitClass(playerName)
+        if RegisterPlayer then
+            RegisterPlayer(playerName, class)
+        end
+        data = PlayerDB and PlayerDB[playerName]
+    end
     if not data or not SLVotingFrame.frame then return end
 
     local attendance = CalculateAttendance(data.attended, data.absent)
@@ -57,6 +64,13 @@ end
 -- Master looter only: handle an incoming roll choice and update the table
 local function HandleRollChoice(sessionID, playerName, rollType)
     local playerData = PlayerDB and PlayerDB[playerName]
+    if not playerData then
+        local _, class = UnitClass(playerName)
+        if RegisterPlayer then
+            RegisterPlayer(playerName, class)
+        end
+        playerData = PlayerDB and PlayerDB[playerName]
+    end
     if not playerData or not sessionID then return end
 
     local baseRoll = math.random(1, 100)
