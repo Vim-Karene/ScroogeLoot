@@ -1,4 +1,4 @@
-﻿--[[	ScroogeLoot by Potdisc
+--[[	ScroogeLoot by Potdisc
 ml_core.lua	Contains core elements for the MasterLooter
 	-	Although possible, this module shouldn't be replaced unless closely replicated as other default modules depend on it.
 	-	Assumes several functions in SessionFrame and VotingFrame
@@ -94,7 +94,19 @@ end
 
 function ScroogeLootML:AddCandidate(name, class, role, rank, enchant, lvl)
         addon:DebugLog("ML:AddCandidate", name, class, role, rank, enchant, lvl)
-        local pd = addon.PlayerData and addon.PlayerData[name] or {}
+        local pd = nil
+        if PlayerDB and PlayerDB[name] then
+                pd = PlayerDB[name]
+        elseif addon.PlayerData and addon.PlayerData[name] then
+                pd = addon.PlayerData[name]
+        end
+        if not pd then
+                local _, cls = UnitClass(name)
+                if RegisterPlayer then
+                        RegisterPlayer(name, cls)
+                end
+                pd = PlayerDB and PlayerDB[name] or {}
+        end
         self.candidates[name] = {
                 ["class"]       = class,
                 ["role"]        = role or "DAMAGER",

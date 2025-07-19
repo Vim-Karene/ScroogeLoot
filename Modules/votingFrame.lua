@@ -27,6 +27,22 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
+-- Handle incoming addon messages
+local function OnAddonMessage(prefix, msg, channel, sender)
+    if prefix ~= "ScroogeLoot" then return end
+
+    if strsub(msg, 1, 5) == "ROLL:" then
+        local _, name, rollType, rollVal = strsplit(":", msg)
+        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
+    end
+end
+
+ChatFrame_AddMessageEventFilter("CHAT_MSG_ADDON", function(_, ...)
+    local prefix, msg, channel, sender = ...
+    OnAddonMessage(prefix, msg, channel, sender)
+    return false
+end)
+
 -- Calculate a player's attendance percentage
 local function CalculateAttendance(attended, absent)
     local total = (attended or 0) + (absent or 0)
@@ -37,6 +53,13 @@ end
 -- Update a single voting row using PlayerDB data
 local function UpdateVotingRow(playerName)
     local data = PlayerDB and PlayerDB[playerName]
+    if not data then
+        local _, class = UnitClass(playerName)
+        if RegisterPlayer then
+            RegisterPlayer(playerName, class)
+        end
+        data = PlayerDB and PlayerDB[playerName]
+    end
     if not data or not SLVotingFrame.frame then return end
 
     local attendance = CalculateAttendance(data.attended, data.absent)
@@ -57,6 +80,13 @@ end
 -- Master looter only: handle an incoming roll choice and update the table
 local function HandleRollChoice(sessionID, playerName, rollType)
     local playerData = PlayerDB and PlayerDB[playerName]
+    if not playerData then
+        local _, class = UnitClass(playerName)
+        if RegisterPlayer then
+            RegisterPlayer(playerName, class)
+        end
+        playerData = PlayerDB and PlayerDB[playerName]
+    end
     if not playerData or not sessionID then return end
 
     local baseRoll = math.random(1, 100)
@@ -405,29 +435,31 @@ function SLVotingFrame:SwitchSession(s)
 end
 
 function SLVotingFrame:BuildST()
-	local rows = {}
-	local i = 1
-	for name in pairs(candidates) do
-		rows[i] = {
-			name = name,
-			cols = {
-				{ value = "",	DoCellUpdate = self.SetCellClass,		name = "class",},
-				{ value = "",	DoCellUpdate = self.SetCellName,			name = "name",},
-				{ value = "",	DoCellUpdate = self.SetCellRank,			name = "rank",},
-				{ value = "",	DoCellUpdate = self.SetCellResponse,	name = "response",},
-				{ value = "",	DoCellUpdate = self.SetCellRaider,			name = "raiderrank",},
-				{ value = "",	DoCellUpdate = self.SetCellAttendance,			name = "attendance",},
-				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear1",},
-				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear2",},
-				{ value = 0,	DoCellUpdate = self.SetCellVotes, 		name = "votes",},
-				{ value = 0,	DoCellUpdate = self.SetCellVote,			name = "vote",},
-				{ value = 0,	DoCellUpdate = self.SetCellNote, 		name = "note",},
-				{ value = "",	DoCellUpdate = self.SetCellRoll,			name = "roll"},
-			},
-		}
-		i = i + 1
-	end
-	self.frame.st:SetData(rows)
+        -- Start with an empty table; rows will be added dynamically
+        self.frame.st:SetData({})
+end
+
+-- Add a new row to the voting table using roll information
+function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
+    local data = PlayerDB and PlayerDB[name]
+    if not data then
+        print("No PlayerDB entry for", name)
+        return
+    end
+    local sp = data.SP or 0
+    local dp = data.DP or 0
+    local adjusted = rollValue
+    if rollType == "sp" then
+        adjusted = adjusted + sp
+    elseif rollType == "dp" then
+        adjusted = adjusted - dp
+    end
+    if not self.frame or not self.frame.st then return end
+    local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = rollValue }, { value = sp }, { value = dp }, { value = adjusted } } }
+    local st = self.frame.st
+    st.data = st.data or {}
+    table.insert(st.data, row)
+    st:SortData()
 end
 
 function SLVotingFrame:UpdateMoreInfo(row, data)
@@ -559,6 +591,7 @@ function SLVotingFrame:GetFrame()
 	})
 	st:SetFilter(SLVotingFrame.filterFunc)
 	st:EnableSelection(true)
+        st:SetData({})
 	f.st = st
 	--[[------------------------------
 		Session item icon and strings
