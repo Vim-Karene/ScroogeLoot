@@ -27,6 +27,22 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
+-- Handle incoming addon messages
+local function OnAddonMessage(prefix, msg, channel, sender)
+    if prefix ~= "ScroogeLoot" then return end
+
+    if strsub(msg, 1, 5) == "ROLL:" then
+        local _, name, class, rollType, raw, adj, sp, dp = strsplit(":", msg)
+        SLVotingFrame:AddVotingRow(name, class, rollType, tonumber(raw), tonumber(adj), tonumber(sp), tonumber(dp))
+    end
+end
+
+ChatFrame_AddMessageEventFilter("CHAT_MSG_ADDON", function(_, ...)
+    local prefix, msg, channel, sender = ...
+    OnAddonMessage(prefix, msg, channel, sender)
+    return false
+end)
+
 -- Calculate a player's attendance percentage
 local function CalculateAttendance(attended, absent)
     local total = (attended or 0) + (absent or 0)
@@ -441,7 +457,27 @@ function SLVotingFrame:BuildST()
 		}
 		i = i + 1
 	end
-	self.frame.st:SetData(rows)
+        self.frame.st:SetData(rows)
+end
+
+-- Add a new row to the voting table using roll information
+function SLVotingFrame:AddVotingRow(name, class, rollType, rawRoll, adjRoll, sp, dp)
+    if not self.frame or not self.frame.st then return end
+    local row = {
+        cols = {
+            { value = name },
+            { value = class },
+            { value = rollType },
+            { value = rawRoll },
+            { value = sp },
+            { value = dp },
+            { value = adjRoll },
+        }
+    }
+    local st = self.frame.st
+    st.data = st.data or {}
+    table.insert(st.data, row)
+    st:SortData()
 end
 
 function SLVotingFrame:UpdateMoreInfo(row, data)

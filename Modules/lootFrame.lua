@@ -34,42 +34,44 @@ local function CanEquipItem(name, item) return true end
 -- Send the chosen roll option to the master looter. When executed by the master
 -- it will also generate and broadcast the roll result to the voting frame.
 local function OnRollOptionClick(playerName, rollType, sessionID)
-    if not addon.isMasterLooter then
-        addon:SendCommand(addon.masterLooter, "roll_choice", sessionID, playerName, rollType)
-        return
-    end
-
-    local playerData = PlayerDB and PlayerDB[playerName]
-    if not playerData then
+    local data = PlayerDB and PlayerDB[playerName]
+    if not data then
         local _, class = UnitClass(playerName)
         if RegisterPlayer then
             RegisterPlayer(playerName, class)
         end
-        playerData = PlayerDB and PlayerDB[playerName]
-        if not playerData then return end
+        data = PlayerDB and PlayerDB[playerName]
+    end
+    if not data then
+        print("Player not found in PlayerDB:", playerName)
+        return
     end
 
-    local baseRoll = math.random(1, 100)
-    local modifiedRoll = baseRoll
-
+    local rollValue = math.random(1, 100)
+    local sp = data.SP or 0
+    local dp = data.DP or 0
+    local adjustedRoll = rollValue
     if rollType == "SP" then
-        modifiedRoll = baseRoll + (playerData.SP or 0)
+        adjustedRoll = adjustedRoll + sp
     elseif rollType == "DP" then
-        modifiedRoll = baseRoll - (playerData.DP or 0)
+        adjustedRoll = adjustedRoll - dp
     end
 
-    local vf = addon:GetModule("SLVotingFrame")
-    vf:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
-    vf:SetCandidateData(sessionID, playerName, "rollInfo", {
-        base = baseRoll,
-        final = modifiedRoll,
-        SP = playerData.SP,
-        DP = playerData.DP,
-    })
-    if vf.frame and vf.frame.st then
-        vf.frame.st:Refresh()
+    local payload = string.format(
+        "ROLL:%s:%s:%s:%d:%d:%d:%d",
+        playerName,
+        data.class or "UNKNOWN",
+        rollType,
+        rollValue,
+        adjustedRoll,
+        sp,
+        dp
+    )
+    if C_ChatInfo and C_ChatInfo.SendAddonMessage then
+        C_ChatInfo.SendAddonMessage("ScroogeLoot", payload, "RAID")
+    else
+        SendAddonMessage("ScroogeLoot", payload, "RAID")
     end
-    vf:Update()
 end
 
 function LootFrame:Start(table)
