@@ -16,6 +16,7 @@ playerdata.lua
 Modules\Modules.xml
 ScroogeLoot.lua
 VotingFrame.lua
+widgets.lua
 Config.lua
 
 Utils\tokenData.lua
