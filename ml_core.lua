@@ -1,4 +1,4 @@
-﻿--[[	ScroogeLoot by Potdisc
+--[[	ScroogeLoot by Potdisc
 ml_core.lua	Contains core elements for the MasterLooter
 	-	Although possible, this module shouldn't be replaced unless closely replicated as other default modules depend on it.
 	-	Assumes several functions in SessionFrame and VotingFrame

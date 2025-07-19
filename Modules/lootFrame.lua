@@ -48,24 +48,12 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
     end
 
     local rollValue = math.random(1, 100)
-    local sp = data.SP or 0
-    local dp = data.DP or 0
-    local adjustedRoll = rollValue
-    if rollType == "SP" then
-        adjustedRoll = adjustedRoll + sp
-    elseif rollType == "DP" then
-        adjustedRoll = adjustedRoll - dp
-    end
 
     local payload = string.format(
-        "ROLL:%s:%s:%s:%d:%d:%d:%d",
+        "ROLL:%s:%s:%d",
         playerName,
-        data.class or "UNKNOWN",
-        rollType,
-        rollValue,
-        adjustedRoll,
-        sp,
-        dp
+        rollType:lower(),
+        rollValue
     )
     if C_ChatInfo and C_ChatInfo.SendAddonMessage then
         C_ChatInfo.SendAddonMessage("ScroogeLoot", payload, "RAID")

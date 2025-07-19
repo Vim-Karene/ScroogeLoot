@@ -32,8 +32,8 @@ local function OnAddonMessage(prefix, msg, channel, sender)
     if prefix ~= "ScroogeLoot" then return end
 
     if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, class, rollType, raw, adj, sp, dp = strsplit(":", msg)
-        SLVotingFrame:AddVotingRow(name, class, rollType, tonumber(raw), tonumber(adj), tonumber(sp), tonumber(dp))
+        local _, name, rollType, rollVal = strsplit(":", msg)
+        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
     end
 end
 
@@ -435,45 +435,27 @@ function SLVotingFrame:SwitchSession(s)
 end
 
 function SLVotingFrame:BuildST()
-	local rows = {}
-	local i = 1
-	for name in pairs(candidates) do
-		rows[i] = {
-			name = name,
-			cols = {
-				{ value = "",	DoCellUpdate = self.SetCellClass,		name = "class",},
-				{ value = "",	DoCellUpdate = self.SetCellName,			name = "name",},
-				{ value = "",	DoCellUpdate = self.SetCellRank,			name = "rank",},
-				{ value = "",	DoCellUpdate = self.SetCellResponse,	name = "response",},
-				{ value = "",	DoCellUpdate = self.SetCellRaider,			name = "raiderrank",},
-				{ value = "",	DoCellUpdate = self.SetCellAttendance,			name = "attendance",},
-				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear1",},
-				{ value = "",	DoCellUpdate = self.SetCellGear, 		name = "gear2",},
-				{ value = 0,	DoCellUpdate = self.SetCellVotes, 		name = "votes",},
-				{ value = 0,	DoCellUpdate = self.SetCellVote,			name = "vote",},
-				{ value = 0,	DoCellUpdate = self.SetCellNote, 		name = "note",},
-				{ value = "",	DoCellUpdate = self.SetCellRoll,			name = "roll"},
-			},
-		}
-		i = i + 1
-	end
-        self.frame.st:SetData(rows)
+        -- Start with an empty table; rows will be added dynamically
+        self.frame.st:SetData({})
 end
 
 -- Add a new row to the voting table using roll information
-function SLVotingFrame:AddVotingRow(name, class, rollType, rawRoll, adjRoll, sp, dp)
+function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
+    local data = PlayerDB and PlayerDB[name]
+    if not data then
+        print("No PlayerDB entry for", name)
+        return
+    end
+    local sp = data.SP or 0
+    local dp = data.DP or 0
+    local adjusted = rollValue
+    if rollType == "sp" then
+        adjusted = adjusted + sp
+    elseif rollType == "dp" then
+        adjusted = adjusted - dp
+    end
     if not self.frame or not self.frame.st then return end
-    local row = {
-        cols = {
-            { value = name },
-            { value = class },
-            { value = rollType },
-            { value = rawRoll },
-            { value = sp },
-            { value = dp },
-            { value = adjRoll },
-        }
-    }
+    local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = rollValue }, { value = sp }, { value = dp }, { value = adjusted } } }
     local st = self.frame.st
     st.data = st.data or {}
     table.insert(st.data, row)
@@ -609,6 +591,7 @@ function SLVotingFrame:GetFrame()
 	})
 	st:SetFilter(SLVotingFrame.filterFunc)
 	st:EnableSelection(true)
+        st:SetData({})
 	f.st = st
 	--[[------------------------------
 		Session item icon and strings
