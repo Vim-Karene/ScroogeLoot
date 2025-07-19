@@ -102,6 +102,8 @@ local methods = {
 
 local function Constructor()
     local frame = AceGUI:Create("ScrollFrame")
+    frame:SetFullWidth(true)
+    frame:SetFullHeight(true)
     frame:SetLayout("Flow")
     for k, v in pairs(methods) do
         frame[k] = v
