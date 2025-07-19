@@ -19,3 +19,4 @@ VotingFrame.lua
 Config.lua
 
 Utils\tokenData.lua
+widgets.lua
