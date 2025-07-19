@@ -40,7 +40,14 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
     end
 
     local playerData = PlayerDB and PlayerDB[playerName]
-    if not playerData then return end
+    if not playerData then
+        local _, class = UnitClass(playerName)
+        if RegisterPlayer then
+            RegisterPlayer(playerName, class)
+        end
+        playerData = PlayerDB and PlayerDB[playerName]
+        if not playerData then return end
+    end
 
     local baseRoll = math.random(1, 100)
     local modifiedRoll = baseRoll
