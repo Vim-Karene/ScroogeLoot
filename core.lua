@@ -500,8 +500,7 @@ function ScroogeLoot:ChatCommand(msg)
                 self:CallModule("history")
 
        elseif input == "pm" or input == "playermanager" then
-               InterfaceOptionsFrame_OpenToCategory("ScroogeLoot")
-               InterfaceOptionsFrame_OpenToCategory("ScroogeLoot")
+               self:OpenPlayerManager()
 --@debug@
 	elseif input == "nnp" then
 		self.nnp = not self.nnp
@@ -1696,8 +1695,7 @@ end
 SLASH_PLAYERMANAGER1 = "/sl"
 SlashCmdList["PLAYERMANAGER"] = function(msg)
     if msg == "pm" then
-        InterfaceOptionsFrame_OpenToCategory("ScroogeLoot")
-        InterfaceOptionsFrame_OpenToCategory("ScroogeLoot")
+        ScroogeLoot:OpenPlayerManager()
     else
         ScroogeLoot:ChatCommand(msg)
     end
