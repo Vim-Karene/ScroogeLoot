@@ -4,6 +4,7 @@
   <Script file = "votingFrame.lua" />
   <Script file = "sessionFrame.lua" />
   <Script file = "playerManager.lua" />
+  <Script file = "playerManagementFrame.lua" />
   <Script file = "options.lua" />
   <Script file = "lootHistory.lua" />
 </Ui>

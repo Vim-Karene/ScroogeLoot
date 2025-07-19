@@ -851,19 +851,6 @@ function addon:OptionsTable()
 							},
 						},
                                         },
-                                        PlayerDataManagement = {
-                                                name = L["Player Management"],
-                                                type = "group",
-                                                order = 10,
-                                                args = {
-                                                        table = {
-                                                                type = "description",
-                                                                name = "",
-                                                                width = "full",
-                                                                dialogControl = "SLPlayerManager",
-                                                        }
-                                                }
-                                        },
                                 },
                         },
                 },
