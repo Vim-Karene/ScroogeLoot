@@ -9,6 +9,7 @@ local SLVotingFrame = addon:NewModule("SLVotingFrame", "AceComm-3.0", "AceTimer-
 local LibDialog = LibStub("LibDialog-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
 local Deflate = LibStub("LibDeflate")
+local ST = LibStub("ScrollingTable")
 
 local ROW_HEIGHT = 20;
 local NUM_ROWS = 15;
@@ -27,20 +28,35 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
--- Handle incoming addon messages
-local function OnAddonMessage(prefix, msg, channel, sender)
+-- Simplified voting table columns used when displaying rolls
+local votingCols = {
+    { name = "Name",     width = 100 },
+    { name = "Rank",     width = 60  },
+    { name = "Response", width = 90  },
+    { name = "Roll",     width = 60  },
+    { name = "SP",       width = 40  },
+    { name = "DP",       width = 40  },
+    { name = "Adjusted", width = 70  },
+}
+
+-- Listen for roll messages and add them to the simple voting table
+local f = CreateFrame("Frame")
+f:RegisterEvent("CHAT_MSG_ADDON")
+f:SetScript("OnEvent", function(_, _, prefix, msg)
     if prefix ~= "ScroogeLoot" then return end
 
-    if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, rollVal = strsplit(":", msg)
-        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
+    local cmd, name, response, raw, adj, sp, dp, tooltip = strsplit(":", msg)
+    if cmd == "ROLL" then
+        addon:AddVotingRow({
+            name = name,
+            response = response,
+            roll = tonumber(raw),
+            adjusted = tonumber(adj),
+            sp = tonumber(sp),
+            dp = tonumber(dp),
+            tooltip = tooltip
+        })
     end
-end
-
-ChatFrame_AddMessageEventFilter("CHAT_MSG_ADDON", function(_, ...)
-    local prefix, msg, channel, sender = ...
-    OnAddonMessage(prefix, msg, channel, sender)
-    return false
 end)
 
 -- Calculate a player's attendance percentage
@@ -136,21 +152,34 @@ function SLVotingFrame:OnInitialize()
 end
 
 function SLVotingFrame:OnEnable()
-	self:RegisterComm("ScroogeLoot")
-	db = addon:Getdb()
-	active = true
-	moreInfo = db.modules["SLVotingFrame"].moreInfo
-	self.frame = self:GetFrame()
+        self:RegisterComm("ScroogeLoot")
+        db = addon:Getdb()
+        active = true
+        moreInfo = db.modules["SLVotingFrame"].moreInfo
+        self.frame = self:GetFrame()
+        if self.frame.st and self.frame.st.frame then
+            self.frame.st.frame:Hide()
+        end
+        if not addon.VotingTable then
+            addon.VotingTable = ST:CreateST(votingCols, NUM_ROWS, ROW_HEIGHT, nil, self.frame)
+            addon.VotingTable.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 15, -20)
+        else
+            addon.VotingTable.frame:SetParent(self.frame)
+            addon.VotingTable.frame:Show()
+        end
 end
 
 function SLVotingFrame:OnDisable() -- We never really call this
-	self:Hide()
-	self.frame:SetParent(nil)
-	self.frame = nil
-	wipe(lootTable)
-	active = false
-	session = 1
-	self:UnregisterAllComm()
+        self:Hide()
+        if addon.VotingTable then
+            addon.VotingTable.frame:Hide()
+        end
+        self.frame:SetParent(nil)
+        self.frame = nil
+        wipe(lootTable)
+        active = false
+        session = 1
+        self:UnregisterAllComm()
 end
 
 function SLVotingFrame:Hide()
@@ -460,6 +489,29 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     st.data = st.data or {}
     table.insert(st.data, row)
     st:SortData()
+end
+
+-- Insert a row into the simplified voting table based on PlayerDB data
+function addon:AddVotingRow(data)
+    if not addon.VotingTable then return end
+
+    local p = PlayerDB and PlayerDB[data.name] or {}
+
+    local row = {
+        cols = {
+            { value = p.name or data.name },
+            { value = p.raiderrank and "Y" or "" },
+            { value = data.response },
+            { value = data.roll },
+            { value = data.sp or p.SP or 0 },
+            { value = data.dp or p.DP or 0 },
+            { value = data.adjusted, tooltip = data.tooltip },
+        }
+    }
+
+    local current = addon.VotingTable:GetData() or {}
+    table.insert(current, row)
+    addon.VotingTable:SetData(current)
 end
 
 function SLVotingFrame:UpdateMoreInfo(row, data)

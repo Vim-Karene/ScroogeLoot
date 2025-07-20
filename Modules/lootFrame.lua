@@ -67,6 +67,39 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
     end
 end
 
+-- Broadcast a player's roll choice to the raid with SP/DP adjustments.
+function addon:SendRollResponse(responseType, itemName)
+    local player = UnitName("player")
+    local data = PlayerDB and PlayerDB[player]
+    if not data then
+        print("You are not registered in PlayerDB.")
+        return
+    end
+
+    local baseRoll = math.random(1, 100)
+    local sp = data.SP or 0
+    local dp = data.DP or 0
+    local adjusted = baseRoll
+    local tooltip = ""
+
+    if responseType == "Scrooge" then
+        adjusted = baseRoll + sp
+        tooltip = string.format("Base %d + SP(%d) = %d", baseRoll, sp, adjusted)
+    elseif responseType == "Deducktion" or responseType == "Main-Spec" or responseType == "Off-Spec" then
+        adjusted = baseRoll - dp
+        tooltip = string.format("Base %d - DP(%d) = %d", baseRoll, dp, adjusted)
+    else
+        tooltip = string.format("Base %d = %d", baseRoll, adjusted)
+    end
+
+    local msg = string.format("ROLL:%s:%s:%d:%d:%d:%d:%s", player, responseType, baseRoll, adjusted, sp, dp, tooltip)
+    if C_ChatInfo and C_ChatInfo.SendAddonMessage then
+        C_ChatInfo.SendAddonMessage("ScroogeLoot", msg, "RAID")
+    else
+        SendAddonMessage("ScroogeLoot", msg, "RAID")
+    end
+end
+
 function LootFrame:Start(table)
 	addon:DebugLog("LootFrame:Start()")
 	for k = 1, #table do
@@ -234,13 +267,7 @@ function LootFrame:OnRoll(entry, button)
        addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
        local index = entries[entry].realID
 
-       local rollType
-       if button == 1 then
-               rollType = "SP"
-       elseif button == 3 or button == 4 or button == 5 then
-               rollType = "DP"
-       end
-       OnRollOptionClick(UnitName("player"), rollType, items[index].session)
+       addon:SendRollResponse(addon:GetResponseText(button))
 
        numRolled = numRolled + 1
        items[index].rolled = true
@@ -350,17 +377,25 @@ end
 
 -- Note button
 LibDialog:Register("LOOTFRAME_NOTE", {
-	text = L["Enter your note:"],
-	editboxes = {
-		{
-			on_enter_pressed = function(self, entry)
-				items[entries[entry].realID].note = self:GetText()
-				LibDialog:Dismiss("LOOTFRAME_NOTE")
-			end,
-			on_escape_pressed = function(self)
-				LibDialog:Dismiss("LOOTFRAME_NOTE")
-			end,
-			auto_focus = true,
-		}
-	},
+        text = L["Enter your note:"],
+        editboxes = {
+                {
+                        on_enter_pressed = function(self, entry)
+                                items[entries[entry].realID].note = self:GetText()
+                                LibDialog:Dismiss("LOOTFRAME_NOTE")
+                        end,
+                        on_escape_pressed = function(self)
+                                LibDialog:Dismiss("LOOTFRAME_NOTE")
+                        end,
+                        auto_focus = true,
+                }
+        },
 })
+
+-- Optional direct button hooks if standalone buttons exist
+if button1 then button1:SetScript("OnClick", function() addon:SendRollResponse("Scrooge") end) end
+if button2 then button2:SetScript("OnClick", function() addon:SendRollResponse("Drool") end) end
+if button3 then button3:SetScript("OnClick", function() addon:SendRollResponse("Deducktion") end) end
+if button4 then button4:SetScript("OnClick", function() addon:SendRollResponse("Main-Spec") end) end
+if button5 then button5:SetScript("OnClick", function() addon:SendRollResponse("Off-Spec") end) end
+if button6 then button6:SetScript("OnClick", function() addon:SendRollResponse("Transmog") end) end
