@@ -26,6 +26,74 @@ local ENTRY_HEIGHT = 75
 local MAX_ENTRIES = 5
 local numRolled = 0
 
+local ITEM_SLOT_MAP = {
+    ["INVTYPE_HEAD"]           = {1},
+    ["INVTYPE_NECK"]           = {2},
+    ["INVTYPE_SHOULDER"]       = {3},
+    ["INVTYPE_CLOAK"]          = {15},
+    ["INVTYPE_CHEST"]          = {5},
+    ["INVTYPE_ROBE"]           = {5},
+    ["INVTYPE_BODY"]           = {4},
+    ["INVTYPE_TABARD"]         = {19},
+    ["INVTYPE_WRIST"]          = {9},
+    ["INVTYPE_HAND"]           = {10},
+    ["INVTYPE_WAIST"]          = {6},
+    ["INVTYPE_LEGS"]           = {7},
+    ["INVTYPE_FEET"]           = {8},
+    ["INVTYPE_FINGER"]         = {11, 12},
+    ["INVTYPE_TRINKET"]        = {13, 14},
+
+    ["INVTYPE_WEAPON"]         = {16, 17},
+    ["INVTYPE_2HWEAPON"]       = {16},
+    ["INVTYPE_WEAPONMAINHAND"] = {16},
+    ["INVTYPE_WEAPONOFFHAND"]  = {17},
+    ["INVTYPE_HOLDABLE"]       = {17},
+    ["INVTYPE_SHIELD"]         = {17},
+    ["INVTYPE_RANGED"]         = {18},
+    ["INVTYPE_THROWN"]         = {18},
+    ["INVTYPE_RANGEDRIGHT"]    = {18},
+    ["INVTYPE_RELIC"]          = {18},
+}
+
+local function GetEquippedItemsForSlotType(invType)
+    local slots = ITEM_SLOT_MAP[invType] or {}
+    local equipped = {}
+    for _, slot in ipairs(slots) do
+        local link = GetInventoryItemLink("player", slot)
+        table.insert(equipped, link or "")
+    end
+    return equipped[1] or "", equipped[2] or ""
+end
+
+function addon:SendRollResponse(responseType, itemLink)
+    local player = UnitName("player")
+    local data = PlayerDB and PlayerDB[player]
+    if not data then
+        print("You are not registered in PlayerDB.")
+        return
+    end
+
+    local roll = math.random(1, 100)
+    local sp, dp = data.SP or 0, data.DP or 0
+    local adjusted = roll
+
+    if responseType == "Scrooge" then
+        adjusted = roll + sp
+    elseif responseType == "Deducktion" or responseType == "Main-Spec" or responseType == "Off-Spec" then
+        adjusted = roll - dp
+    end
+
+    local invType = select(9, GetItemInfo(itemLink or "")) or "INVTYPE_CHEST"
+    local item1, item2 = GetEquippedItemsForSlotType(invType)
+
+    local msg = string.format("ROLL:%s:%s:%d:%d:%d:%d:%s:%s", player, responseType, roll, adjusted, sp, dp, item1, item2)
+    if C_ChatInfo and C_ChatInfo.SendAddonMessage then
+        C_ChatInfo.SendAddonMessage("ScroogeLoot", msg, "RAID")
+    else
+        SendAddonMessage("ScroogeLoot", msg, "RAID")
+    end
+end
+
 -- Simple placeholder helper checks
 local function PlayerHasItemToken(p, item) return true end
 local function PlayerGotItem(p, item) return false end
@@ -231,16 +299,17 @@ function LootFrame:Update()
 end
 
 function LootFrame:OnRoll(entry, button)
-       addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
+       addon:Debug("LootFrame:OnRoll", entry, button)
        local index = entries[entry].realID
 
-       local rollType
-       if button == 1 then
-               rollType = "SP"
-       elseif button == 3 or button == 4 or button == 5 then
-               rollType = "DP"
+       local responseType
+       if button == "PASS" then
+               responseType = "PASS"
+       else
+               responseType = ROLL_BUTTONS[button] and ROLL_BUTTONS[button].name or tostring(button)
        end
-       OnRollOptionClick(UnitName("player"), rollType, items[index].session)
+
+       addon:SendRollResponse(responseType, items[index].link)
 
        numRolled = numRolled + 1
        items[index].rolled = true

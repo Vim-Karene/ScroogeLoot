@@ -32,8 +32,17 @@ local function OnAddonMessage(prefix, msg, channel, sender)
     if prefix ~= "ScroogeLoot" then return end
 
     if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, rollVal = strsplit(":", msg)
-        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
+        local cmd, name, response, roll, adjusted, sp, dp, item1, item2 = strsplit(":", msg)
+        addon:AddVotingRow({
+            name = name,
+            response = response,
+            roll = tonumber(roll),
+            adjusted = tonumber(adjusted),
+            sp = tonumber(sp),
+            dp = tonumber(dp),
+            item1 = item1,
+            item2 = item2
+        })
     end
 end
 
@@ -113,20 +122,15 @@ local function HandleRollChoice(sessionID, playerName, rollType)
 end
 
 function SLVotingFrame:OnInitialize()
-	self.scrollCols = {
-		{ name = "",															sortnext = 2,		width = 20},	-- 1 Class
-		{ name = L["Name"],														sortnext = 4,		width = 80},	-- 2 Candidate Name
-		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
-		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
-		{ name = L["Raider"],														sortnext = 6,		width = 60},	-- 5 Raider rank
-		{ name = L["Attendance"],														sortnext = 5,		width = 60},	-- 6 Attendance
-		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 1
-		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 8 Current gear 2
-		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 9 Number of votes
-		{ name = L["Vote"],			align = "CENTER",							sortnext = 4,		width = 60},	-- 10 Vote button
-		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 11 Note icon
-		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 12 Roll
-	}
+        self.scrollCols = {
+                { name = "Name",    width = 100 },
+                { name = "Class",   width = 80  },
+                { name = "Rank",    width = 50  },
+                { name = "Response",width = 100 },
+                { name = "Item1",   width = 150 },
+                { name = "Item2",   width = 150 },
+                { name = "Roll",    width = 80  },
+        }
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	filterMenu = CreateFrame("Frame", "ScroogeLoot_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	enchanters = CreateFrame("Frame", "ScroogeLoot_VotingFrame_EnchantersMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -435,7 +439,16 @@ function SLVotingFrame:SwitchSession(s)
 end
 
 function SLVotingFrame:BuildST()
-        -- Start with an empty table; rows will be added dynamically
+        local cols = {
+                { value = "", DoCellUpdate = self.SetCellName },
+                { value = "", DoCellUpdate = self.SetCellClass },
+                { value = "", DoCellUpdate = self.SetCellRaider },
+                { value = "", DoCellUpdate = self.SetCellResponse },
+                { value = "", DoCellUpdate = self.SetCellItem1 },
+                { value = "", DoCellUpdate = self.SetCellItem2 },
+                { value = "", DoCellUpdate = self.SetCellRoll },
+        }
+        self.frame.st:SetDisplayCols(cols)
         self.frame.st:SetData({})
 end
 
@@ -458,6 +471,33 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = rollValue }, { value = sp }, { value = dp }, { value = adjusted } } }
     local st = self.frame.st
     st.data = st.data or {}
+    table.insert(st.data, row)
+    st:SortData()
+end
+
+function addon:AddVotingRow(rowData)
+    if not SLVotingFrame.frame or not SLVotingFrame.frame.st then return end
+    local st = SLVotingFrame.frame.st
+    st.data = st.data or {}
+    local row = {
+        name = rowData.name,
+        response = rowData.response,
+        roll = rowData.roll,
+        adjusted = rowData.adjusted,
+        sp = rowData.sp,
+        dp = rowData.dp,
+        item1 = rowData.item1,
+        item2 = rowData.item2,
+        cols = {
+            { value = rowData.name or "" },
+            { value = "" },
+            { value = "" },
+            { value = rowData.response or "" },
+            { value = rowData.item1 or "" },
+            { value = rowData.item2 or "" },
+            { value = rowData.adjusted or rowData.roll or 0 },
+        }
+    }
     table.insert(st.data, row)
     st:SortData()
 end
@@ -964,18 +1004,51 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 end
 
 function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local info = lootTable[session].candidates[name].rollInfo or {}
-       frame.text:SetText(lootTable[session].candidates[name].roll)
-       frame:SetScript("OnEnter", function()
-               addon:CreateTooltip(
-                       "Base: "..tostring(info.base),
-                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
-                       "Final: "..tostring(info.final)
-               )
-       end)
-       frame:SetScript("OnLeave", addon.HideTooltip)
-       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+       local entry = data[realrow]
+       local db = PlayerDB and PlayerDB[entry.name]
+       if not db then frame.text:SetText("N/A") return end
+
+       local roll = entry.roll or math.random(1, 100)
+       local sp = db.SP or 0
+       local dp = db.DP or 0
+       local adjusted = roll
+
+       if entry.response == "Scrooge" then
+               adjusted = roll + sp
+       elseif entry.response == "Deducktion" or entry.response == "Main-Spec" or entry.response == "Off-Spec" then
+               adjusted = roll - dp
+       else
+               adjusted = roll
+       end
+
+       frame.text:SetText(adjusted)
+       data[realrow].cols[column].value = adjusted
+end
+
+function SLVotingFrame.SetCellName(_, frame, data, _, _, realrow)
+       frame.text:SetText(data[realrow].name or "")
+end
+
+function SLVotingFrame.SetCellClass(_, frame, data, _, _, realrow)
+       local db = PlayerDB and PlayerDB[data[realrow].name]
+       frame.text:SetText(db and db.class or "")
+end
+
+function SLVotingFrame.SetCellRaider(_, frame, data, _, _, realrow)
+       local db = PlayerDB and PlayerDB[data[realrow].name]
+       frame.text:SetText(db and db.raiderrank and "Y" or "")
+end
+
+function SLVotingFrame.SetCellResponse(_, frame, data, _, _, realrow)
+       frame.text:SetText(data[realrow].response or "")
+end
+
+function SLVotingFrame.SetCellItem1(_, frame, data, _, _, realrow)
+       frame.text:SetText(data[realrow].item1 or "")
+end
+
+function SLVotingFrame.SetCellItem2(_, frame, data, _, _, realrow)
+       frame.text:SetText(data[realrow].item2 or "")
 end
 
 function SLVotingFrame.filterFunc(table, row)
