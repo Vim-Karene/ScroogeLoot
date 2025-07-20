@@ -27,14 +27,40 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
--- Handle incoming addon messages
-local function OnAddonMessage(prefix, msg, channel, sender)
-    if prefix ~= "ScroogeLoot" then return end
+-- Simple data holder for voting table rows
+addon.VotingTable = addon.VotingTable or {
+data = {},
+GetData = function(self) return self.data end,
+SetData = function(self, d)
+self.data = d
+local vf = addon:GetModule("SLVotingFrame", true)
+if vf and vf.frame and vf.frame.st then
+vf.frame.st:SetData(d)
+end
+end,
+}
 
-    if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, rollVal = strsplit(":", msg)
-        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
-    end
+-- Handle incoming addon messages
+local function HandleRoll(msg)
+local _, name, response, item, roll, adj, sp, dp, tooltip = strsplit(":", msg)
+addon:AddVotingRow({
+name = name,
+response = response,
+item = item,
+roll = tonumber(roll),
+adjusted = tonumber(adj),
+sp = tonumber(sp),
+dp = tonumber(dp),
+tooltip = tooltip,
+})
+end
+
+local function OnAddonMessage(prefix, msg, channel, sender)
+if prefix ~= "ScroogeLoot" then return end
+
+if strsub(msg, 1, 5) == "ROLL:" then
+HandleRoll(msg)
+end
 end
 
 ChatFrame_AddMessageEventFilter("CHAT_MSG_ADDON", function(_, ...)
@@ -460,6 +486,24 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     st.data = st.data or {}
     table.insert(st.data, row)
     st:SortData()
+end
+
+function addon:AddVotingRow(data)
+local row = {
+cols = {
+{ value = data.name, tooltip = data.tooltip },
+{ value = data.response },
+{ value = data.item },
+{ value = data.roll },
+{ value = data.sp },
+{ value = data.dp },
+{ value = data.adjusted },
+}
+}
+
+local current = addon.VotingTable:GetData()
+table.insert(current, row)
+addon.VotingTable:SetData(current)
 end
 
 function SLVotingFrame:UpdateMoreInfo(row, data)

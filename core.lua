@@ -1702,6 +1702,47 @@ function ScroogeLoot:ShowCandidates(candidateList)
     vf.frame.st:SetData(rows)
 end
 
+-- Send a roll choice to the raid with adjusted values
+function ScroogeLoot:SendRoll(responseType, itemName)
+	local name = UnitName("player")
+	local data = PlayerData and PlayerData[name]
+	if not data then print("No PlayerDB for", name) return end
+	
+	if responseType == "scrooge" or responseType == "drool" then
+	if not data.raiderrank then print("Not a raider") return end
+	local found = false
+	for i = 1, 3 do
+	local item = data["item" .. i]
+	local received = data["item" .. i .. "received"]
+	if item == itemName and not received then found = true end
+	end
+	if not found then print("Item not in item slots or already received") return end
+	elseif responseType == "deducktion" or responseType == "mainspec" or responseType == "offspec" then
+	if not data.raiderrank then print("Not a raider") return end
+	-- Add "canUseItem" check here if needed
+	end
+	
+	local roll = math.random(1, 100)
+	local adjusted = roll
+	local sp, dp = data.SP or 0, data.DP or 0
+	local tooltip = string.format("Roll: %d", roll)
+	
+	if responseType == "scrooge" then
+	adjusted = roll + sp
+	tooltip = tooltip .. string.format(" + SP(%d) = %d", sp, adjusted)
+	elseif responseType == "deducktion" or responseType == "mainspec" or responseType == "offspec" then
+	adjusted = roll - dp
+	tooltip = tooltip .. string.format(" - DP(%d) = %d", dp, adjusted)
+	end
+	
+		local msg = string.format("ROLL:%s:%s:%s:%d:%d:%d:%d:%s", name, responseType, itemName, roll, adjusted, sp, dp, tooltip)
+		if C_ChatInfo and C_ChatInfo.SendAddonMessage then
+		C_ChatInfo.SendAddonMessage("ScroogeLoot", msg, "RAID")
+		else
+		SendAddonMessage("ScroogeLoot", msg, "RAID")
+	end
+	end
+
 --#end UI Functions -----------------------------------------------------
 --@debug@
 -- debug func

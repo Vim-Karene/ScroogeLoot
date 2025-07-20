@@ -234,14 +234,6 @@ function LootFrame:OnRoll(entry, button)
        addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
        local index = entries[entry].realID
 
-       local rollType
-       if button == 1 then
-               rollType = "SP"
-       elseif button == 3 or button == 4 or button == 5 then
-               rollType = "DP"
-       end
-       OnRollOptionClick(UnitName("player"), rollType, items[index].session)
-
        numRolled = numRolled + 1
        items[index].rolled = true
        self:Update()
@@ -294,17 +286,21 @@ function LootFrame:GetEntry(entry)
 
 	-------- Buttons -------------
 	f.buttons = {}
-	for i = 1, addon.mldb.numButtons do
-		f.buttons[i] = addon:CreateButton(addon:GetButtonText(i), f)
-		if i == 1 then
-			f.buttons[i]:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 5, 0)
-		else
-			f.buttons[i]:SetPoint("LEFT", f.buttons[i-1], "RIGHT", 5, 0)
-		end
+       for i = 1, addon.mldb.numButtons do
+               f.buttons[i] = addon:CreateButton(addon:GetButtonText(i), f)
+               if i == 1 then
+                       f.buttons[i]:SetPoint("BOTTOMLEFT", icon, "BOTTOMRIGHT", 5, 0)
+               else
+                       f.buttons[i]:SetPoint("LEFT", f.buttons[i-1], "RIGHT", 5, 0)
+               end
                f.buttons[i]:SetScript("OnClick", function()
+                       local idx = entries[entry].realID
+                       local itemName = items[idx] and items[idx].name
+                       local responses = {"scrooge", "drool", "deducktion", "mainspec", "offspec", "transmog"}
+                       addon:SendRoll(responses[i], itemName)
                        LootFrame:OnRoll(entry, i)
                end)
-	end
+       end
 	-- Pass button
 	f.buttons[addon.mldb.numButtons + 1] = addon:CreateButton(L["Pass"], f)
 	f.buttons[addon.mldb.numButtons + 1]:SetPoint("LEFT", f.buttons[addon.mldb.numButtons], "RIGHT", 5, 0)
