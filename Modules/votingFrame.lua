@@ -28,9 +28,11 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
+-- Columns for the lightweight voting table. These map directly to the
+-- fields provided by AddVotingRow below. The "Class" column was removed to
+-- simplify the display.
 local votingCols = {
     { name = "Name",      width = 100 },
-    { name = "Class",     width = 80  },
     { name = "Rank",      width = 80  },
     { name = "Roll Type", width = 90  },
     { name = "Raw Roll",  width = 70  },
@@ -507,10 +509,11 @@ function addon:AddVotingRow(data)
 
     local p = PlayerDB and PlayerDB[data.name] or {}
 
+    -- Always show the stored player name if available. If the entry doesn't
+    -- exist yet, fall back to the provided name.
     local row = {
         cols = {
-            { value = p.name or "?" },
-            { value = p.class or "?" },
+            { value = p.name or data.name or "?" },
             { value = p.raiderrank and "Raider" or "Non-Raider" },
             { value = data.response },
             { value = data.roll },
