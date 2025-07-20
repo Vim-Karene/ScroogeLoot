@@ -113,20 +113,12 @@ local function HandleRollChoice(sessionID, playerName, rollType)
 end
 
 function SLVotingFrame:OnInitialize()
-	self.scrollCols = {
-		{ name = "",															sortnext = 2,		width = 20},	-- 1 Class
-		{ name = L["Name"],														sortnext = 4,		width = 80},	-- 2 Candidate Name
-		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
-		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
-		{ name = L["Raider"],														sortnext = 6,		width = 60},	-- 5 Raider rank
-		{ name = L["Attendance"],														sortnext = 5,		width = 60},	-- 6 Attendance
-		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 1
-		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 8 Current gear 2
-		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 9 Number of votes
-		{ name = L["Vote"],			align = "CENTER",							sortnext = 4,		width = 60},	-- 10 Vote button
-		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 11 Note icon
-		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 12 Roll
-	}
+        self.scrollCols = {
+            { name = L["Name"],     width = 120 }, -- 1: Name
+            { name = L["Rank"],     width = 60  }, -- 2: Raider rank
+            { name = L["Response"], width = 160 }, -- 3: Response
+            { name = L["Roll"],     width = 60  }, -- 4: Roll
+        }
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	filterMenu = CreateFrame("Frame", "ScroogeLoot_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	enchanters = CreateFrame("Frame", "ScroogeLoot_VotingFrame_EnchantersMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -435,8 +427,21 @@ function SLVotingFrame:SwitchSession(s)
 end
 
 function SLVotingFrame:BuildST()
-        -- Start with an empty table; rows will be added dynamically
-        self.frame.st:SetData({})
+        local rows = {}
+        if lootTable[session] and lootTable[session].candidates then
+                for name in pairs(lootTable[session].candidates) do
+                        table.insert(rows, {
+                                name = name,
+                                cols = {
+                                        { value = "", DoCellUpdate = self.SetCellName },
+                                        { value = "", DoCellUpdate = self.SetCellRaider },
+                                        { value = "", DoCellUpdate = self.SetCellResponse },
+                                        { value = "", DoCellUpdate = self.SetCellRoll },
+                                }
+                        })
+                end
+        end
+        self.frame.st:SetData(rows)
 end
 
 -- Add a new row to the voting table using roll information
@@ -446,16 +451,16 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
         print("No PlayerDB entry for", name)
         return
     end
-    local sp = data.SP or 0
-    local dp = data.DP or 0
-    local adjusted = rollValue
-    if rollType == "sp" then
-        adjusted = adjusted + sp
-    elseif rollType == "dp" then
-        adjusted = adjusted - dp
-    end
     if not self.frame or not self.frame.st then return end
-    local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = rollValue }, { value = sp }, { value = dp }, { value = adjusted } } }
+    local row = {
+        name = name,
+        cols = {
+            { value = "", DoCellUpdate = self.SetCellName },
+            { value = "", DoCellUpdate = self.SetCellRaider },
+            { value = "", DoCellUpdate = self.SetCellResponse },
+            { value = "", DoCellUpdate = self.SetCellRoll },
+        },
+    }
     local st = self.frame.st
     st.data = st.data or {}
     table.insert(st.data, row)
@@ -845,7 +850,7 @@ function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, 
        local name = data[realrow].name
        local db = PlayerDB and PlayerDB[name]
        local val = db and db.raiderrank
-       frame.text:SetText(RaiderText(val))
+       frame.text:SetText(val and "Y" or "")
        data[realrow].cols[column].value = val and 1 or 0
 end
 
