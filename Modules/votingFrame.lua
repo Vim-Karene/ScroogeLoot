@@ -43,17 +43,17 @@ local votingCols = {
 local function OnAddonMessage(prefix, msg, channel, sender)
     if prefix ~= "ScroogeLoot" then return end
 
-    local cmd, name, response, roll, adjusted, sp, dp, tooltip = strsplit(":", msg)
-    if cmd == "ROLL" then
-        addon:AddVotingRow({
-            name = name,
-            response = response,
-            roll = tonumber(roll),
-            adjusted = tonumber(adjusted),
-            sp = tonumber(sp),
-            dp = tonumber(dp),
-            tooltip = tooltip,
-        })
+	local cmd, name, response, roll, adjusted, sp, dp, tooltip = strsplit(":", msg)
+	if cmd == "ROLL" then
+		addon:AddVotingRow({
+		name = name,
+		response = response,
+		roll = tonumber(roll),
+		adjusted = tonumber(adjusted),
+		sp = tonumber(sp),
+		dp = tonumber(dp),
+		tooltip = tooltip,
+		})
     end
 end
 
@@ -156,24 +156,24 @@ function SLVotingFrame:OnInitialize()
 end
 
 function SLVotingFrame:OnEnable()
-        self:RegisterComm("ScroogeLoot")
-        db = addon:Getdb()
-        active = true
-        moreInfo = db.modules["SLVotingFrame"].moreInfo
-        self.frame = self:GetFrame()
+	self:RegisterComm("ScroogeLoot")
+	db = addon:Getdb()
+	active = true
+	moreInfo = db.modules["SLVotingFrame"].moreInfo
+	self.frame = self:GetFrame()
 
-        -- hide the original scrolling table
-        if self.frame.st and self.frame.st.frame then
-            self.frame.st.frame:Hide()
-        end
+	-- hide the original scrolling table
+	if self.frame.st and self.frame.st.frame then
+	    self.frame.st.frame:Hide()
+	end
 
-        if not addon.VotingTable then
-            addon.VotingTable = ST:CreateST(votingCols, NUM_ROWS, ROW_HEIGHT, nil, self.frame)
-            addon.VotingTable.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 15, -20)
-        else
-            addon.VotingTable.frame:SetParent(self.frame)
-            addon.VotingTable.frame:Show()
-        end
+	if not addon.VotingTable then
+	    addon.VotingTable = ST:CreateST(votingCols, NUM_ROWS, ROW_HEIGHT, nil, self.frame)
+	    addon.VotingTable.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 15, -20)
+	else
+	    addon.VotingTable.frame:SetParent(self.frame)
+	    addon.VotingTable.frame:Show()
+	end
 end
 
 function SLVotingFrame:OnDisable() -- We never really call this
@@ -495,35 +495,35 @@ end
 
 -- Simple helper used by the lightweight voting table
 function addon:AddVotingRow(data)
-    local p = PlayerDB and PlayerDB[data.name] or {}
+	local p = PlayerDB and PlayerDB[data.name] or {}
 
-    local row = {
-        cols = {
-            { value = p.name or data.name },
-            { value = p.raiderrank and "Y" or "" },
-            { value = data.response },
-            { value = data.roll },
-            { value = data.sp or 0 },
-            { value = data.dp or 0 },
-            { value = data.adjusted, tooltip = data.tooltip or "" },
-        }
-    }
+	local row = {
+	    cols = {
+	        { value = p.name or data.name },
+		{ value = p.raiderrank and "Y" or "" },
+		{ value = data.response },
+		{ value = data.roll },
+		{ value = data.sp or 0 },
+		{ value = data.dp or 0 },
+		{ value = data.adjusted, tooltip = data.tooltip or "" },
+		}
+		}
 
-    if addon.VotingTable then
-        local current = addon.VotingTable:GetData() or {}
-        table.insert(current, row)
-        addon.VotingTable:SetData(current)
-    end
+		if addon.VotingTable then
+		local current = addon.VotingTable:GetData() or {}
+		table.insert(current, row)
+		addon.VotingTable:SetData(current)
+		end
 end
 
 -- Add a new row to the voting table using roll information
 function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
-    local data = PlayerDB and PlayerDB[name]
-    if not data then
-        print("No PlayerDB entry for", name)
-        return
-    end
-    local sp = data.SP or 0
+	local data = PlayerDB and PlayerDB[name]
+	if not data then
+	    print("No PlayerDB entry for", name)
+	    return
+	end
+	local sp = data.SP or 0
     local dp = data.DP or 0
     local baseRoll = math.random(1, 100)
     local adjusted = baseRoll

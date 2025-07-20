@@ -34,36 +34,36 @@ local function CanEquipItem(name, item) return true end
 -- Send the chosen roll option to the master looter. When executed by the master
 -- it will also generate and broadcast the roll result to the voting frame.
 local function OnRollOptionClick(playerName, responseName, sessionID)
-    addon:SendRoll(responseName, sessionID)
-    if addon.ShowCandidates then
-        addon:ShowCandidates({playerName})
-    end
+	addon:SendRoll(responseName, sessionID)
+	if addon.ShowCandidates then
+	    addon:ShowCandidates({playerName})
+	end
 end
 
 -- Broadcast a roll result to the raid
 function addon:SendRoll(responseType, itemName)
-    local name = UnitName("player")
-    local data = PlayerDB and PlayerDB[name]
-    if not data then
-        print("No PlayerDB for", name)
-        return
-    end
+	local name = UnitName("player")
+	local data = PlayerDB and PlayerDB[name]
+	if not data then
+	    print("No PlayerDB for", name)
+	    return
+	end
 
-    local baseRoll = math.random(1, 100)
-    local sp = data.SP or 0
-    local dp = data.DP or 0
-    local adjusted = baseRoll
+	local baseRoll = math.random(1, 100)
+	local sp = data.SP or 0
+	local dp = data.DP or 0
+	local adjusted = baseRoll
 
-    if responseType == "Scrooge" then
-        adjusted = baseRoll + sp
-    elseif responseType == "Deducktion" or responseType == "Main-Spec" or responseType == "Off-Spec" then
-        adjusted = baseRoll - dp
-    end
+	if responseType == "Scrooge" then
+	    adjusted = baseRoll + sp
+	elseif responseType == "Deducktion" or responseType == "Main-Spec" or responseType == "Off-Spec" then
+	    adjusted = baseRoll - dp
+	end
 
-    local tooltip = string.format("Roll: %d \226\134\146 Adjusted: %d", baseRoll, adjusted)
-    local msg = string.format("ROLL:%s:%s:%d:%d:%d:%d:%s", name, responseType, baseRoll, adjusted, sp, dp, tooltip)
+	local tooltip = string.format("Roll: %d \226\134\146 Adjusted: %d", baseRoll, adjusted)
+	local msg = string.format("ROLL:%s:%s:%d:%d:%d:%d:%s", name, responseType, baseRoll, adjusted, sp, dp, tooltip)
 
-    if C_ChatInfo and C_ChatInfo.SendAddonMessage then
+	if C_ChatInfo and C_ChatInfo.SendAddonMessage then
         C_ChatInfo.SendAddonMessage("ScroogeLoot", msg, "RAID")
     else
         SendAddonMessage("ScroogeLoot", msg, "RAID")
@@ -234,17 +234,17 @@ function LootFrame:Update()
 end
 
 function LootFrame:OnRoll(entry, button)
-       addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
-       local index = entries[entry].realID
+	addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
+	local index = entries[entry].realID
 
-       if button ~= "PASS" then
-               local responseName = addon:GetButtonText(button)
-               OnRollOptionClick(UnitName("player"), responseName, items[index].session)
-       end
+	if button ~= "PASS" then
+		local responseName = addon:GetButtonText(button)
+		OnRollOptionClick(UnitName("player"), responseName, items[index].session)
+		end
 
-       numRolled = numRolled + 1
-       items[index].rolled = true
-       self:Update()
+	numRolled = numRolled + 1
+	items[index].rolled = true
+	self:Update()
 end
 
 function LootFrame:GetFrame()
