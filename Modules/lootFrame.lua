@@ -47,21 +47,33 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
         return
     end
 
-    local rollValue = math.random(1, 100)
+    local baseRoll = math.random(1, 100)
+    local sp = data.SP or 0
+    local dp = data.DP or 0
+    local adjustedRoll = baseRoll
+
+    if rollType == "sp" then
+        adjustedRoll = adjustedRoll + sp
+    elseif rollType == "dp" then
+        adjustedRoll = adjustedRoll - dp
+    end
 
     local payload = string.format(
-        "ROLL:%s:%s:%d",
+        "ROLL:%s:%s:%d:%d:%d:%d:%d",
         playerName,
-        rollType:lower(),
-        rollValue
+        rollType,
+        baseRoll,
+        adjustedRoll,
+        sp,
+        dp
     )
+
     if C_ChatInfo and C_ChatInfo.SendAddonMessage then
         C_ChatInfo.SendAddonMessage("ScroogeLoot", payload, "RAID")
     else
         SendAddonMessage("ScroogeLoot", payload, "RAID")
     end
 
-    -- Update voting frame with this player if possible
     if addon.ShowCandidates then
         addon:ShowCandidates({playerName})
     end

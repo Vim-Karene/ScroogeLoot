@@ -32,8 +32,8 @@ local function OnAddonMessage(prefix, msg, channel, sender)
     if prefix ~= "ScroogeLoot" then return end
 
     if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, rollVal = strsplit(":", msg)
-        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
+        local _, name, response, raw, adj, sp, dp = strsplit(":", msg)
+        SLVotingFrame:AddVotingRowFromPlayer(name, response, tonumber(raw), tonumber(adj), tonumber(sp), tonumber(dp))
     end
 end
 
@@ -440,22 +440,22 @@ function SLVotingFrame:BuildST()
 end
 
 -- Add a new row to the voting table using roll information
-function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
-    local data = PlayerDB and PlayerDB[name]
-    if not data then
-        print("No PlayerDB entry for", name)
-        return
-    end
-    local sp = data.SP or 0
-    local dp = data.DP or 0
-    local adjusted = rollValue
-    if rollType == "sp" then
-        adjusted = adjusted + sp
-    elseif rollType == "dp" then
-        adjusted = adjusted - dp
-    end
+function SLVotingFrame:AddVotingRowFromPlayer(name, response, rawRoll, adjRoll, sp, dp)
+    local data = PlayerDB and PlayerDB[name] or {}
     if not self.frame or not self.frame.st then return end
-    local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = rollValue }, { value = sp }, { value = dp }, { value = adjusted } } }
+
+    local row = {
+        cols = {
+            { value = name },
+            { value = data.class or "" },
+            { value = response },
+            { value = rawRoll },
+            { value = sp or 0 },
+            { value = dp or 0 },
+            { value = adjRoll },
+        }
+    }
+
     local st = self.frame.st
     st.data = st.data or {}
     table.insert(st.data, row)
