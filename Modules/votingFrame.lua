@@ -32,13 +32,12 @@ local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 -- fields provided by AddVotingRow below. The "Class" column was removed to
 -- simplify the display.
 local votingCols = {
-    { name = "Name",      width = 100 },
-    { name = "Rank",      width = 80  },
-    { name = "Roll Type", width = 90  },
-    { name = "Raw Roll",  width = 70  },
-    { name = "SP",        width = 40  },
-    { name = "DP",        width = 40  },
-    { name = "Adjusted",  width = 70  },
+    { name = "Name",     width = 100 },
+    { name = "Rank",     width = 80  },
+    { name = "Response", width = 100 },
+    { name = "Item 1",   width = 140 },
+    { name = "Item 2",   width = 140 },
+    { name = "Roll",     width = 60  },
 }
 
 -- Handle incoming addon messages
@@ -46,8 +45,14 @@ local function OnAddonMessage(prefix, msg, channel, sender)
     if prefix ~= "ScroogeLoot" then return end
 
     if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, rollVal = strsplit(":", msg)
-        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
+        local _, name, response, item1, item2, rollVal = strsplit(":", msg)
+        addon:AddVotingRow({
+            name = name,
+            response = response,
+            item1 = item1,
+            item2 = item2,
+            roll = tonumber(rollVal),
+        })
     end
 end
 
@@ -63,17 +68,14 @@ addonMsgFrame:RegisterEvent("CHAT_MSG_ADDON")
 addonMsgFrame:SetScript("OnEvent", function(_, _, prefix, msg, _, sender)
     if prefix ~= "ScroogeLoot" then return end
 
-    local cmd, name, response, item, roll, adj, sp, dp, tooltip = strsplit(":", msg)
+    local cmd, name, response, item1, item2, rollVal = strsplit(":", msg)
     if cmd == "ROLL" then
         addon:AddVotingRow({
             name = name,
             response = response,
-            item = item,
-            roll = tonumber(roll),
-            adjusted = tonumber(adj),
-            sp = tonumber(sp),
-            dp = tonumber(dp),
-            tooltip = tooltip or "",
+            item1 = item1,
+            item2 = item2,
+            roll = tonumber(rollVal),
         })
     end
 end)
@@ -513,13 +515,12 @@ function addon:AddVotingRow(data)
     -- exist yet, fall back to the provided name.
     local row = {
         cols = {
-            { value = p.name or data.name or "?" },
-            { value = p.raiderrank and "Raider" or "Non-Raider" },
-            { value = data.response },
-            { value = data.roll },
-            { value = data.sp or p.SP or 0 },
-            { value = data.dp or p.DP or 0 },
-            { value = data.adjusted, tooltip = data.tooltip or "" },
+            { value = p.name or data.name or "?" },           -- Name
+            { value = p.raiderrank and "Raider" or "Non-Raider" }, -- Rank
+            { value = data.response },                         -- Response
+            { value = data.item1 or "" },                      -- Item 1
+            { value = data.item2 or "" },                      -- Item 2
+            { value = data.roll },                             -- Roll
         }
     }
 
