@@ -28,15 +28,15 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
--- Columns for the simple voting table
 local votingCols = {
-  { name = "Name", width = 100 },
-  { name = "Response", width = 90 },
-  { name = "Item", width = 140 },
-  { name = "Roll", width = 60 },
-  { name = "SP", width = 40 },
-  { name = "DP", width = 40 },
-  { name = "Adjusted", width = 80 },
+    { name = "Name",      width = 100 },
+    { name = "Class",     width = 80  },
+    { name = "Rank",      width = 80  },
+    { name = "Roll Type", width = 90  },
+    { name = "Raw Roll",  width = 70  },
+    { name = "SP",        width = 40  },
+    { name = "DP",        width = 40  },
+    { name = "Adjusted",  width = 70  },
 }
 
 -- Handle incoming addon messages
@@ -505,21 +505,24 @@ end
 function addon:AddVotingRow(data)
     if not addon.VotingTable then return end
 
+    local p = PlayerDB and PlayerDB[data.name] or {}
+
     local row = {
         cols = {
-            { value = data.name, tooltip = data.tooltip },
+            { value = p.name or "?" },
+            { value = p.class or "?" },
+            { value = p.raiderrank and "Raider" or "Non-Raider" },
             { value = data.response },
-            { value = data.item },
             { value = data.roll },
-            { value = data.sp },
-            { value = data.dp },
-            { value = data.adjusted },
+            { value = data.sp or p.SP or 0 },
+            { value = data.dp or p.DP or 0 },
+            { value = data.adjusted, tooltip = data.tooltip or "" },
         }
     }
 
-    local rows = addon.VotingTable:GetData() or {}
-    table.insert(rows, row)
-    addon.VotingTable:SetData(rows)
+    local current = addon.VotingTable:GetData() or {}
+    table.insert(current, row)
+    addon.VotingTable:SetData(current)
 end
 
 function SLVotingFrame:UpdateMoreInfo(row, data)
