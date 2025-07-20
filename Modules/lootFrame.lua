@@ -60,6 +60,11 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
     else
         SendAddonMessage("ScroogeLoot", payload, "RAID")
     end
+
+    -- Update voting frame with this player if possible
+    if addon.ShowCandidates then
+        addon:ShowCandidates({playerName})
+    end
 end
 
 function LootFrame:Start(table)

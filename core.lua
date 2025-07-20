@@ -1669,7 +1669,37 @@ function ScroogeLoot:GetResponseColorTable(response)
 end
 
 function ScroogeLoot:GetResponseSort(response)
-	return (self.mldb.responses and self.mldb.responses[response]) and self.mldb.responses[response].sort or db.responses[response].sort
+        return (self.mldb.responses and self.mldb.responses[response]) and self.mldb.responses[response].sort or db.responses[response].sort
+end
+
+--- Populate the VotingFrame's scrolling table with data from PlayerDB
+-- @param candidateList table of player names
+function ScroogeLoot:ShowCandidates(candidateList)
+    local vf = self:GetModule("SLVotingFrame", true)
+    if not vf or not vf.frame or not vf.frame.st then return end
+
+    local rows = {}
+    for _, playerName in ipairs(candidateList) do
+        local p = PlayerDB and PlayerDB[playerName]
+        if p then
+            table.insert(rows, {
+                name = playerName,
+                cols = {
+                    { value = p.name },
+                    { value = p.class },
+                    { value = p.SP },
+                    { value = p.DP },
+                    { value = p.item1 },
+                    { value = p.item2 },
+                    { value = p.item3 }
+                }
+            })
+        else
+            print("No PlayerData for", playerName)
+        end
+    end
+
+    vf.frame.st:SetData(rows)
 end
 
 --#end UI Functions -----------------------------------------------------
