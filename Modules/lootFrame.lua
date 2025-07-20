@@ -49,16 +49,10 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
 
     local rollValue = math.random(1, 100)
 
-    local itemLink = items[sessionID] and items[sessionID].link
-    local equipLoc = items[sessionID] and items[sessionID].equipLoc
-    local g1, g2 = addon:GetPlayersGear(itemLink, equipLoc)
-
     local payload = string.format(
-        "ROLL:%s:%s:%s:%s:%d",
+        "ROLL:%s:%s:%d",
         playerName,
         rollType:lower(),
-        g1 or "",
-        g2 or "",
         rollValue
     )
     if C_ChatInfo and C_ChatInfo.SendAddonMessage then
