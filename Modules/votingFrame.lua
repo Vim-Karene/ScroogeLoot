@@ -280,13 +280,31 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
                                 end
                                 guildRanks = addon:GetGuildRanks() -- Just update it on every session
 
-			elseif command == "response" then
-				local session, name, t = unpack(data)
-				for k,v in pairs(t) do
-					self:SetCandidateData(session, name, k, v)
-				end
-				self:Update()
-			end
+                       elseif command == "response" then
+                                local session, name, t = unpack(data)
+                                for k,v in pairs(t) do
+                                        self:SetCandidateData(session, name, k, v)
+                                end
+                                -- Generate a roll when a response is registered
+                                if t.response then
+                                        local base = math.random(1, 100)
+                                        local pd = PlayerDB and PlayerDB[name]
+                                        local roll = base
+                                        if t.response == 1 then
+                                                roll = roll + (pd and pd.SP or 0)
+                                        elseif t.response == 3 or t.response == 4 or t.response == 5 then
+                                                roll = roll - (pd and pd.DP or 0)
+                                        end
+                                        self:SetCandidateData(session, name, "roll", roll)
+                                        self:SetCandidateData(session, name, "rollInfo", {
+                                                base = base,
+                                                final = roll,
+                                                SP = pd and pd.SP,
+                                                DP = pd and pd.DP,
+                                        })
+                                end
+                                self:Update()
+                       end
 		end
 	end
 end
@@ -448,14 +466,15 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     end
     local sp = data.SP or 0
     local dp = data.DP or 0
-    local adjusted = rollValue
+    local baseRoll = math.random(1, 100)
+    local adjusted = baseRoll
     if rollType == "sp" then
         adjusted = adjusted + sp
     elseif rollType == "dp" then
         adjusted = adjusted - dp
     end
     if not self.frame or not self.frame.st then return end
-    local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = rollValue }, { value = sp }, { value = dp }, { value = adjusted } } }
+    local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = baseRoll }, { value = sp }, { value = dp }, { value = adjusted } } }
     local st = self.frame.st
     st.data = st.data or {}
     table.insert(st.data, row)
@@ -821,18 +840,22 @@ function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, c
 end
 
 function SLVotingFrame.SetCellName(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(name)
-	local c = addon:GetClassColor(lootTable[session].candidates[name].class)
-	frame.text:SetTextColor(c.r, c.g, c.b, c.a)
-	data[realrow].cols[column].value = name
+        local name = data[realrow].name
+        local dbEntry = PlayerDB and PlayerDB[name]
+        local displayName = (dbEntry and dbEntry.name) or name
+        frame.text:SetText(displayName)
+        local c = addon:GetClassColor(lootTable[session].candidates[name].class)
+        frame.text:SetTextColor(c.r, c.g, c.b, c.a)
+        data[realrow].cols[column].value = displayName
 end
 
 function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].rank)
-	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
-	data[realrow].cols[column].value = lootTable[session].candidates[name].rank
+        local name = data[realrow].name
+        local dbEntry = PlayerDB and PlayerDB[name]
+        local rankVal = dbEntry and dbEntry.raiderrank
+        frame.text:SetText(tostring(rankVal))
+        frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
+        data[realrow].cols[column].value = rankVal and 1 or 0
 end
 
 function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
