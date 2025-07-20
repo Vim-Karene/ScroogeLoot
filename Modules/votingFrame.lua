@@ -40,27 +40,7 @@ local votingCols = {
     { name = "Roll",     width = 60  },
 }
 
--- Handle incoming addon messages
-local function OnAddonMessage(prefix, msg, channel, sender)
-    if prefix ~= "ScroogeLoot" then return end
-
-    if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, response, item1, item2, rollVal = strsplit(":", msg)
-        addon:AddVotingRow({
-            name = name,
-            response = response,
-            item1 = item1,
-            item2 = item2,
-            roll = tonumber(rollVal),
-        })
-    end
-end
-
-ChatFrame_AddMessageEventFilter("CHAT_MSG_ADDON", function(_, ...)
-    local prefix, msg, channel, sender = ...
-    OnAddonMessage(prefix, msg, channel, sender)
-    return false
-end)
+-- Handle incoming roll messages and add rows to the lightweight table
 
 -- Listen for addon messages using a frame
 local addonMsgFrame = CreateFrame("Frame")
@@ -179,18 +159,26 @@ function SLVotingFrame:OnEnable()
         moreInfo = db.modules["SLVotingFrame"].moreInfo
         self.frame = self:GetFrame()
 
+        -- hide the original scrolling table to avoid duplicate columns
+        if self.frame.st and self.frame.st.frame then
+            self.frame.st.frame:Hide()
+        end
+
         -- create simple voting table if it doesn't exist
         if not addon.VotingTable then
-            addon.VotingTable = ST:CreateST(votingCols, 15, 20, nil, self.frame)
+            addon.VotingTable = ST:CreateST(votingCols, NUM_ROWS, ROW_HEIGHT, nil, self.frame)
             addon.VotingTable.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 15, -20)
         end
 end
 
 function SLVotingFrame:OnDisable() -- We never really call this
-	self:Hide()
-	self.frame:SetParent(nil)
-	self.frame = nil
-	wipe(lootTable)
+        self:Hide()
+        if addon.VotingTable then
+            addon.VotingTable.frame:Hide()
+        end
+        self.frame:SetParent(nil)
+        self.frame = nil
+        wipe(lootTable)
 	active = false
 	session = 1
 	self:UnregisterAllComm()
