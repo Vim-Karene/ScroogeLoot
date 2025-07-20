@@ -9,6 +9,7 @@ local SLVotingFrame = addon:NewModule("SLVotingFrame", "AceComm-3.0", "AceTimer-
 local LibDialog = LibStub("LibDialog-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
 local Deflate = LibStub("LibDeflate")
+local ST = LibStub("ScrollingTable")
 
 local ROW_HEIGHT = 20;
 local NUM_ROWS = 15;
@@ -27,6 +28,17 @@ local enchanters -- Enchanters drop down menu frame
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
+-- Columns for the simple voting table
+local votingCols = {
+  { name = "Name", width = 100 },
+  { name = "Response", width = 90 },
+  { name = "Item", width = 140 },
+  { name = "Roll", width = 60 },
+  { name = "SP", width = 40 },
+  { name = "DP", width = 40 },
+  { name = "Adjusted", width = 80 },
+}
+
 -- Handle incoming addon messages
 local function OnAddonMessage(prefix, msg, channel, sender)
     if prefix ~= "ScroogeLoot" then return end
@@ -41,6 +53,27 @@ ChatFrame_AddMessageEventFilter("CHAT_MSG_ADDON", function(_, ...)
     local prefix, msg, channel, sender = ...
     OnAddonMessage(prefix, msg, channel, sender)
     return false
+end)
+
+-- Listen for addon messages using a frame
+local addonMsgFrame = CreateFrame("Frame")
+addonMsgFrame:RegisterEvent("CHAT_MSG_ADDON")
+addonMsgFrame:SetScript("OnEvent", function(_, _, prefix, msg, _, sender)
+    if prefix ~= "ScroogeLoot" then return end
+
+    local cmd, name, response, item, roll, adj, sp, dp, tooltip = strsplit(":", msg)
+    if cmd == "ROLL" then
+        addon:AddVotingRow({
+            name = name,
+            response = response,
+            item = item,
+            roll = tonumber(roll),
+            adjusted = tonumber(adj),
+            sp = tonumber(sp),
+            dp = tonumber(dp),
+            tooltip = tooltip or "",
+        })
+    end
 end)
 
 -- Calculate a player's attendance percentage
@@ -136,11 +169,17 @@ function SLVotingFrame:OnInitialize()
 end
 
 function SLVotingFrame:OnEnable()
-	self:RegisterComm("ScroogeLoot")
-	db = addon:Getdb()
-	active = true
-	moreInfo = db.modules["SLVotingFrame"].moreInfo
-	self.frame = self:GetFrame()
+        self:RegisterComm("ScroogeLoot")
+        db = addon:Getdb()
+        active = true
+        moreInfo = db.modules["SLVotingFrame"].moreInfo
+        self.frame = self:GetFrame()
+
+        -- create simple voting table if it doesn't exist
+        if not addon.VotingTable then
+            addon.VotingTable = ST:CreateST(votingCols, 15, 20, nil, self.frame)
+            addon.VotingTable.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", 15, -20)
+        end
 end
 
 function SLVotingFrame:OnDisable() -- We never really call this
@@ -460,6 +499,27 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     st.data = st.data or {}
     table.insert(st.data, row)
     st:SortData()
+end
+
+-- Add a new row to the simplified voting table
+function addon:AddVotingRow(data)
+    if not addon.VotingTable then return end
+
+    local row = {
+        cols = {
+            { value = data.name, tooltip = data.tooltip },
+            { value = data.response },
+            { value = data.item },
+            { value = data.roll },
+            { value = data.sp },
+            { value = data.dp },
+            { value = data.adjusted },
+        }
+    }
+
+    local rows = addon.VotingTable:GetData() or {}
+    table.insert(rows, row)
+    addon.VotingTable:SetData(rows)
 end
 
 function SLVotingFrame:UpdateMoreInfo(row, data)
