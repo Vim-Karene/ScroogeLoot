@@ -471,7 +471,7 @@ end
 
 function SLVotingFrame:BuildST()
         -- Start with an empty table; rows will be added dynamically
-        self.frame.st:SetData({})
+        self.frame.st:SetData({}, true)
         SLVotingFrame.rows = {}
 end
 
@@ -481,8 +481,9 @@ function addon:AddVotingRow(entry)
     table.insert(SLVotingFrame.rows, entry)
 
     if SLVotingFrame.frame and SLVotingFrame.frame.st then
-        SLVotingFrame.frame.st:SetData(SLVotingFrame.rows)
+        SLVotingFrame.frame.st:SetData(SLVotingFrame.rows, true)
         SLVotingFrame.frame.st:SortData()
+        SLVotingFrame.frame.st:Refresh()
     end
 end
 
@@ -776,12 +777,19 @@ function SLVotingFrame:GetFrame()
 	local stgl = CreateFrame("Frame", nil, f.content)
 	stgl:SetWidth(40)
 	stgl:SetHeight(f:GetHeight())
-	stgl:SetPoint("TOPRIGHT", f, "TOPLEFT", -2, 0)
-	f.sessionToggleFrame = stgl
+        stgl:SetPoint("TOPRIGHT", f, "TOPLEFT", -2, 0)
+        f.sessionToggleFrame = stgl
 
-	-- Set a proper width
-	f:SetWidth(st.frame:GetWidth() + 20)
-	return f;
+        -- Set a proper width
+        f:SetWidth(st.frame:GetWidth() + 20)
+
+        f:SetScript("OnShow", function()
+            if f.st then
+                f.st:SetData(SLVotingFrame.rows or {}, true)
+                f.st:Refresh()
+            end
+        end)
+        return f;
 end
 
 function SLVotingFrame:UpdatePeopleToVote()
