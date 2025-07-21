@@ -281,8 +281,31 @@ function ScroogeLoot:OnEnable()
 	self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEvent")
 	self:RegisterEvent("PLAYER_REGEN_DISABLED", "EnterCombat")
 	self:RegisterEvent("PLAYER_REGEN_ENABLED", "LeaveCombat")
-	self:RegisterEvent("CHAT_MSG_SYSTEM", "CheckGuildUpdate")
-	--self:RegisterEvent("GROUP_ROSTER_UPDATE", "Debug", "event")
+        self:RegisterEvent("CHAT_MSG_SYSTEM", "CheckGuildUpdate")
+        --self:RegisterEvent("GROUP_ROSTER_UPDATE", "Debug", "event")
+
+        -- Listen for roll broadcasts
+        local rollFrame = CreateFrame("Frame")
+        rollFrame:RegisterEvent("CHAT_MSG_ADDON")
+        rollFrame:SetScript("OnEvent", function(_, event, prefix, msg, _, sender)
+                if prefix == "ScroogeLoot" then
+                        local cmd, name, rType, base, sp, dp = strsplit(":", msg)
+                        if cmd == "ROLL" then
+                                local final = tonumber(base)
+                                if rType == "Scrooge" then
+                                        final = final + tonumber(sp)
+                                elseif rType == "Deducktion" or rType == "Main-Spec" or rType == "Off-Spec" then
+                                        final = final - tonumber(dp)
+                                end
+                                local vf = self:GetModule("SLVotingFrame", true)
+                                if vf then
+                                        vf:SetCandidateData(nil, name, "response", rType)
+                                        vf:SetCandidateData(nil, name, "roll", final)
+                                        vf:Update()
+                                end
+                        end
+                end
+        end)
 
 	if IsInGuild() then
 		self.guildRank = select(2, GetGuildInfo("player"))

@@ -31,30 +31,33 @@ local function PlayerHasItemToken(p, item) return true end
 local function PlayerGotItem(p, item) return false end
 local function CanEquipItem(name, item) return true end
 
--- Send the chosen roll option to the master looter. When executed by the master
--- it will also generate and broadcast the roll result to the voting frame.
 local function OnRollOptionClick(playerName, rollType, sessionID)
-    local data = PlayerDB and PlayerDB[playerName]
-    if not data then
+    local db = PlayerDB and PlayerDB[playerName]
+    if not db then
         local _, class = UnitClass(playerName)
         if RegisterPlayer then
             RegisterPlayer(playerName, class)
         end
-        data = PlayerDB and PlayerDB[playerName]
+        db = PlayerDB and PlayerDB[playerName]
     end
-    if not data then
+    if not db then
         print("Player not found in PlayerDB:", playerName)
         return
     end
 
-    local rollValue = math.random(1, 100)
+    local baseRoll = math.random(1, 100)
+    local sp = db.SP or 0
+    local dp = db.DP or 0
 
     local payload = string.format(
-        "ROLL:%s:%s:%d",
+        "ROLL:%s:%s:%d:%d:%d",
         playerName,
-        rollType:lower(),
-        rollValue
+        rollType,
+        baseRoll,
+        sp,
+        dp
     )
+
     if C_ChatInfo and C_ChatInfo.SendAddonMessage then
         C_ChatInfo.SendAddonMessage("ScroogeLoot", payload, "RAID")
     else
@@ -234,11 +237,9 @@ function LootFrame:OnRoll(entry, button)
        addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
        local index = entries[entry].realID
 
-       local rollType
-       if button == 1 then
-               rollType = "SP"
-       elseif button == 3 or button == 4 or button == 5 then
-               rollType = "DP"
+       local rollType = ROLL_BUTTONS[button] and ROLL_BUTTONS[button].name
+       if button == "PASS" then
+               rollType = "PASS"
        end
        OnRollOptionClick(UnitName("player"), rollType, items[index].session)
 

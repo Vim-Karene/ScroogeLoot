@@ -32,8 +32,21 @@ local function OnAddonMessage(prefix, msg, channel, sender)
     if prefix ~= "ScroogeLoot" then return end
 
     if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, rollVal = strsplit(":", msg)
-        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
+        local _, name, rollType, base, sp, dp = strsplit(":", msg)
+        base = tonumber(base)
+        sp = tonumber(sp)
+        dp = tonumber(dp)
+        local final = base
+        if rollType == "Scrooge" then
+            final = base + sp
+        elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
+            final = base - dp
+        end
+        if SLVotingFrame then
+            SLVotingFrame:SetCandidateData(nil, name, "response", rollType)
+            SLVotingFrame:SetCandidateData(nil, name, "roll", final)
+            SLVotingFrame:Update()
+        end
     end
 end
 
@@ -291,21 +304,27 @@ end
 
 -- Getter/Setter for candidate data
 -- Handles errors
-function SLVotingFrame:SetCandidateData(session, candidate, data, val)
-	local function Set(session, candidate, data, val)
-		lootTable[session].candidates[candidate][data] = val
-	end
-	local ok, arg = pcall(Set, session, candidate, data, val)
-	if not ok then addon:Debug("Error in 'SetCandidateData':", arg, session, candidate, data, val) end
+function SLVotingFrame:SetCandidateData(sessionID, candidate, data, val)
+        local function Set(sessionID, candidate, data, val)
+                local ses = sessionID or session
+                if lootTable[ses] and lootTable[ses].candidates[candidate] then
+                        lootTable[ses].candidates[candidate][data] = val
+                end
+        end
+        local ok, arg = pcall(Set, sessionID, candidate, data, val)
+        if not ok then addon:Debug("Error in 'SetCandidateData':", arg, sessionID, candidate, data, val) end
 end
 
-function SLVotingFrame:GetCandidateData(session, candidate, data)
-	local function Get(session, candidate, data)
-		return lootTable[session].candidates[candidate][data]
-	end
-	local ok, arg = pcall(Get, session, candidate, data)
-	if not ok then addon:Debug("Error in 'GetCandidateData':", arg, session, candidate, data)
-	else return arg end
+function SLVotingFrame:GetCandidateData(sessionID, candidate, data)
+        local function Get(sessionID, candidate, data)
+                local ses = sessionID or session
+                if lootTable[ses] and lootTable[ses].candidates[candidate] then
+                        return lootTable[ses].candidates[candidate][data]
+                end
+        end
+        local ok, arg = pcall(Get, sessionID, candidate, data)
+        if not ok then addon:Debug("Error in 'GetCandidateData':", arg, sessionID, candidate, data)
+        else return arg end
 end
 
 function SLVotingFrame:Setup(table)
