@@ -68,9 +68,12 @@ local function UpdateVotingRow(playerName)
     if not st then return end
     for i, row in ipairs(st.data or {}) do
         if row.name == playerName then
-            row.cols[2].value = playerName
-            row.cols[3].value = data.raiderrank and 1 or 0
-            row.cols[6].value = attendance
+            row.cols[1].value = playerName
+            row.cols[2].value = data.raiderrank and 1 or 0
+            row.cols[4].value = attendance
+            row.cols[7].value = lootTable[session].candidates[playerName].roll
+            row.roll = lootTable[session].candidates[playerName].roll
+            row.rollInfo = lootTable[session].candidates[playerName].rollInfo
             st:Refresh()
             break
         end
@@ -113,20 +116,15 @@ local function HandleRollChoice(sessionID, playerName, rollType)
 end
 
 function SLVotingFrame:OnInitialize()
-	self.scrollCols = {
-		{ name = "",															sortnext = 2,		width = 20},	-- 1 Class
-		{ name = L["Name"],														sortnext = 4,		width = 80},	-- 2 Candidate Name
-		{ name = L["Rank"],		comparesort = GuildRankSort,					sortnext = 4,		width = 95},	-- 3 Guild rank
-		{ name = L["Response"],	comparesort = ResponseSort,						sortnext = 6,		width = 240},	-- 4 Response
-		{ name = L["Raider"],														sortnext = 6,		width = 60},	-- 5 Raider rank
-		{ name = L["Attendance"],														sortnext = 5,		width = 60},	-- 6 Attendance
-		{ name = L["g1"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 7 Current gear 1
-		{ name = L["g2"],			align = "CENTER",							sortnext = 5,		width = ROW_HEIGHT},	-- 8 Current gear 2
-		{ name = L["Votes"], 		align = "CENTER",												width = 40},	-- 9 Number of votes
-		{ name = L["Vote"],			align = "CENTER",							sortnext = 4,		width = 60},	-- 10 Vote button
-		{ name = L["Notes"],		align = "CENTER",												width = 40},	-- 11 Note icon
-		{ name = L["Roll"],			align = "CENTER", 							sortnext = 4,		width = 30},	-- 12 Roll
-	}
+        self.scrollCols = {
+                { name = "Name",       width = 100, DoCellUpdate = self.SetCellName },
+                { name = "Rank",       width = 50,  DoCellUpdate = self.SetCellRank },
+                { name = "Response",   width = 100, DoCellUpdate = self.SetCellResponse },
+                { name = "Attendance", width = 70,  DoCellUpdate = self.SetCellAttendance },
+                { name = "Gear 1",     width = 120, DoCellUpdate = self.SetCellGear1 },
+                { name = "Gear 2",     width = 120, DoCellUpdate = self.SetCellGear2 },
+                { name = "Roll",       width = 60,  DoCellUpdate = self.SetCellRoll },
+        }
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	filterMenu = CreateFrame("Frame", "ScroogeLoot_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	enchanters = CreateFrame("Frame", "ScroogeLoot_VotingFrame_EnchantersMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -435,30 +433,119 @@ function SLVotingFrame:SwitchSession(s)
 end
 
 function SLVotingFrame:BuildST()
-        -- Start with an empty table; rows will be added dynamically
-        self.frame.st:SetData({})
+        local rows = {}
+        if lootTable[session] and lootTable[session].candidates then
+                for name, cand in pairs(lootTable[session].candidates) do
+                        local pdata = PlayerDB and PlayerDB[name] or {}
+                        local attendance = CalculateAttendance(pdata.attended, pdata.absent)
+                        local row = {
+                                name = name,
+                                raiderrank = pdata.raiderrank,
+                                response = cand.response,
+                                attendance = attendance,
+                                gear1 = cand.gear1,
+                                gear2 = cand.gear2,
+                                roll = cand.roll,
+                                rollInfo = cand.rollInfo,
+                                cols = {
+                                        { value = name },
+                                        { value = pdata.raiderrank and 1 or 0 },
+                                        { value = cand.response },
+                                        { value = attendance },
+                                        { name = "gear1" },
+                                        { name = "gear2" },
+                                        { value = cand.roll },
+                                }
+                        }
+                        table.insert(rows, row)
+                end
+        end
+        self.frame.st:SetData(rows)
+end
+
+function SLVotingFrame:AddVotingRow(rowData)
+        if not self.frame or not self.frame.st or not rowData then return end
+        local row = {
+                name = rowData.name,
+                raiderrank = rowData.raiderrank,
+                response = rowData.response,
+                attendance = rowData.attendance,
+                gear1 = rowData.gear1,
+                gear2 = rowData.gear2,
+                roll = rowData.roll,
+                rollInfo = rowData.rollInfo,
+                cols = {
+                        { value = rowData.name },
+                        { value = rowData.raiderrank and 1 or 0 },
+                        { value = rowData.response },
+                        { value = rowData.attendance },
+                        { name = "gear1" },
+                        { name = "gear2" },
+                        { value = rowData.roll },
+                }
+        }
+        local st = self.frame.st
+        st.data = st.data or {}
+        table.insert(st.data, row)
+        st:SortData()
 end
 
 -- Add a new row to the voting table using roll information
 function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
-    local data = PlayerDB and PlayerDB[name]
-    if not data then
+    local pdata = PlayerDB and PlayerDB[name]
+    if not pdata then
         print("No PlayerDB entry for", name)
         return
     end
-    local sp = data.SP or 0
-    local dp = data.DP or 0
+    local sp = pdata.SP or 0
+    local dp = pdata.DP or 0
     local adjusted = rollValue
+    local reason
     if rollType == "sp" then
         adjusted = adjusted + sp
+        reason = "+SP"
     elseif rollType == "dp" then
         adjusted = adjusted - dp
+        reason = "-DP"
     end
     if not self.frame or not self.frame.st then return end
-    local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = rollValue }, { value = sp }, { value = dp }, { value = adjusted } } }
+
+    local attendance = CalculateAttendance(pdata.attended, pdata.absent)
+    local candidate = lootTable[session] and lootTable[session].candidates[name] or {}
     local st = self.frame.st
     st.data = st.data or {}
-    table.insert(st.data, row)
+
+    local existing
+    for _, r in ipairs(st.data) do
+        if r.name == name then existing = r break end
+    end
+
+    local row = existing or {
+        name = name,
+        cols = {
+            { value = name },
+            { value = pdata.raiderrank and 1 or 0 },
+            { value = candidate.response },
+            { value = attendance },
+            { name = "gear1" },
+            { name = "gear2" },
+            { value = adjusted },
+        }
+    }
+    row.raiderrank = pdata.raiderrank
+    row.response = candidate.response
+    row.attendance = attendance
+    row.gear1 = candidate.gear1
+    row.gear2 = candidate.gear2
+    row.roll = adjusted
+    row.rollInfo = { base = rollValue, SP = sp, DP = dp, final = adjusted, reason = reason }
+    row.cols[1].value = name
+    row.cols[2].value = pdata.raiderrank and 1 or 0
+    row.cols[3].value = candidate.response
+    row.cols[4].value = attendance
+    row.cols[7].value = adjusted
+
+    if not existing then table.insert(st.data, row) end
     st:SortData()
 end
 
@@ -829,10 +916,11 @@ function SLVotingFrame.SetCellName(rowFrame, frame, data, cols, row, realrow, co
 end
 
 function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(lootTable[session].candidates[name].rank)
-	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
-	data[realrow].cols[column].value = lootTable[session].candidates[name].rank
+        local name = data[realrow].name
+        local db = PlayerDB and PlayerDB[name]
+        local val = db and db.raiderrank
+        frame.text:SetText(RaiderText(val))
+        data[realrow].cols[column].value = val and 1 or 0
 end
 
 function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -867,9 +955,19 @@ function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, co
 		frame:SetScript("OnEnter", function() addon:CreateHypertip(gear) end)
 		frame:SetScript("OnLeave", function() addon:HideTooltip() end)
 		frame:Show()
-	else
-		frame:Hide()
-	end
+        else
+                frame:Hide()
+        end
+end
+
+function SLVotingFrame.SetCellGear1(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+        data[realrow].cols[column].name = "gear1"
+        SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+end
+
+function SLVotingFrame.SetCellGear2(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
+        data[realrow].cols[column].name = "gear2"
+        SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 end
 
 function SLVotingFrame.SetCellVotes(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
