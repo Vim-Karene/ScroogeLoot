@@ -34,36 +34,43 @@ local function CanEquipItem(name, item) return true end
 -- Send the chosen roll option to the master looter. When executed by the master
 -- it will also generate and broadcast the roll result to the voting frame.
 local function OnRollOptionClick(playerName, rollType, sessionID)
-    local data = PlayerDB and PlayerDB[playerName]
-    if not data then
-        local _, class = UnitClass(playerName)
-        if RegisterPlayer then
-            RegisterPlayer(playerName, class)
-        end
-        data = PlayerDB and PlayerDB[playerName]
+    addon:SendRollResponse(playerName, rollType, sessionID)
+
+    if addon.ShowCandidates then
+        addon:ShowCandidates({playerName})
     end
-    if not data then
-        print("Player not found in PlayerDB:", playerName)
-        return
+end
+
+function addon:SendRollResponse(playerName, rollType, sessionID)
+    local db = PlayerDB and PlayerDB[playerName]
+    if not db then return end
+
+    local baseRoll = math.random(1, 100)
+    local final = baseRoll
+    local sp = db.SP or 0
+    local dp = db.DP or 0
+    if rollType == "SP" then
+        final = baseRoll + sp
+    elseif rollType == "DP" then
+        final = baseRoll - dp
     end
 
-    local rollValue = math.random(1, 100)
-
-    local payload = string.format(
-        "ROLL:%s:%s:%d",
+    local payload = table.concat({
+        "ROLL",
         playerName,
-        rollType:lower(),
-        rollValue
-    )
+        rollType,
+        tostring(baseRoll),
+        tostring(final),
+        tostring(sp),
+        tostring(dp),
+        tostring(sessionID),
+        ""
+    }, ":")
+
     if C_ChatInfo and C_ChatInfo.SendAddonMessage then
         C_ChatInfo.SendAddonMessage("ScroogeLoot", payload, "RAID")
     else
         SendAddonMessage("ScroogeLoot", payload, "RAID")
-    end
-
-    -- Update voting frame with this player if possible
-    if addon.ShowCandidates then
-        addon:ShowCandidates({playerName})
     end
 end
 

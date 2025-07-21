@@ -16,6 +16,7 @@ local db
 local session = 1 -- The session we're viewing
 local lootTable = {} -- lib-st compatible, extracted from addon's lootTable
 local sessionButtons = {}
+SLVotingFrame.rows = SLVotingFrame.rows or {}
 local moreInfo = false -- Show more info frame?
 local active = false -- Are we currently in session?
 local candidates = {} -- Candidates for the loot, initial data from the ML
@@ -28,19 +29,34 @@ local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
 -- Handle incoming addon messages
-local function OnAddonMessage(prefix, msg, channel, sender)
+local function OnAddonMessage(prefix, msg)
     if prefix ~= "ScroogeLoot" then return end
 
-    if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, rollVal = strsplit(":", msg)
-        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
+    local cmd, name, response, roll, adjusted, sp, dp, item1, item2 = strsplit(":", msg)
+    if cmd == "ROLL" then
+        addon:AddVotingRow({
+            name = name,
+            response = response,
+            roll = tonumber(adjusted),
+            rollInfo = {
+                base = tonumber(roll),
+                final = tonumber(adjusted),
+                SP = tonumber(sp),
+                DP = tonumber(dp),
+                reason = response == "Scrooge" and "+SP" or
+                         (response == "Deducktion" or response == "Main-Spec" or response == "Off-Spec") and "-DP" or
+                         "none",
+            },
+            item1 = item1,
+            item2 = item2,
+        })
     end
 end
 
-ChatFrame_AddMessageEventFilter("CHAT_MSG_ADDON", function(_, ...)
-    local prefix, msg, channel, sender = ...
-    OnAddonMessage(prefix, msg, channel, sender)
-    return false
+local frame = CreateFrame("Frame")
+frame:RegisterEvent("CHAT_MSG_ADDON")
+frame:SetScript("OnEvent", function(_, _, prefix, msg)
+    OnAddonMessage(prefix, msg)
 end)
 
 -- Calculate a player's attendance percentage
@@ -51,7 +67,7 @@ local function CalculateAttendance(attended, absent)
 end
 
 -- Update a single voting row using PlayerDB data
-local function UpdateVotingRow(playerName)
+local function _UpdateVotingRow(playerName)
     local data = PlayerDB and PlayerDB[playerName]
     if not data then
         local _, class = UnitClass(playerName)
@@ -75,6 +91,13 @@ local function UpdateVotingRow(playerName)
             break
         end
     end
+end
+
+function UpdateVotingRow(playerName)
+    if SLVotingFrame.frame and SLVotingFrame.frame.st then
+        SLVotingFrame.frame.st:Refresh()
+    end
+    _UpdateVotingRow(playerName)
 end
 
 -- Master looter only: handle an incoming roll choice and update the table
@@ -293,11 +316,24 @@ end
 -- Getter/Setter for candidate data
 -- Handles errors
 function SLVotingFrame:SetCandidateData(session, candidate, data, val)
-	local function Set(session, candidate, data, val)
-		lootTable[session].candidates[candidate][data] = val
-	end
-	local ok, arg = pcall(Set, session, candidate, data, val)
-	if not ok then addon:Debug("Error in 'SetCandidateData':", arg, session, candidate, data, val) end
+        local function Set(session, candidate, data, val)
+                lootTable[session].candidates[candidate][data] = val
+        end
+        local ok, arg = pcall(Set, session, candidate, data, val)
+        if not ok then
+                addon:Debug("Error in 'SetCandidateData':", arg, session, candidate, data, val)
+        end
+
+        for i, row in ipairs(self.rows or {}) do
+                if row.name == candidate then
+                        row[data] = val
+                        break
+                end
+        end
+
+        if self.frame and self.frame.st then
+                self.frame.st:Refresh()
+        end
 end
 
 function SLVotingFrame:GetCandidateData(session, candidate, data)
@@ -436,6 +472,18 @@ end
 function SLVotingFrame:BuildST()
         -- Start with an empty table; rows will be added dynamically
         self.frame.st:SetData({})
+        SLVotingFrame.rows = {}
+end
+
+-- Insert a new entry into the voting table and refresh the display
+function addon:AddVotingRow(entry)
+    SLVotingFrame.rows = SLVotingFrame.rows or {}
+    table.insert(SLVotingFrame.rows, entry)
+
+    if SLVotingFrame.frame and SLVotingFrame.frame.st then
+        SLVotingFrame.frame.st:SetData(SLVotingFrame.rows)
+        SLVotingFrame.frame.st:SortData()
+    end
 end
 
 -- Add a new row to the voting table using roll information
@@ -453,12 +501,19 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     elseif rollType == "dp" then
         adjusted = adjusted - dp
     end
-    if not self.frame or not self.frame.st then return end
-    local row = { cols = { { value = name }, { value = data.class or "" }, { value = rollType }, { value = rollValue }, { value = sp }, { value = dp }, { value = adjusted } } }
-    local st = self.frame.st
-    st.data = st.data or {}
-    table.insert(st.data, row)
-    st:SortData()
+    local row = {
+        name = name,
+        response = rollType,
+        roll = adjusted,
+        rollInfo = {
+            base = rollValue,
+            final = adjusted,
+            SP = sp,
+            DP = dp,
+            reason = rollType == "sp" and "+SP" or rollType == "dp" and "-DP" or "none",
+        },
+    }
+    addon:AddVotingRow(row)
 end
 
 function SLVotingFrame:UpdateMoreInfo(row, data)
