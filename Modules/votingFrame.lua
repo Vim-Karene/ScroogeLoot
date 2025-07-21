@@ -68,8 +68,8 @@ local function UpdateVotingRow(playerName)
     if not st then return end
     for i, row in ipairs(st.data or {}) do
         if row.name == playerName then
-            row.cols[2].value = playerName
-            row.cols[3].value = data.raiderrank and 1 or 0
+            row.cols[2].value = data.name or playerName
+            row.cols[5].value = data.raiderrank and 1 or 0
             row.cols[6].value = attendance
             st:Refresh()
             break
