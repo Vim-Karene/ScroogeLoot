@@ -1678,28 +1678,55 @@ function ScroogeLoot:ShowCandidates(candidateList)
     local vf = self:GetModule("SLVotingFrame", true)
     if not vf or not vf.frame or not vf.frame.st then return end
 
-    local rows = {}
+    local st = vf.frame.st
+    st.data = st.data or {}
+
     for _, playerName in ipairs(candidateList) do
+        local exists
+        for _, row in ipairs(st.data) do
+            if row.name == playerName then
+                exists = true
+                break
+            end
+        end
+
         local p = PlayerDB and PlayerDB[playerName]
-        if p then
-            table.insert(rows, {
+        if not p then
+            print("No PlayerData for", playerName)
+        end
+
+        if not exists then
+            table.insert(st.data, {
                 name = playerName,
                 cols = {
-                    { value = p.name },
-                    { value = p.class },
-                    { value = p.SP },
-                    { value = p.DP },
-                    { value = p.item1 },
-                    { value = p.item2 },
-                    { value = p.item3 }
+                    { DoCellUpdate = vf.SetCellClass },            -- 1 Class icon
+                    { DoCellUpdate = vf.SetCellName },             -- 2 Name
+                    { DoCellUpdate = vf.SetCellRank },             -- 3 Rank
+                    { DoCellUpdate = vf.SetCellResponse },         -- 4 Response
+                    { DoCellUpdate = vf.SetCellRaider,  value = p and p.raiderrank and 1 or 0 }, -- 5 Raider status
+                    { DoCellUpdate = vf.SetCellAttendance, value = p and CalculateAttendance(p.attended, p.absent) or 0 }, -- 6 Attendance
+                    { DoCellUpdate = vf.SetCellGear, name = "gear1" }, -- 7 Gear1
+                    { DoCellUpdate = vf.SetCellGear, name = "gear2" }, -- 8 Gear2
+                    { DoCellUpdate = vf.SetCellVotes },            -- 9 Votes
+                    { DoCellUpdate = vf.SetCellVote },             -- 10 Vote button
+                    { DoCellUpdate = vf.SetCellNote },             -- 11 Note
+                    { DoCellUpdate = vf.SetCellRoll }              -- 12 Roll
                 }
             })
         else
-            print("No PlayerData for", playerName)
+            -- Update existing row values from PlayerDB
+            for _, row in ipairs(st.data) do
+                if row.name == playerName then
+                    row.cols[2].value = p and p.name or playerName
+                    row.cols[5].value = p and p.raiderrank and 1 or 0
+                    row.cols[6].value = p and CalculateAttendance(p.attended, p.absent) or 0
+                    break
+                end
+            end
         end
     end
 
-    vf.frame.st:SetData(rows)
+    st:SortData()
 end
 
 --#end UI Functions -----------------------------------------------------
