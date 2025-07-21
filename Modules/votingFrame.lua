@@ -91,11 +91,14 @@ local function HandleRollChoice(sessionID, playerName, rollType)
 
     local baseRoll = math.random(1, 100)
     local modifiedRoll = baseRoll
+    local reason
 
     if rollType == "SP" then
         modifiedRoll = baseRoll + (playerData.SP or 0)
+        reason = "+SP"
     elseif rollType == "DP" then
         modifiedRoll = baseRoll - (playerData.DP or 0)
+        reason = "-DP"
     end
 
     SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
@@ -104,6 +107,7 @@ local function HandleRollChoice(sessionID, playerName, rollType)
         final = modifiedRoll,
         SP = playerData.SP,
         DP = playerData.DP,
+        reason = reason,
     })
     if SLVotingFrame.frame and SLVotingFrame.frame.st then
         SLVotingFrame.frame.st:Refresh()
@@ -810,10 +814,6 @@ end
 ----------------------------------------------------------
 --	Lib-st data functions (not particular pretty, I know)
 ----------------------------------------------------------
--- Display boolean raiderrank as Yes/No
-local function RaiderText(flag)
-       return flag and L["Yes"] or L["No"]
-end
 
 function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
 	local name = data[realrow].name
@@ -845,7 +845,7 @@ function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, 
        local name = data[realrow].name
        local db = PlayerDB and PlayerDB[name]
        local val = db and db.raiderrank
-       frame.text:SetText(RaiderText(val))
+       frame.text:SetText(val and "Y" or "")
        data[realrow].cols[column].value = val and 1 or 0
 end
 
