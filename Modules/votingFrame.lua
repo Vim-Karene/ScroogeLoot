@@ -33,7 +33,9 @@ local function OnAddonMessage(prefix, msg, channel, sender)
 
     if strsub(msg, 1, 5) == "ROLL:" then
         local _, name, rollType, rollVal = strsplit(":", msg)
-        SLVotingFrame:AddVotingRowFromPlayer(name, rollType, tonumber(rollVal))
+        SLVotingFrame:SetCandidateData(session, name, "response", rollType)
+        SLVotingFrame:SetCandidateData(session, name, "roll", tonumber(rollVal))
+        SLVotingFrame:Update()
     end
 end
 
@@ -48,6 +50,10 @@ local function CalculateAttendance(attended, absent)
     local total = (attended or 0) + (absent or 0)
     if total == 0 then return 0 end
     return math.floor((attended / total) * 100)
+end
+
+local function BoolToYesNo(b)
+    return b and "Y" or ""
 end
 
 -- Update a single voting row using PlayerDB data
@@ -433,34 +439,36 @@ function SLVotingFrame:SwitchSession(s)
 end
 
 function SLVotingFrame:BuildST()
-        local rows = {}
-        if lootTable[session] and lootTable[session].candidates then
-                for name, cand in pairs(lootTable[session].candidates) do
-                        local pdata = PlayerDB and PlayerDB[name] or {}
-                        local attendance = CalculateAttendance(pdata.attended, pdata.absent)
-                        local row = {
-                                name = name,
-                                raiderrank = pdata.raiderrank,
-                                response = cand.response,
-                                attendance = attendance,
-                                gear1 = cand.gear1,
-                                gear2 = cand.gear2,
-                                roll = cand.roll,
-                                rollInfo = cand.rollInfo,
-                                cols = {
-                                        { value = name },
-                                        { value = pdata.raiderrank and 1 or 0 },
-                                        { value = cand.response },
-                                        { value = attendance },
-                                        { name = "gear1" },
-                                        { name = "gear2" },
-                                        { value = cand.roll },
-                                }
-                        }
-                        table.insert(rows, row)
-                end
+    local rows = {}
+    if lootTable[session] and lootTable[session].candidates then
+        for name, cand in pairs(lootTable[session].candidates) do
+            local pdata = PlayerDB and PlayerDB[name] or {}
+            local attendance = CalculateAttendance(pdata.attended, pdata.absent)
+
+            local row = {
+                name = name,
+                raiderrank = pdata.raiderrank,
+                response = cand.response or "",
+                attendance = attendance,
+                gear1 = cand.gear1 or "",
+                gear2 = cand.gear2 or "",
+                roll = cand.roll or "",
+                rollInfo = cand.rollInfo or {},
+                cols = {
+                    { value = name },
+                    { value = BoolToYesNo(pdata.raiderrank) },
+                    { value = cand.response },
+                    { value = attendance },
+                    { value = cand.gear1 or "" },
+                    { value = cand.gear2 or "" },
+                    { value = cand.roll or "" },
+                }
+            }
+
+            table.insert(rows, row)
         end
-        self.frame.st:SetData(rows)
+    end
+    self.frame.st:SetData(rows)
 end
 
 function SLVotingFrame:AddVotingRow(rowData)

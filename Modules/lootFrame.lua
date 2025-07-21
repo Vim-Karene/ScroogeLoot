@@ -35,33 +35,36 @@ local function CanEquipItem(name, item) return true end
 -- it will also generate and broadcast the roll result to the voting frame.
 local function OnRollOptionClick(playerName, rollType, sessionID)
     local data = PlayerDB and PlayerDB[playerName]
-    if not data then
-        local _, class = UnitClass(playerName)
-        if RegisterPlayer then
-            RegisterPlayer(playerName, class)
-        end
-        data = PlayerDB and PlayerDB[playerName]
-    end
-    if not data then
-        print("Player not found in PlayerDB:", playerName)
-        return
-    end
+    if not data then return end
 
     local rollValue = math.random(1, 100)
+    local modifiedRoll = rollValue
+    local rollLogic = ""
+
+    if rollType == "Scrooge" then
+        modifiedRoll = rollValue + (data.SP or 0)
+        rollLogic = "SP"
+    elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
+        modifiedRoll = rollValue - (data.DP or 0)
+        rollLogic = "DP"
+    elseif rollType == "Drool" or rollType == "Transmog" then
+        rollLogic = "PLAIN"
+    end
 
     local payload = string.format(
         "ROLL:%s:%s:%d",
         playerName,
-        rollType:lower(),
-        rollValue
+        rollLogic,
+        modifiedRoll
     )
+
     if C_ChatInfo and C_ChatInfo.SendAddonMessage then
         C_ChatInfo.SendAddonMessage("ScroogeLoot", payload, "RAID")
     else
         SendAddonMessage("ScroogeLoot", payload, "RAID")
     end
 
-    -- Update voting frame with this player if possible
+    -- Force voting frame update for this player
     if addon.ShowCandidates then
         addon:ShowCandidates({playerName})
     end
@@ -234,12 +237,7 @@ function LootFrame:OnRoll(entry, button)
        addon:Debug("LootFrame:OnRoll", entry, button, "Response:", addon:GetResponseText(button))
        local index = entries[entry].realID
 
-       local rollType
-       if button == 1 then
-               rollType = "SP"
-       elseif button == 3 or button == 4 or button == 5 then
-               rollType = "DP"
-       end
+       local rollType = addon:GetButtonText(button)
        OnRollOptionClick(UnitName("player"), rollType, items[index].session)
 
        numRolled = numRolled + 1
