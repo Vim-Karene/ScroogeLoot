@@ -625,9 +625,9 @@ function SLVotingFrame:GetFrame()
 
 	-- Container and title
 	local f = addon:CreateFrame("DefaultScroogeLootFrame", "votingframe", L["ScroogeLoot Voting Frame"], 250, 420)
-	-- Scrolling table
-	local st = LibStub("ScrollingTable"):CreateST(self.scrollCols, NUM_ROWS, ROW_HEIGHT, { ["r"] = 1.0, ["g"] = 0.9, ["b"] = 0.0, ["a"] = 0.5 }, f.content)
-	st.frame:SetPoint("BOTTOMLEFT", f, "BOTTOMLEFT", 10, 10)
+        -- Scrolling table
+        local st = LibStub("ScrollingTable"):CreateST(self.scrollCols, NUM_ROWS, ROW_HEIGHT, { ["r"] = 1.0, ["g"] = 0.9, ["b"] = 0.0, ["a"] = 0.5 }, f.content)
+        st.frame:SetPoint("TOPLEFT", f, "TOPLEFT", 10, -30)
 	st:RegisterEvents({
 		["OnClick"] = function(rowFrame, cellFrame, data, cols, row, realrow, column, table, button, ...)
 			if button == "RightButton" and row then
@@ -644,9 +644,9 @@ function SLVotingFrame:GetFrame()
 			return false
 		end,
 	})
-	st:SetFilter(SLVotingFrame.filterFunc)
-	st:EnableSelection(true)
-        st:SetData({})
+        st:SetFilter(SLVotingFrame.filterFunc)
+        st:EnableSelection(true)
+        st:SetData(SLVotingFrame.rows or {}, true)
 	f.st = st
 	--[[------------------------------
 		Session item icon and strings
