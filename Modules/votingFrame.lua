@@ -79,35 +79,34 @@ end
 
 -- Master looter only: handle an incoming roll choice and update the table
 local function HandleRollChoice(sessionID, playerName, rollType)
-    local playerData = PlayerDB and PlayerDB[playerName]
-    if not playerData then
-        local _, class = UnitClass(playerName)
-        if RegisterPlayer then
-            RegisterPlayer(playerName, class)
-        end
-        playerData = PlayerDB and PlayerDB[playerName]
-    end
-    if not playerData or not sessionID then return end
+    if not sessionID or not playerName then return end
+    local db = PlayerDB and PlayerDB[playerName]
+    if not db then return end
 
     local baseRoll = math.random(1, 100)
-    local modifiedRoll = baseRoll
+    local finalRoll = baseRoll
+    local reason
 
     if rollType == "SP" then
-        modifiedRoll = baseRoll + (playerData.SP or 0)
+        finalRoll = baseRoll + (db.SP or 0)
+        reason = "+SP"
     elseif rollType == "DP" then
-        modifiedRoll = baseRoll - (playerData.DP or 0)
+        finalRoll = baseRoll - (db.DP or 0)
+        reason = "-DP"
+    else
+        reason = "none"
     end
 
-    SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
-    SLVotingFrame:SetCandidateData(sessionID, playerName, "rollInfo", {
+    local info = {
         base = baseRoll,
-        final = modifiedRoll,
-        SP = playerData.SP,
-        DP = playerData.DP,
-    })
-    if SLVotingFrame.frame and SLVotingFrame.frame.st then
-        SLVotingFrame.frame.st:Refresh()
-    end
+        final = finalRoll,
+        SP = db.SP or 0,
+        DP = db.DP or 0,
+        reason = reason,
+    }
+
+    SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", finalRoll)
+    SLVotingFrame:SetCandidateData(sessionID, playerName, "rollInfo", info)
     UpdateVotingRow(playerName)
     SLVotingFrame:Update()
 end
@@ -820,12 +819,17 @@ function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, c
 	addon.SetCellClassIcon(rowFrame, frame, data, cols, row, realrow, column, fShow, table, lootTable[session].candidates[name].class)
 end
 
-function SLVotingFrame.SetCellName(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(name)
-	local c = addon:GetClassColor(lootTable[session].candidates[name].class)
-	frame.text:SetTextColor(c.r, c.g, c.b, c.a)
-	data[realrow].cols[column].value = name
+function SLVotingFrame.SetCellName(_, frame, data, _, _, realrow)
+    local name = data[realrow].name or "Unknown"
+    local db = PlayerDB and PlayerDB[name]
+    frame.text:SetText(name)
+
+    if db and db.class then
+        local color = RAID_CLASS_COLORS[db.class:upper()]
+        if color then
+            frame.text:SetTextColor(color.r, color.g, color.b)
+        end
+    end
 end
 
 function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -841,12 +845,11 @@ function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow
 	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
 end
 
-function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local db = PlayerDB and PlayerDB[name]
-       local val = db and db.raiderrank
-       frame.text:SetText(RaiderText(val))
-       data[realrow].cols[column].value = val and 1 or 0
+function SLVotingFrame.SetCellRaider(_, frame, data, _, _, realrow)
+    local name = data[realrow].name
+    local db = PlayerDB and PlayerDB[name]
+    local isRaider = db and db.raiderrank
+    frame.text:SetText(isRaider and "Y" or "")
 end
 
 function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -963,19 +966,10 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 	frame.noteBtn = f
 end
 
-function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local info = lootTable[session].candidates[name].rollInfo or {}
-       frame.text:SetText(lootTable[session].candidates[name].roll)
-       frame:SetScript("OnEnter", function()
-               addon:CreateTooltip(
-                       "Base: "..tostring(info.base),
-                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
-                       "Final: "..tostring(info.final)
-               )
-       end)
-       frame:SetScript("OnLeave", addon.HideTooltip)
-       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+function SLVotingFrame.SetCellRoll(_, frame, data, _, _, realrow)
+    local info = data[realrow].rollInfo or {}
+    local value = info.final or data[realrow].roll or ""
+    frame.text:SetText(value)
 end
 
 function SLVotingFrame.filterFunc(table, row)
