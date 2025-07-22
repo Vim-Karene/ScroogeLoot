@@ -806,7 +806,36 @@ function ScroogeLootML:SendWhisperHelp(target)
 		SendChatMessage(msg, "WHISPER", nil, target)
 	end
 	SendChatMessage(L["whisper_guide2"], "WHISPER", nil, target)
-	addon:Print(format(L["Sent whisper help to 'player'"], target))
+        addon:Print(format(L["Sent whisper help to 'player'"], target))
+end
+
+-- Process a player's roll choice and update the voting frame
+function addon:HandleRollChoice(sessionID, playerName, rollType)
+    if not addon.isMasterLooter then return end
+    if not sessionID or not playerName or not rollType then return end
+
+    local pdata = PlayerDB and PlayerDB[playerName]
+    if not pdata then return end
+
+    local base = math.random(1, 100)
+    local final = base
+    local info = { base = base, final = base }
+
+    if rollType == "Scrooge" then
+        final = base + (pdata.SP or 0)
+        info.SP = pdata.SP or 0
+    elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
+        final = base - (pdata.DP or 0)
+        info.DP = pdata.DP or 0
+    end
+
+    info.final = final
+
+    SLVotingFrame:SetCandidateData(sessionID, playerName, "response", rollType)
+    SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", final)
+    SLVotingFrame:SetCandidateData(sessionID, playerName, "rollInfo", info)
+
+    SLVotingFrame:Update()
 end
 
 --------ML Popups ------------------
