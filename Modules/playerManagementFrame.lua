@@ -13,6 +13,8 @@ function SLPlayerManagementFrame:OnInitialize()
         {name=L["Raider"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"raiderrank") end},
         {name="SP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"SP") end},
         {name="DP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"DP") end},
+        {name=L["Attended"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"attended") end},
+        {name=L["Absent"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"absent") end},
         {name="Item1", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1") end},
         {name="Rec1", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1received") end},
         {name="Item2", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2") end},
@@ -92,6 +94,8 @@ function SLPlayerManagementFrame:LoadData(target)
             {value=copy.raiderrank},
             {value=copy.SP},
             {value=copy.DP},
+            {value=copy.attended},
+            {value=copy.absent},
             {value=copy.item1},
             {value=copy.item1received},
             {value=copy.item2},
@@ -138,7 +142,8 @@ function SLPlayerManagementFrame:Save(target)
     local t = target or self.frame.content
     PlayerDB = PlayerDB or {}
     wipe(PlayerDB)
-    for _,row in ipairs(t.rows) do
+    wipe(addon.PlayerData)
+    for _, row in ipairs(t.rows) do
         local d = row.data
         local pd = {
             name = d.name or row.name,
@@ -146,6 +151,8 @@ function SLPlayerManagementFrame:Save(target)
             raiderrank = d.raiderrank,
             SP = tonumber(d.SP) or 0,
             DP = tonumber(d.DP) or 0,
+            attended = tonumber(d.attended) or 0,
+            absent = tonumber(d.absent) or 0,
             item1 = d.item1,
             item1received = not not d.item1received,
             item2 = d.item2,
@@ -153,10 +160,18 @@ function SLPlayerManagementFrame:Save(target)
             item3 = d.item3,
             item3received = not not d.item3received,
         }
+        local total = pd.attended + pd.absent
+        if total > 0 then
+            pd.attendance = math.floor((pd.attended / total) * 100)
+        else
+            pd.attendance = 100
+        end
         local name = pd.name
         PlayerDB[name] = pd
+        addon.PlayerData[name] = pd
         row.name = name
     end
+    addon:BroadcastPlayerData()
     addon:Print(L["Player Management"]..": "..L["Save"].."!")
 end
 

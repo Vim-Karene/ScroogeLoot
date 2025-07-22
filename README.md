@@ -16,9 +16,10 @@ clients stay in sync.
 
 ### Editing PlayerData
 
-Use `/sl pm` in game to open the **Player Management** window. This window now
-edits the persistent `PlayerDB` saved variables directly. Saving your changes
-does not broadcast them but they will persist between sessions.
+Use `/sl pm` in game to open the **Player Management** window. The window edits
+the persistent `PlayerDB` saved variables and updates the in-memory
+`PlayerData` table. Saving your changes broadcasts the new `PlayerData` to the
+group and persists them between sessions.
 
 The saved data is written to `PlayerDB` which lives in its own file
 `WTF/Account/<ACCOUNT>/SavedVariables/PlayerDB.lua`. If the file or
