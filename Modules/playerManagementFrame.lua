@@ -43,9 +43,14 @@ end
 
 function SLPlayerManagementFrame:GetFrame()
     if self.frame then return self.frame end
-    local f = addon:CreateFrame("SLPlayerManagementFrame", "playermanagement", L["Player Management"], 900, 350)
+    local f = addon:CreateFrame("SLPlayerManagementFrame", "playermanagement", L["Player Management"], 1000, 350)
     self:CreateUI(f.content)
-    f:SetWidth(f.content.st.frame:GetWidth()+20)
+    f:SetWidth(f.content.st.frame:GetWidth()+120)
+
+    local closeBtn = addon:CreateButton(L["Close"], f.content)
+    closeBtn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 10)
+    closeBtn:SetScript("OnClick", function() self:Hide() end)
+    f.closeBtn = closeBtn
     return f
 end
 
