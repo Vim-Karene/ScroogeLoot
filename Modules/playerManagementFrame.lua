@@ -13,12 +13,40 @@ function SLPlayerManagementFrame:OnInitialize()
         {name=L["Raider"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"raiderrank") end},
         {name="SP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"SP") end},
         {name="DP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"DP") end},
+        {name=L["Attended"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"attended") end},
+        {name=L["Absent"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"absent") end},
         {name="Item1", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1") end},
         {name="Rec1", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1received") end},
         {name="Item2", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2") end},
         {name="Rec2", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2received") end},
         {name="Item3", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item3") end},
         {name="Rec3", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item3received") end},
+    }
+
+    StaticPopupDialogs["SLPLAYERMANAGER_EXPORT"] = {
+        text = L["Player Management"],
+        button1 = OKAY,
+        hasEditBox = true,
+        editBoxWidth = 350,
+        OnShow = function(self, data)
+            self.editBox:SetText(data)
+            self.editBox:HighlightText()
+        end,
+        timeout = 0,
+        whileDead = true,
+    }
+
+    StaticPopupDialogs["SLPLAYERMANAGER_IMPORT"] = {
+        text = L["Paste XML"],
+        button1 = ACCEPT,
+        button2 = CANCEL,
+        hasEditBox = true,
+        editBoxWidth = 350,
+        OnAccept = function(self, data)
+            SLPlayerManagementFrame:ImportData(self.editBox:GetText())
+        end,
+        timeout = 0,
+        whileDead = true,
     }
 end
 
@@ -33,11 +61,21 @@ function SLPlayerManagementFrame:CreateUI(parent)
     saveBtn:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -10, 10)
     saveBtn:SetScript("OnClick", function() SLPlayerManagementFrame:Save(parent) end)
 
+    local exportBtn = addon:CreateButton(L["Export"], parent)
+    exportBtn:SetPoint("RIGHT", saveBtn, "LEFT", -10, 0)
+    exportBtn:SetScript("OnClick", function() SLPlayerManagementFrame:Export() end)
+
+    local importBtn = addon:CreateButton(L["Import"], parent)
+    importBtn:SetPoint("RIGHT", exportBtn, "LEFT", -10, 0)
+    importBtn:SetScript("OnClick", function() SLPlayerManagementFrame:ImportPrompt() end)
+
     local resetBtn = addon:CreateButton(L["Reset"], parent)
-    resetBtn:SetPoint("RIGHT", saveBtn, "LEFT", -10, 0)
+    resetBtn:SetPoint("RIGHT", importBtn, "LEFT", -10, 0)
     resetBtn:SetScript("OnClick", function() SLPlayerManagementFrame:LoadData(parent); parent.st:SetData(parent.rows) end)
 
     parent.saveBtn = saveBtn
+    parent.exportBtn = exportBtn
+    parent.importBtn = importBtn
     parent.resetBtn = resetBtn
 end
 
@@ -52,12 +90,16 @@ function SLPlayerManagementFrame:GetFrame()
     closeBtn:SetScript("OnClick", function() self:Hide() end)
     f.closeBtn = closeBtn
 
-    -- Reposition save and reset buttons next to the close button
+    -- Reposition action buttons next to the close button
     local content = f.content
     content.saveBtn:ClearAllPoints()
     content.saveBtn:SetPoint("RIGHT", closeBtn, "LEFT", -10, 0)
+    content.exportBtn:ClearAllPoints()
+    content.exportBtn:SetPoint("RIGHT", content.saveBtn, "LEFT", -10, 0)
+    content.importBtn:ClearAllPoints()
+    content.importBtn:SetPoint("RIGHT", content.exportBtn, "LEFT", -10, 0)
     content.resetBtn:ClearAllPoints()
-    content.resetBtn:SetPoint("RIGHT", content.saveBtn, "LEFT", -10, 0)
+    content.resetBtn:SetPoint("RIGHT", content.importBtn, "LEFT", -10, 0)
 
     -- Move the title slightly above the frame
     f.title:ClearAllPoints()
@@ -92,6 +134,8 @@ function SLPlayerManagementFrame:LoadData(target)
             {value=copy.raiderrank},
             {value=copy.SP},
             {value=copy.DP},
+            {value=copy.attended},
+            {value=copy.absent},
             {value=copy.item1},
             {value=copy.item1received},
             {value=copy.item2},
@@ -146,6 +190,8 @@ function SLPlayerManagementFrame:Save(target)
             raiderrank = d.raiderrank,
             SP = tonumber(d.SP) or 0,
             DP = tonumber(d.DP) or 0,
+            attended = tonumber(d.attended) or 0,
+            absent = tonumber(d.absent) or 0,
             item1 = d.item1,
             item1received = not not d.item1received,
             item2 = d.item2,
@@ -153,11 +199,76 @@ function SLPlayerManagementFrame:Save(target)
             item3 = d.item3,
             item3received = not not d.item3received,
         }
+        local total = pd.attended + pd.absent
+        if total > 0 then
+            pd.attendance = math.floor((pd.attended / total) * 100)
+        else
+            pd.attendance = 0
+        end
         local name = pd.name
         PlayerDB[name] = pd
         row.name = name
     end
     addon:Print(L["Player Management"]..": "..L["Save"].."!")
+end
+
+local function Escape(str)
+    if not str then return "" end
+    str = str:gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")
+    str = str:gsub('"','&quot;')
+    return str
+end
+
+function SLPlayerManagementFrame:Export()
+    local xml = "<PlayerData>\n"
+    for name,data in pairs(PlayerDB or {}) do
+        local n = data.name or name
+        xml = xml .. string.format('<Player name="%s" class="%s" raider="%s" SP="%s" DP="%s" attended="%s" absent="%s" item1="%s" item1received="%s" item2="%s" item2received="%s" item3="%s" item3received="%s"/>\n',
+            Escape(n), Escape(data.class), tostring(data.raiderrank or false), tostring(data.SP or 0), tostring(data.DP or 0), tostring(data.attended or 0), tostring(data.absent or 0), Escape(data.item1), tostring(data.item1received or false), Escape(data.item2), tostring(data.item2received or false), Escape(data.item3), tostring(data.item3received or false))
+    end
+    xml = xml .. "</PlayerData>"
+    StaticPopup_Show("SLPLAYERMANAGER_EXPORT", nil, nil, xml)
+end
+
+function SLPlayerManagementFrame:ImportPrompt()
+    StaticPopup_Show("SLPLAYERMANAGER_IMPORT")
+end
+
+function SLPlayerManagementFrame:ImportData(text)
+    local newData = {}
+    for entry in string.gmatch(text, "<Player%s+([^/>]+)/?>") do
+        local name = entry:match('name="([^"]*)"')
+        if name then
+            local d = {}
+            d.name = name
+            d.class = entry:match('class="([^"]*)"') or ""
+            d.raiderrank = entry:match('raider="([^"]*)"') == "true"
+            d.SP = tonumber(entry:match('SP="([^"]*)"') or 0)
+            d.DP = tonumber(entry:match('DP="([^"]*)"') or 0)
+            d.attended = tonumber(entry:match('attended="([^"]*)"') or 0)
+            d.absent = tonumber(entry:match('absent="([^"]*)"') or 0)
+            d.item1 = entry:match('item1="([^"]*)"')
+            d.item1received = entry:match('item1received="([^"]*)"') == "true"
+            d.item2 = entry:match('item2="([^"]*)"')
+            d.item2received = entry:match('item2received="([^"]*)"') == "true"
+            d.item3 = entry:match('item3="([^"]*)"')
+            d.item3received = entry:match('item3received="([^"]*)"') == "true"
+            local total = d.attended + d.absent
+            if total > 0 then
+                d.attendance = math.floor((d.attended / total) * 100)
+            else
+                d.attendance = 0
+            end
+            newData[name] = d
+        end
+    end
+    if next(newData) then
+        PlayerDB = newData
+        if self.frame and self.frame.content then
+            self:LoadData(self.frame.content)
+            self.frame.content.st:SetData(self.frame.content.rows)
+        end
+    end
 end
 
 return SLPlayerManagementFrame
