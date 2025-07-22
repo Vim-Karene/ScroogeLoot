@@ -1,4 +1,4 @@
--- PlayerManagementFrame module for editing PlayerDB
+-- PlayerManagementFrame module for editing PlayerDB and PlayerData
 local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
 local SLPlayerManagementFrame = addon:NewModule("SLPlayerManagementFrame")
 local ST = LibStub("ScrollingTable")

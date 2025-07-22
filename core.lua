@@ -522,7 +522,7 @@ function ScroogeLoot:ChatCommand(msg)
         elseif input == "history" or input == L["history"] or input == "h" or input == "his" then
                 self:CallModule("history")
 
-       elseif input == "pm" or input == "playermanager" then
+       elseif input == "pm" or input == "playermanager" or input == "playermanagement" or input == "playermanagementframe" then
                local pm = self:GetModule("SLPlayerManagementFrame", true)
                if pm then pm:Show() end
 --@debug@
