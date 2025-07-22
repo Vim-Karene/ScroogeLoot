@@ -809,6 +809,35 @@ function ScroogeLootML:SendWhisperHelp(target)
 	addon:Print(format(L["Sent whisper help to 'player'"], target))
 end
 
+function addon:HandleRollChoice(sessionID, playerName, rollType)
+    if not sessionID or not playerName or not rollType then return end
+
+    local pdata = PlayerDB[playerName]
+    if not pdata then return end
+
+    local baseRoll = math.random(1, 100)
+    local finalRoll = baseRoll
+    local rollInfo = { base = baseRoll }
+
+    if rollType == "Scrooge" then
+        rollInfo.SP = pdata.SP or 0
+        finalRoll = finalRoll + rollInfo.SP
+    elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
+        rollInfo.DP = pdata.DP or 0
+        finalRoll = finalRoll - rollInfo.DP
+    end
+
+    rollInfo.final = finalRoll
+
+    local vf = addon:GetModule("SLVotingFrame", true)
+    if vf and vf.SetCandidateData then
+        vf:SetCandidateData(sessionID, playerName, "response", rollType)
+        vf:SetCandidateData(sessionID, playerName, "roll", finalRoll)
+        vf:SetCandidateData(sessionID, playerName, "rollInfo", rollInfo)
+        vf:Update()
+    end
+end
+
 --------ML Popups ------------------
 LibDialog:Register("SLLOOTCOUNCIL_CONFIRM_ABORT", {
 	text = L["Are you sure you want to abort?"],
