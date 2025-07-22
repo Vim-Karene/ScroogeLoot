@@ -229,11 +229,30 @@ function ScroogeLoot:OnInitialize()
 	-- register chat and comms
        self:RegisterChatCommand("sl", "ChatCommand")
        self:RegisterChatCommand("rclc", "ChatCommand")
-	self:RegisterComm("ScroogeLoot")
-	self:RegisterComm("ScroogeLoot_WotLK")
+       self:RegisterComm("ScroogeLoot")
+       self:RegisterComm("ScroogeLoot_WotLK")
        self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
        self.lootDB = LibStub("AceDB-3.0"):New("ScroogeLootLootDB")
        self.playerDB = LibStub("AceDB-3.0"):New("PlayerDB", {global={playerData={}}})
+
+       -- direct slash command to open the Player Management frame
+       SLASH_SL1 = "/sl"
+       SlashCmdList["SL"] = function(msg)
+               if msg == "pm" then
+                       local pm = ScroogeLoot:GetModule("SLPlayerManagementFrame", true)
+                       if pm then
+                               if pm.frame and pm.frame:IsShown() then
+                                       pm:Hide()
+                               else
+                                       pm:Show()
+                               end
+                       else
+                               print("Player Management Frame is not available.")
+                       end
+               else
+                       ScroogeLoot:ChatCommand(msg)
+               end
+       end
 	--[[ Format:
 	"playerName" = {
 		[#] = {"lootWon", "date (d/m/y)", "time (h:m:s)", "instance", "boss", "votes", "itemReplaced1", "itemReplaced2", "response", "responseID", "color", "class", "isAwardReason"}
@@ -522,7 +541,7 @@ function ScroogeLoot:ChatCommand(msg)
         elseif input == "history" or input == L["history"] or input == "h" or input == "his" then
                 self:CallModule("history")
 
-       elseif input == "pm" or input == "playermanager" then
+       elseif input == "pm" or input == "playermanager" or input == "playermanagement" or input == "playermanagementframe" then
                local pm = self:GetModule("SLPlayerManagementFrame", true)
                if pm then pm:Show() end
 --@debug@
