@@ -1,4 +1,4 @@
-﻿-- Author      : Potdisc
+-- Author      : Potdisc
 -- Create Date : 5/24/2012 6:24:55 PM
 -- options.lua - option frame in BlizOptions for ScroogeLoot
 
