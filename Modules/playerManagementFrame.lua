@@ -43,9 +43,26 @@ end
 
 function SLPlayerManagementFrame:GetFrame()
     if self.frame then return self.frame end
-    local f = addon:CreateFrame("SLPlayerManagementFrame", "playermanagement", L["Player Management"], 900, 350)
+    local f = addon:CreateFrame("SLPlayerManagementFrame", "playermanagement", L["Player Management"], 1000, 350)
     self:CreateUI(f.content)
-    f:SetWidth(f.content.st.frame:GetWidth()+20)
+    f:SetWidth(f.content.st.frame:GetWidth()+120)
+
+    local closeBtn = addon:CreateButton(L["Close"], f.content)
+    closeBtn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 10)
+    closeBtn:SetScript("OnClick", function() self:Hide() end)
+    f.closeBtn = closeBtn
+
+    -- Reposition save and reset buttons next to the close button
+    local content = f.content
+    content.saveBtn:ClearAllPoints()
+    content.saveBtn:SetPoint("RIGHT", closeBtn, "LEFT", -10, 0)
+    content.resetBtn:ClearAllPoints()
+    content.resetBtn:SetPoint("RIGHT", content.saveBtn, "LEFT", -10, 0)
+
+    -- Move the title slightly above the frame
+    f.title:ClearAllPoints()
+    f.title:SetPoint("BOTTOM", f, "TOP", 0, 5)
+
     return f
 end
 
