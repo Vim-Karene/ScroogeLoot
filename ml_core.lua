@@ -118,6 +118,34 @@ function ScroogeLootML:AddCandidate(name, class, role, rank, enchant, lvl)
         }
 end
 
+-- Handle an incoming roll choice from a player
+function addon:HandleRollChoice(sessionID, playerName, rollType)
+    local pdata = PlayerDB and PlayerDB[playerName]
+    if not pdata then return end
+
+    local base = math.random(1, 100)
+    local final = base
+    local info = { base = base }
+
+    if rollType == "Scrooge" then
+        final = base + (pdata.SP or 0)
+        info.SP = pdata.SP or 0
+    elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
+        final = base - (pdata.DP or 0)
+        info.DP = pdata.DP or 0
+    end
+
+    info.final = final
+
+    local vf = addon:GetModule("SLVotingFrame", true)
+    if vf then
+        vf:SetCandidateData(sessionID, playerName, "response", rollType)
+        vf:SetCandidateData(sessionID, playerName, "roll", final)
+        vf:SetCandidateData(sessionID, playerName, "rollInfo", info)
+        vf:Update()
+    end
+end
+
 function ScroogeLootML:RemoveCandidate(name)
 	addon:DebugLog("ML:RemoveCandidate", name)
 	self.candidates[name] = nil
@@ -370,25 +398,29 @@ function ScroogeLootML:OnCommReceived(prefix, serializedMsg, distri, sender)
 				self.council = addon:GetCouncilInGroup()
 				addon:SendCommand(sender, "council", self.council)
 
-			elseif command == "reconnect" and not addon:UnitIsUnit(sender, addon.playerName) then -- Don't receive our own reconnect
-				-- Someone asks for mldb, council and candidates
-				addon:SendCommand(sender, "MLdb", addon.mldb)
-				self.council = addon:GetCouncilInGroup()
-				addon:SendCommand(sender, "council", self.council)
+                        elseif command == "reconnect" and not addon:UnitIsUnit(sender, addon.playerName) then -- Don't receive our own reconnect
+                                -- Someone asks for mldb, council and candidates
+                                addon:SendCommand(sender, "MLdb", addon.mldb)
+                                self.council = addon:GetCouncilInGroup()
+                                addon:SendCommand(sender, "council", self.council)
 
 			--[[NOTE: For some reason this can silently fail, but adding a 1 sec timer on the rest of the calls seems to fix it
 				v2.0.1: With huge candidates/lootTable we get AceComm lostdatawarning "First", presumeably due to the 4kb ChatThrottleLib limit.
 				Bumping loottable to 4 secs is tested to work with 27 candidates + 10 items.]]
 
-				addon:ScheduleTimer("SendCommand", 1, sender, "candidates", self.candidates)
-				if self.running then -- Resend lootTable
-					addon:ScheduleTimer("SendCommand", 4, sender, "lootTable", self.lootTable)
-				end
-				addon:Debug("Responded to reconnect from", sender)
-			end
-		elseif addon.isMasterLooter then
-			addon:Debug("Error in deserializing ML comm: ", command)
-		end
+                                addon:ScheduleTimer("SendCommand", 1, sender, "candidates", self.candidates)
+                                if self.running then -- Resend lootTable
+                                        addon:ScheduleTimer("SendCommand", 4, sender, "lootTable", self.lootTable)
+                                end
+                                addon:Debug("Responded to reconnect from", sender)
+
+                        elseif command == "roll_choice" then
+                                local ses, name, rType = unpack(data)
+                                addon:HandleRollChoice(ses, name, rType)
+                        end
+                elseif addon.isMasterLooter then
+                        addon:Debug("Error in deserializing ML comm: ", command)
+                end
 	end
 end
 

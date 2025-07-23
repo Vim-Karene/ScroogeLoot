@@ -28,33 +28,7 @@ local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
 -- Handle incoming addon messages
-local function OnAddonMessage(prefix, msg, channel, sender)
-    if prefix ~= "ScroogeLoot" then return end
 
-    if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, base, sp, dp = strsplit(":", msg)
-        base = tonumber(base)
-        sp = tonumber(sp)
-        dp = tonumber(dp)
-        local final = base
-        if rollType == "Scrooge" then
-            final = base + sp
-        elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
-            final = base - dp
-        end
-        if SLVotingFrame then
-            SLVotingFrame:SetCandidateData(nil, name, "response", rollType)
-            SLVotingFrame:SetCandidateData(nil, name, "roll", final)
-            SLVotingFrame:Update()
-        end
-    end
-end
-
-ChatFrame_AddMessageEventFilter("CHAT_MSG_ADDON", function(_, ...)
-    local prefix, msg, channel, sender = ...
-    OnAddonMessage(prefix, msg, channel, sender)
-    return false
-end)
 
 -- Calculate a player's attendance percentage
 local function CalculateAttendance(attended, absent)
@@ -95,37 +69,9 @@ end
 
 -- Master looter only: handle an incoming roll choice and update the table
 local function HandleRollChoice(sessionID, playerName, rollType)
-    local playerData = PlayerDB and PlayerDB[playerName]
-    if not playerData then
-        local _, class = UnitClass(playerName)
-        if RegisterPlayer then
-            RegisterPlayer(playerName, class)
-        end
-        playerData = PlayerDB and PlayerDB[playerName]
+    if addon.HandleRollChoice then
+        addon:HandleRollChoice(sessionID, playerName, rollType)
     end
-    if not playerData or not sessionID then return end
-
-    local baseRoll = math.random(1, 100)
-    local modifiedRoll = baseRoll
-
-    if rollType == "SP" then
-        modifiedRoll = baseRoll + (playerData.SP or 0)
-    elseif rollType == "DP" then
-        modifiedRoll = baseRoll - (playerData.DP or 0)
-    end
-
-    SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
-    SLVotingFrame:SetCandidateData(sessionID, playerName, "rollInfo", {
-        base = baseRoll,
-        final = modifiedRoll,
-        SP = playerData.SP,
-        DP = playerData.DP,
-    })
-    if SLVotingFrame.frame and SLVotingFrame.frame.st then
-        SLVotingFrame.frame.st:Refresh()
-    end
-    UpdateVotingRow(playerName)
-    SLVotingFrame:Update()
 end
 
 function SLVotingFrame:OnInitialize()
@@ -474,6 +420,30 @@ function SLVotingFrame:BuildST()
                                         { name = "gear1" },
                                         { name = "gear2" },
                                         { value = cand.roll },
+                                }
+                        }
+                        table.insert(rows, row)
+                end
+        else
+                for name, pdata in pairs(PlayerDB or {}) do
+                        local attendance = CalculateAttendance(pdata.attended, pdata.absent)
+                        local row = {
+                                name = pdata.name,
+                                raiderrank = pdata.raiderrank,
+                                response = nil,
+                                attendance = attendance,
+                                gear1 = nil,
+                                gear2 = nil,
+                                roll = nil,
+                                rollInfo = nil,
+                                cols = {
+                                        { value = pdata.name },
+                                        { value = pdata.raiderrank and 1 or 0 },
+                                        { value = "" },
+                                        { value = attendance },
+                                        { name = "gear1" },
+                                        { name = "gear2" },
+                                        { value = "" },
                                 }
                         }
                         table.insert(rows, row)
@@ -1081,18 +1051,22 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 end
 
 function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local info = lootTable[session].candidates[name].rollInfo or {}
-       frame.text:SetText(lootTable[session].candidates[name].roll)
+       local info = data[realrow].rollInfo or {}
+       frame.text:SetText(data[realrow].roll or "")
        frame:SetScript("OnEnter", function()
-               addon:CreateTooltip(
-                       "Base: "..tostring(info.base),
-                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
-                       "Final: "..tostring(info.final)
-               )
+               local breakdown = "Roll " .. tostring(info.base or "?")
+               if info.SP then
+                       breakdown = breakdown .. " + " .. info.SP .. " SP"
+               elseif info.DP then
+                       breakdown = breakdown .. " - " .. info.DP .. " DP"
+               end
+               breakdown = breakdown .. " = " .. tostring(info.final or "?")
+               GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+               GameTooltip:SetText(breakdown)
+               GameTooltip:Show()
        end)
-       frame:SetScript("OnLeave", addon.HideTooltip)
-       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+       frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
+       data[realrow].cols[column].value = data[realrow].roll
 end
 
 function SLVotingFrame.filterFunc(table, row)
