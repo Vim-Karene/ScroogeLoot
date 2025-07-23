@@ -145,7 +145,7 @@ function SLPlayerManagementFrame:Save(target)
             class = d.class,
             raiderrank = d.raiderrank,
             SP = tonumber(d.SP) or 0,
-            DP = tonumber(d.DP) or 0,
+            DP = math.max(0, math.min(200, tonumber(d.DP) or 0)),
             item1 = d.item1,
             item1received = not not d.item1received,
             item2 = d.item2,
