@@ -79,7 +79,8 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
     local dp = db.DP or 0
 
     local payload = string.format(
-        "ROLL:%s:%s:%d:%d:%d",
+        "ROLL:%d:%s:%s:%d:%d:%d",
+        sessionID,
         playerName,
         rollType,
         baseRoll,

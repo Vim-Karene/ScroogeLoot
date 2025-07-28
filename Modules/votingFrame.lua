@@ -32,7 +32,8 @@ local function OnAddonMessage(prefix, msg, channel, sender)
     if prefix ~= "ScroogeLoot" then return end
 
     if strsub(msg, 1, 5) == "ROLL:" then
-        local _, name, rollType, base, sp, dp = strsplit(":", msg)
+        local _, ses, name, rollType, base, sp, dp = strsplit(":", msg)
+        ses = tonumber(ses)
         base = tonumber(base)
         sp = tonumber(sp)
         dp = tonumber(dp)
@@ -43,8 +44,8 @@ local function OnAddonMessage(prefix, msg, channel, sender)
             final = base - dp
         end
         if SLVotingFrame then
-            SLVotingFrame:SetCandidateData(nil, name, "response", rollType)
-            SLVotingFrame:SetCandidateData(nil, name, "roll", final)
+            SLVotingFrame:SetCandidateData(ses, name, "response", rollType)
+            SLVotingFrame:SetCandidateData(ses, name, "roll", final)
             SLVotingFrame:Update()
         end
     end
