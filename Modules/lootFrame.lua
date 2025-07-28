@@ -53,6 +53,35 @@ local function PlayerHasReservedItem(itemName)
     return normalize(data.item1) == target or normalize(data.item2) == target or normalize(data.item3) == target
 end
 
+-- Returns true if the current player's reserved entry for the item is marked as received
+local function PlayerReceivedReservedItem(itemName)
+    if not itemName or itemName == "" then return false end
+    local player = UnitName("player")
+    local data = (PlayerDB and PlayerDB[player]) or (addon.PlayerData and addon.PlayerData[player])
+    if not data then return false end
+
+    local function normalize(entry)
+        if not entry or entry == "" then return nil end
+        if type(entry) ~= "string" then return nil end
+        if entry:find("|Hitem:") then
+            local n = GetItemInfo(entry)
+            if n then return n:lower() end
+        end
+        return entry:lower()
+    end
+
+    local target = itemName:lower()
+    if normalize(data.item1) == target then return data.item1received end
+    if normalize(data.item2) == target then return data.item2received end
+    if normalize(data.item3) == target then return data.item3received end
+    return false
+end
+
+-- Determine if the player can scrooge the given item
+local function PlayerCanScrooge(itemName)
+    return PlayerHasReservedItem(itemName) and not PlayerReceivedReservedItem(itemName)
+end
+
 local function OnRollOptionClick(playerName, rollType, sessionID)
     local db = PlayerDB and PlayerDB[playerName]
     if not db then
@@ -241,12 +270,20 @@ function LootFrame:Update()
                                 but:SetWidth(but:GetTextWidth() + 10)
                                 width = width + but:GetWidth()
                         end
-                        -- Enable Scrooge button only if item is reserved
+                        -- Update Scrooge and Drool buttons based on reserve status
                         local scroogeBtn = entries[numEntries].buttons[1]
-                        if PlayerHasReservedItem(v.name) then
+                        local droolBtn = entries[numEntries].buttons[2]
+
+                        if PlayerCanScrooge(v.name) then
                                 scroogeBtn:Enable()
                         else
                                 scroogeBtn:Disable()
+                        end
+
+                        if PlayerReceivedReservedItem(v.name) then
+                                droolBtn:Disable()
+                        else
+                                droolBtn:Enable()
                         end
                        entries[numEntries]:SetWidth(width)
                        entries[numEntries]:Show()
