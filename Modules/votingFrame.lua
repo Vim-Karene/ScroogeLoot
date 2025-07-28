@@ -840,6 +840,11 @@ function SLVotingFrame:GetFrame()
                         end
                         local total = data.attended + data.absent
                         data.attendance = total > 0 and math.floor((data.attended / total) * 100) or 0
+
+                        -- Award SP for raiders on attendance check
+                        if data.raiderrank then
+                                data.SP = (data.SP or 0) + 5
+                        end
                 end
 
                 if addon.playerDB and addon.playerDB.global then
