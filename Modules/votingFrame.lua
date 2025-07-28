@@ -81,7 +81,8 @@ local function UpdateVotingRow(playerName)
     if not st then return end
     for i, row in ipairs(st.data or {}) do
         if row.name == playerName then
-            row.cols[1].value = playerName
+            local displayName = PlayerDB and PlayerDB[playerName] and PlayerDB[playerName].name or playerName
+            row.cols[1].value = displayName
             row.cols[2].value = data.raiderrank and 1 or 0
             row.cols[4].value = attendance
             row.cols[7].value = lootTable[session].candidates[playerName].roll
@@ -467,7 +468,7 @@ function SLVotingFrame:BuildST()
                                 roll = cand.roll,
                                 rollInfo = cand.rollInfo,
                                 cols = {
-                                        { value = name },
+                                        { value = pdata.name or name },
                                         { value = pdata.raiderrank and 1 or 0 },
                                         { value = cand.response },
                                         { value = attendance },
@@ -494,7 +495,7 @@ function SLVotingFrame:AddVotingRow(rowData)
                 roll = rowData.roll,
                 rollInfo = rowData.rollInfo,
                 cols = {
-                        { value = rowData.name },
+                        { value = (PlayerDB and PlayerDB[rowData.name] and PlayerDB[rowData.name].name) or rowData.name },
                         { value = rowData.raiderrank and 1 or 0 },
                         { value = rowData.response },
                         { value = rowData.attendance },
@@ -542,7 +543,7 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     local row = existing or {
         name = name,
         cols = {
-            { value = name },
+            { value = pdata.name or name },
             { value = pdata.raiderrank and 1 or 0 },
             { value = candidate.response },
             { value = attendance },
@@ -558,7 +559,7 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     row.gear2 = candidate.gear2
     row.roll = adjusted
     row.rollInfo = { base = rollValue, SP = sp, DP = dp, final = adjusted, reason = reason }
-    row.cols[1].value = name
+    row.cols[1].value = pdata.name or name
     row.cols[2].value = pdata.raiderrank and 1 or 0
     row.cols[3].value = candidate.response
     row.cols[4].value = attendance
@@ -927,11 +928,15 @@ function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, c
 end
 
 function SLVotingFrame.SetCellName(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(name)
-	local c = addon:GetClassColor(lootTable[session].candidates[name].class)
-	frame.text:SetTextColor(c.r, c.g, c.b, c.a)
-	data[realrow].cols[column].value = name
+        local name = data[realrow].name
+        local displayName = name
+        if PlayerDB and PlayerDB[name] and PlayerDB[name].name then
+                displayName = PlayerDB[name].name
+        end
+        frame.text:SetText(displayName)
+        local c = addon:GetClassColor(lootTable[session].candidates[name].class)
+        frame.text:SetTextColor(c.r, c.g, c.b, c.a)
+        data[realrow].cols[column].value = displayName
 end
 
 function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
