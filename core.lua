@@ -524,7 +524,12 @@ function ScroogeLoot:ChatCommand(msg)
 
        elseif input == "pm" or input == "playermanager" then
                local pm = self:GetModule("SLPlayerManagementFrame", true)
-               if pm then pm:Show() end
+               if pm and pm.Show then
+                       pm:Show()
+               else
+                       local alt = self:GetModule("SLPlayerManager", true)
+                       if alt and alt.Show then alt:Show() end
+               end
 --@debug@
 	elseif input == "nnp" then
 		self.nnp = not self.nnp
