@@ -1091,14 +1091,17 @@ function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, co
        local info = lootTable[session].candidates[name].rollInfo or {}
        frame.text:SetText(lootTable[session].candidates[name].roll)
        frame:SetScript("OnEnter", function()
-    local lines = { "Base: "..tostring(info.base) }
-    if info.reason == "+SP" then
-        tinsert(lines, "SP+: "..tostring(info.SP))
-    elseif info.reason == "-DP" then
-        tinsert(lines, "DP-: "..tostring(info.DP))
-    end
-    tinsert(lines, "Final: "..tostring(info.final))
-    addon:CreateTooltip(unpack(lines))
+               local lines = {}
+               local base = info.base or 0
+               tinsert(lines, "Base: " .. tostring(base))
+               if info.reason == "+SP" and info.SP then
+                       tinsert(lines, "SP+: " .. tostring(info.SP))
+               elseif info.reason == "-DP" and info.DP then
+                       tinsert(lines, "DP-: " .. tostring(info.DP))
+               end
+               local final = info.final or base
+               tinsert(lines, "Final: " .. tostring(final))
+               addon:CreateTooltip(unpack(lines))
        end)
        frame:SetScript("OnLeave", addon.HideTooltip)
        data[realrow].cols[column].value = lootTable[session].candidates[name].roll
