@@ -241,12 +241,15 @@ function LootFrame:Update()
                                 but:SetWidth(but:GetTextWidth() + 10)
                                 width = width + but:GetWidth()
                         end
-                        -- Enable Scrooge button only if item is reserved
+                        -- Enable Scrooge and Drool buttons only if item is reserved
                         local scroogeBtn = entries[numEntries].buttons[1]
+                        local droolBtn = entries[numEntries].buttons[2]
                         if PlayerHasReservedItem(v.name) then
                                 scroogeBtn:Enable()
+                                droolBtn:Enable()
                         else
                                 scroogeBtn:Disable()
+                                droolBtn:Disable()
                         end
                        entries[numEntries]:SetWidth(width)
                        entries[numEntries]:Show()
