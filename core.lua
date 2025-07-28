@@ -289,8 +289,9 @@ function ScroogeLoot:OnEnable()
         rollFrame:RegisterEvent("CHAT_MSG_ADDON")
         rollFrame:SetScript("OnEvent", function(_, event, prefix, msg, _, sender)
                 if prefix == "ScroogeLoot" then
-                        local cmd, name, rType, base, sp, dp = strsplit(":", msg)
+                        local cmd, ses, name, rType, base, sp, dp = strsplit(":", msg)
                         if cmd == "ROLL" then
+                                ses = tonumber(ses)
                                 local final = tonumber(base)
                                 if rType == "Scrooge" then
                                         final = final + tonumber(sp)
@@ -299,8 +300,8 @@ function ScroogeLoot:OnEnable()
                                 end
                                 local vf = self:GetModule("SLVotingFrame", true)
                                 if vf then
-                                        vf:SetCandidateData(nil, name, "response", rType)
-                                        vf:SetCandidateData(nil, name, "roll", final)
+                                        vf:SetCandidateData(ses, name, "response", rType)
+                                        vf:SetCandidateData(ses, name, "roll", final)
                                         vf:Update()
                                 end
                         end
