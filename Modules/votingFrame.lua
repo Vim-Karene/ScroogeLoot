@@ -801,6 +801,18 @@ function SLVotingFrame:GetFrame()
 	--b4:SetNormalTexture("Interface\\Icons\\INV_Enchant_Disenchant")
 --	b4:Hide() -- hidden by default
 	f.disenchant = b4
+        -- Attendance Check button
+        local b5 = addon:CreateButton(L["Attendance Check"], f.content)
+        b5:SetPoint("RIGHT", b4, "LEFT", -10, 0)
+        b5:SetScript("OnClick", function()
+                local pm = addon:GetModule("SLPlayerManagementFrame", true)
+                if pm and pm.Show then
+                        pm:Show()
+                else
+                        addon:Print("Attendance frame not available")
+                end
+        end)
+        f.attendance = b5
 
 	-- Number of votes
 	local rf = CreateFrame("Frame", nil, f.content)

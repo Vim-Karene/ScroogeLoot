@@ -147,6 +147,7 @@ L["Enter your note:"] = true
 L["Everyone have voted"] = true
 L["Filter"] = true
 L["Following winners was registered:"] = true
+L["Attendance Check"] = true
 L["Free"] = true
 L["From:"] = true
 L["g1"] = true
