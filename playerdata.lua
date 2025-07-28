@@ -13,7 +13,7 @@ local function EnsurePlayer(name)
             class = "",
             raiderrank = false,
             SP = 0,
-            DP = 0,
+            DP = 0, -- capped at 200 when updated
             attended = 0,
             absent = 0,
             attendance = 100,
@@ -73,6 +73,9 @@ end
 function addon:SetPlayerField(name, field, value)
     if not self.isMasterLooter then return end
     EnsurePlayer(name)
+    if field == "DP" then
+        value = math.min(200, tonumber(value) or 0)
+    end
     self.PlayerData[name][field] = value
     self:BroadcastPlayerData()
 end
@@ -114,6 +117,13 @@ end
 local addonName = ...
 PlayerDB = PlayerDB or {}
 
+local function ClampDP(v)
+    v = tonumber(v) or 0
+    if v > 200 then v = 200 end
+    if v < 0 then v = 0 end
+    return v
+end
+
 local function InitializePlayerData(playerName, class)
     if not PlayerDB[playerName] then
         PlayerDB[playerName] = {
@@ -121,7 +131,7 @@ local function InitializePlayerData(playerName, class)
             class = class,
             raiderrank = false,
             SP = 0,
-            DP = 0,
+            DP = ClampDP(0),
             attended = 0,
             absent = 0,
             attendance = 0,
@@ -146,6 +156,7 @@ local function InitializePlayerData(playerName, class)
                 player[k] = nil
             end
         end
+        player.DP = ClampDP(player.DP)
         -- Fill missing fields
         for k in pairs(keepFields) do
             if player[k] == nil then
@@ -165,6 +176,9 @@ end
 
 function RegisterPlayer(name, class)
     InitializePlayerData(name, class)
+    if PlayerDB[name] then
+        PlayerDB[name].DP = ClampDP(PlayerDB[name].DP)
+    end
     UpdateAttendance(name)
 end
 
