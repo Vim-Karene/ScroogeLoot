@@ -79,6 +79,21 @@ function SLPlayerManager:GetFrame()
     local f = addon:CreateFrame("SLPlayerManagerFrame", "playerManager", L["Player Management"], 900, 400)
     self:CreateUI(f.content)
     f:SetWidth(f.content.st.frame:GetWidth()+20)
+
+    -- Add a close button and move existing buttons to make room
+    local closeBtn = addon:CreateButton(L["Close"], f.content)
+    closeBtn:SetPoint("BOTTOMRIGHT", f, "BOTTOMRIGHT", -10, 10)
+    closeBtn:SetScript("OnClick", function() self:Hide() end)
+    f.closeBtn = closeBtn
+
+    local content = f.content
+    content.saveBtn:ClearAllPoints()
+    content.saveBtn:SetPoint("RIGHT", closeBtn, "LEFT", -10, 0)
+    content.exportBtn:ClearAllPoints()
+    content.exportBtn:SetPoint("RIGHT", content.saveBtn, "LEFT", -10, 0)
+    content.importBtn:ClearAllPoints()
+    content.importBtn:SetPoint("RIGHT", content.exportBtn, "LEFT", -10, 0)
+
     return f
 end
 
