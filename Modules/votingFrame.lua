@@ -1002,10 +1002,9 @@ function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, co
         data[realrow].cols[column].value = val and 1 or 0
 end
 
-function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(addon:GetResponseText(lootTable[session].candidates[name].response))
-	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
+function SLVotingFrame.SetCellResponse(_, frame, data, _, _, realrow, _, _, ...)
+    local response = data[realrow].response
+    frame.text:SetText(response or "")
 end
 
 function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
