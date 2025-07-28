@@ -805,12 +805,54 @@ function SLVotingFrame:GetFrame()
         local b5 = addon:CreateButton(L["Attendance Check"], f.content)
         b5:SetPoint("RIGHT", b4, "LEFT", -10, 0)
         b5:SetScript("OnClick", function()
-                local pm = addon:GetModule("SLPlayerManagementFrame", true)
-                if pm and pm.Show then
-                        pm:Show()
+                PlayerDB = PlayerDB or {}
+                local inRaid = {}
+
+                if addon:IsInRaid() then
+                        for i = 1, addon:GetNumGroupMembers() do
+                                local name = UnitName("raid" .. i)
+                                if name then
+                                        inRaid[name] = true
+                                end
+                        end
+                elseif addon:IsInGroup() then
+                        for i = 0, addon:GetNumGroupMembers() do
+                                local unit = i == 0 and "player" or ("party" .. i)
+                                local name = UnitName(unit)
+                                if name then
+                                        inRaid[name] = true
+                                end
+                        end
                 else
-                        addon:Print("Attendance frame not available")
+                        local name = UnitName("player")
+                        if name then
+                                inRaid[name] = true
+                        end
                 end
+
+                for name, data in pairs(PlayerDB) do
+                        data.attended = data.attended or 0
+                        data.absent = data.absent or 0
+                        if inRaid[name] then
+                                data.attended = data.attended + 1
+                        else
+                                data.absent = data.absent + 1
+                        end
+                        local total = data.attended + data.absent
+                        data.attendance = total > 0 and math.floor((data.attended / total) * 100) or 0
+                end
+
+                if addon.playerDB and addon.playerDB.global then
+                        addon.playerDB.global.playerData = PlayerDB
+                end
+
+                if SLVotingFrame.frame and SLVotingFrame.frame.st and SLVotingFrame.frame.st.data then
+                        for _, row in ipairs(SLVotingFrame.frame.st.data) do
+                                UpdateVotingRow(row.name)
+                        end
+                end
+
+                addon:Print("Attendance updated")
         end)
         f.attendance = b5
 
