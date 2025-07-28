@@ -31,6 +31,28 @@ local function PlayerHasItemToken(p, item) return true end
 local function PlayerGotItem(p, item) return false end
 local function CanEquipItem(name, item) return true end
 
+-- Returns true if the current player has the given item name
+-- listed in their PlayerDB or PlayerData item1-3 fields.
+local function PlayerHasReservedItem(itemName)
+    if not itemName or itemName == "" then return false end
+    local player = UnitName("player")
+    local data = (PlayerDB and PlayerDB[player]) or (addon.PlayerData and addon.PlayerData[player])
+    if not data then return false end
+
+    local function normalize(entry)
+        if not entry or entry == "" then return nil end
+        if type(entry) ~= "string" then return nil end
+        if entry:find("|Hitem:") then
+            local n = GetItemInfo(entry)
+            if n then return n:lower() end
+        end
+        return entry:lower()
+    end
+
+    local target = itemName:lower()
+    return normalize(data.item1) == target or normalize(data.item2) == target or normalize(data.item3) == target
+end
+
 local function OnRollOptionClick(playerName, rollType, sessionID)
     local db = PlayerDB and PlayerDB[playerName]
     if not db then
@@ -210,17 +232,24 @@ function LootFrame:Update()
 
 			-- Update the buttons and get frame width
 			-- IDEA There might be a better way of doing this instead of SetText() on every update?
-			local but = entries[numEntries].buttons[addon.mldb.numButtons+1]
-			but:SetWidth(but:GetTextWidth() + 10)
-			width = width + but:GetWidth()
-			for i = 1, addon.mldb.numButtons do
-				but = entries[numEntries].buttons[i]
-				but:SetText(addon:GetButtonText(i))
-				but:SetWidth(but:GetTextWidth() + 10)
-				width = width + but:GetWidth()
-			end
-			entries[numEntries]:SetWidth(width)
-			entries[numEntries]:Show()
+                        local but = entries[numEntries].buttons[addon.mldb.numButtons+1]
+                        but:SetWidth(but:GetTextWidth() + 10)
+                        width = width + but:GetWidth()
+                        for i = 1, addon.mldb.numButtons do
+                                but = entries[numEntries].buttons[i]
+                                but:SetText(addon:GetButtonText(i))
+                                but:SetWidth(but:GetTextWidth() + 10)
+                                width = width + but:GetWidth()
+                        end
+                        -- Enable Scrooge button only if item is reserved
+                        local scroogeBtn = entries[numEntries].buttons[1]
+                        if PlayerHasReservedItem(v.name) then
+                                scroogeBtn:Enable()
+                        else
+                                scroogeBtn:Disable()
+                        end
+                       entries[numEntries]:SetWidth(width)
+                       entries[numEntries]:Show()
 		end
 	end
 	self.frame:SetHeight(numEntries * ENTRY_HEIGHT)
