@@ -24,6 +24,15 @@ local keys = {} -- Lookup table for cols TODO implement this
 local menuFrame -- Right click menu frame
 local filterMenu -- Filter drop down menu
 local enchanters -- Enchanters drop down menu frame
+-- Map roll type strings from the loot buttons to the response index
+local RESPONSE_LOOKUP = {
+    ["Scrooge"] = 1,
+    ["Drool"] = 2,
+    ["Deducktion"] = 3,
+    ["Main-Spec"] = 4,
+    ["Off-Spec"] = 5,
+    ["Transmog"] = 6,
+}
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
@@ -43,8 +52,9 @@ local function OnAddonMessage(prefix, msg, channel, sender)
         elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
             final = base - dp
         end
+        local response = RESPONSE_LOOKUP[rollType] or rollType
         if SLVotingFrame then
-            SLVotingFrame:SetCandidateData(ses, name, "response", rollType)
+            SLVotingFrame:SetCandidateData(ses, name, "response", response)
             SLVotingFrame:SetCandidateData(ses, name, "roll", final)
             SLVotingFrame:Update()
         end
