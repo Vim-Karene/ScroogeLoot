@@ -94,40 +94,6 @@ local function UpdateVotingRow(playerName)
     end
 end
 
--- Master looter only: handle an incoming roll choice and update the table
-local function HandleRollChoice(sessionID, playerName, rollType)
-    local playerData = PlayerDB and PlayerDB[playerName]
-    if not playerData then
-        local _, class = UnitClass(playerName)
-        if RegisterPlayer then
-            RegisterPlayer(playerName, class)
-        end
-        playerData = PlayerDB and PlayerDB[playerName]
-    end
-    if not playerData or not sessionID then return end
-
-    local baseRoll = math.random(1, 100)
-    local modifiedRoll = baseRoll
-
-    if rollType == "SP" then
-        modifiedRoll = baseRoll + (playerData.SP or 0)
-    elseif rollType == "DP" then
-        modifiedRoll = baseRoll - (playerData.DP or 0)
-    end
-
-    SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
-    SLVotingFrame:SetCandidateData(sessionID, playerName, "rollInfo", {
-        base = baseRoll,
-        final = modifiedRoll,
-        SP = playerData.SP,
-        DP = playerData.DP,
-    })
-    if SLVotingFrame.frame and SLVotingFrame.frame.st then
-        SLVotingFrame.frame.st:Refresh()
-    end
-    UpdateVotingRow(playerName)
-    SLVotingFrame:Update()
-end
 
 function SLVotingFrame:OnInitialize()
         self.scrollCols = {
@@ -249,7 +215,7 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 
                        elseif command == "roll_choice" and addon.isMasterLooter then
                                local ses, name, rType = unpack(data)
-                               HandleRollChoice(ses, name, rType)
+                               addon:HandleRollChoice(tonumber(ses), name, rType)
 
                        elseif command == "lootAck" then
 				local name = unpack(data)
@@ -1085,19 +1051,29 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 	frame.noteBtn = f
 end
 
-function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local info = lootTable[session].candidates[name].rollInfo or {}
-       frame.text:SetText(lootTable[session].candidates[name].roll)
-       frame:SetScript("OnEnter", function()
-               addon:CreateTooltip(
-                       "Base: "..tostring(info.base),
-                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
-                       "Final: "..tostring(info.final)
-               )
-       end)
-       frame:SetScript("OnLeave", addon.HideTooltip)
-       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+function SLVotingFrame.SetCellRoll(_, frame, data, _, _, realrow)
+       local roll = data[realrow].roll or ""
+       frame.text:SetText(roll)
+
+       local info = data[realrow].rollInfo
+       if info then
+               local t = "Roll " .. (info.base or "?")
+               if info.SP then
+                       t = t .. " + " .. info.SP .. " SP"
+               elseif info.DP then
+                       t = t .. " - " .. info.DP .. " DP"
+               end
+               t = t .. " = " .. info.final
+               frame:SetScript("OnEnter", function()
+                       GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+                       GameTooltip:SetText(t)
+                       GameTooltip:Show()
+               end)
+               frame:SetScript("OnLeave", GameTooltip_Hide)
+       else
+               frame:SetScript("OnEnter", nil)
+               frame:SetScript("OnLeave", nil)
+       end
 end
 
 function SLVotingFrame.filterFunc(table, row)

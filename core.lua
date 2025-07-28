@@ -778,8 +778,8 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 			elseif command == "playerInfoRequest" then
 				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
 
-			elseif command == "playerData" then
-				-- Update local PlayerData from the master looter
+                        elseif command == "playerData" then
+                                -- Update local PlayerData from the master looter
                                 if not self.isMasterLooter then
                                         local incomingData = unpack(data)
                                         self.PlayerData = incomingData
@@ -790,8 +790,11 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
                                                 self.playerDB.global.playerData = incomingData
                                         end
                                 end
-			elseif command == "message" then
-				self:Print(unpack(data))
+                        elseif command == "roll_choice" then
+                                local ses, name, rType = unpack(data)
+                                self:HandleRollChoice(tonumber(ses), name, rType)
+                        elseif command == "message" then
+                                self:Print(unpack(data))
 
 			elseif command == "session_end" and self.enabled then
 				if self:UnitIsUnit(sender, self.masterLooter) then
