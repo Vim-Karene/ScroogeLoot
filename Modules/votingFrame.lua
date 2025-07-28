@@ -1093,11 +1093,11 @@ function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, co
        frame:SetScript("OnEnter", function()
     local lines = { "Base: "..tostring(info.base) }
     if info.reason == "+SP" then
-        table.insert(lines, "SP+: "..tostring(info.SP))
+        tinsert(lines, "SP+: "..tostring(info.SP))
     elseif info.reason == "-DP" then
-        table.insert(lines, "DP-: "..tostring(info.DP))
+        tinsert(lines, "DP-: "..tostring(info.DP))
     end
-    table.insert(lines, "Final: "..tostring(info.final))
+    tinsert(lines, "Final: "..tostring(info.final))
     addon:CreateTooltip(unpack(lines))
        end)
        frame:SetScript("OnLeave", addon.HideTooltip)
