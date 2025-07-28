@@ -31,6 +31,13 @@ local function PlayerHasItemToken(p, item) return true end
 local function PlayerGotItem(p, item) return false end
 local function CanEquipItem(name, item) return true end
 
+-- Returns true if the current player has Raider rank
+local function PlayerHasRaiderRank()
+    local player = UnitName("player")
+    local data = (PlayerDB and PlayerDB[player]) or (addon.PlayerData and addon.PlayerData[player])
+    return data and data.raiderrank
+end
+
 -- Returns true if the current player has the given item name
 -- listed in their PlayerDB or PlayerData item1-3 fields.
 local function PlayerHasReservedItem(itemName)
@@ -244,6 +251,7 @@ function LootFrame:Update()
                         -- Enable Scrooge and Drool buttons only if item is reserved
                         local scroogeBtn = entries[numEntries].buttons[1]
                         local droolBtn = entries[numEntries].buttons[2]
+                        local deduckBtn = entries[numEntries].buttons[3]
                         if PlayerHasReservedItem(v.name) then
                                 scroogeBtn:Enable()
                                 droolBtn:Enable()
@@ -251,10 +259,16 @@ function LootFrame:Update()
                                 scroogeBtn:Disable()
                                 droolBtn:Disable()
                         end
+                        if deduckBtn then deduckBtn:Enable() end
+                        if not PlayerHasRaiderRank() then
+                                scroogeBtn:Disable()
+                                droolBtn:Disable()
+                                if deduckBtn then deduckBtn:Disable() end
+                        end
                        entries[numEntries]:SetWidth(width)
                        entries[numEntries]:Show()
-		end
-	end
+               end
+       end
 	self.frame:SetHeight(numEntries * ENTRY_HEIGHT)
 	self.frame:SetWidth(width)
 	for i = MAX_ENTRIES, numEntries + 1, -1 do -- Hide unused
