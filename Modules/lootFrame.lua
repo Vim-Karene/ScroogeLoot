@@ -61,37 +61,7 @@ local function PlayerHasReservedItem(itemName)
 end
 
 local function OnRollOptionClick(playerName, rollType, sessionID)
-    local db = PlayerDB and PlayerDB[playerName]
-    if not db then
-        local _, class = UnitClass(playerName)
-        if RegisterPlayer then
-            RegisterPlayer(playerName, class)
-        end
-        db = PlayerDB and PlayerDB[playerName]
-    end
-    if not db then
-        print("Player not found in PlayerDB:", playerName)
-        return
-    end
-
-    local baseRoll = math.random(1, 100)
-    local sp = db.SP or 0
-    local dp = db.DP or 0
-
-    local payload = string.format(
-        "ROLL:%s:%s:%d:%d:%d",
-        playerName,
-        rollType,
-        baseRoll,
-        sp,
-        dp
-    )
-
-    if C_ChatInfo and C_ChatInfo.SendAddonMessage then
-        C_ChatInfo.SendAddonMessage("ScroogeLoot", payload, "RAID")
-    else
-        SendAddonMessage("ScroogeLoot", payload, "RAID")
-    end
+    addon:SendCommand("group", "roll_choice", { sessionID, playerName, rollType })
 
     -- Update voting frame with this player if possible
     if addon.ShowCandidates then

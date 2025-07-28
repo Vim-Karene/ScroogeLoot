@@ -775,8 +775,14 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 				self:CallModule("lootframe")
 				self:GetActiveModule("lootframe"):ReRoll(unpack(data))
 
-			elseif command == "playerInfoRequest" then
-				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
+                        elseif command == "playerInfoRequest" then
+                                self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
+
+                        elseif command == "roll_choice" then
+                                local sessionID, playerName, rollType = unpack(data)
+                                if self.HandleRollChoice then
+                                        self:HandleRollChoice(tonumber(sessionID), playerName, rollType)
+                                end
 
 			elseif command == "playerData" then
 				-- Update local PlayerData from the master looter
