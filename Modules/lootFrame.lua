@@ -94,6 +94,11 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
         SendAddonMessage("ScroogeLoot", payload, "RAID")
     end
 
+    -- Inform the master looter about this roll choice so it can be tied to the
+    -- proper session. The sessionID refers to the item currently displayed in
+    -- the loot frame.
+    addon:SendCommand("group", "roll_choice", {sessionID, playerName, rollType})
+
     -- Update voting frame with this player if possible
     if addon.ShowCandidates then
         addon:ShowCandidates({playerName})

@@ -1086,19 +1086,30 @@ function SLVotingFrame.SetCellNote(rowFrame, frame, data, cols, row, realrow, co
 	frame.noteBtn = f
 end
 
-function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local info = lootTable[session].candidates[name].rollInfo or {}
-       frame.text:SetText(lootTable[session].candidates[name].roll)
-       frame:SetScript("OnEnter", function()
-               addon:CreateTooltip(
-                       "Base: "..tostring(info.base),
-                       info.reason == "+SP" and "+SP: "..tostring(info.SP) or info.reason == "-DP" and "-DP: "..tostring(info.DP) or nil,
-                       "Final: "..tostring(info.final)
-               )
-       end)
-       frame:SetScript("OnLeave", addon.HideTooltip)
-       data[realrow].cols[column].value = lootTable[session].candidates[name].roll
+function SLVotingFrame.SetCellRoll(_, frame, data, cols, row, realrow, column)
+    local roll = data[realrow].roll or ""
+    frame.text:SetText(roll)
+    local info = data[realrow].rollInfo
+
+    if info then
+        local breakdown = "Roll " .. (info.base or "?")
+        if info.SP and info.SP > 0 then
+            breakdown = breakdown .. " + " .. info.SP .. " SP"
+        elseif info.DP and info.DP > 0 then
+            breakdown = breakdown .. " - " .. info.DP .. " DP"
+        end
+        breakdown = breakdown .. " = " .. (info.final or "?")
+        frame:SetScript("OnEnter", function()
+            GameTooltip:SetOwner(frame, "ANCHOR_RIGHT")
+            GameTooltip:SetText(breakdown)
+            GameTooltip:Show()
+        end)
+        frame:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    else
+        frame:SetScript("OnEnter", nil)
+        frame:SetScript("OnLeave", nil)
+    end
+    data[realrow].cols[column].value = roll
 end
 
 function SLVotingFrame.filterFunc(table, row)
