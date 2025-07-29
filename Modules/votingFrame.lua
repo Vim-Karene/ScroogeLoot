@@ -255,15 +255,21 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 				local entry_name, data = unpack(data) 
 				addon.mlhistory[entry_name] = data
 			
-                       elseif command == "change_response" and addon:UnitIsUnit(sender, addon.masterLooter) then
+                     elseif command == "change_response" and addon:UnitIsUnit(sender, addon.masterLooter) then
                                local ses, name, response = unpack(data)
                                self:SetCandidateData(ses, name, "response", response)
                                self:SetCandidateData(ses, name, "responseName", addon:GetButtonText(response))
                                self:Update()
 
-                       elseif command == "roll_choice" and addon.isMasterLooter then
+                     elseif command == "roll_choice" then
                                local ses, name, rType = unpack(data)
-                               HandleRollChoice(ses, name, rType)
+                               local response = RESPONSE_MAP[rType] or rType
+                               self:SetCandidateData(ses, name, "response", response)
+                               self:SetCandidateData(ses, name, "responseName", rType)
+                               if addon.isMasterLooter then
+                                       HandleRollChoice(ses, name, rType)
+                               end
+                               self:Update()
 
                        elseif command == "lootAck" then
 				local name = unpack(data)
@@ -308,12 +314,15 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
                                 end
                                 guildRanks = addon:GetGuildRanks() -- Just update it on every session
 
-			elseif command == "response" then
-				local session, name, t = unpack(data)
-				for k,v in pairs(t) do
-					self:SetCandidateData(session, name, k, v)
-				end
-				self:Update()
+                        elseif command == "response" then
+                                local session, name, t = unpack(data)
+                                for k,v in pairs(t) do
+                                        self:SetCandidateData(session, name, k, v)
+                                end
+                                if t.response then
+                                        self:SetCandidateData(session, name, "responseName", addon:GetResponseText(t.response))
+                                end
+                                self:Update()
 			end
 		end
 	end
