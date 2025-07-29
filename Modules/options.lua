@@ -277,16 +277,32 @@ function addon:OptionsTable()
 										type = "toggle",
 										disabled = function() return not self.db.profile.autoLoot end,
 									},
-									autolootBoE = {
-										order = 7,
-										name = L["Autoloot BoE"],
-										desc = L["autoloot_BoE_desc"],
-										type = "toggle",
-										disabled = function() return not self.db.profile.autoLoot end,
-									},
-								},
-							},
-							voteOptions = {
+                                                                       autolootBoE = {
+                                                                               order = 7,
+                                                                               name = L["Autoloot BoE"],
+                                                                               desc = L["autoloot_BoE_desc"],
+                                                                               type = "toggle",
+                                                                               disabled = function() return not self.db.profile.autoLoot end,
+                                                                       },
+                                                                       playerManagement = {
+                                                                               order = 8,
+                                                                               name = L["Player Management"],
+                                                                               type = "execute",
+                                                                               func = function()
+                                                                                       InterfaceOptionsFrame:Hide()
+                                                                                       LibStub("AceConfigDialog-3.0"):CloseAll()
+                                                                                       local pm = addon:GetModule("SLPlayerManagementFrame", true)
+                                                                                       if pm and pm.Show then
+                                                                                               pm:Show()
+                                                                                       else
+                                                                                               local alt = addon:GetModule("SLPlayerManager", true)
+                                                                                               if alt and alt.Show then alt:Show() end
+                                                                                       end
+                                                                               end,
+                                                                       },
+                                                               },
+                                                       },
+                                                       voteOptions = {
 								order = 2,
 								name = L["Voting options"],
 								type = "group",
