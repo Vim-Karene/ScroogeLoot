@@ -58,6 +58,19 @@ local function OnAddonMessage(prefix, msg, channel, sender)
             SLVotingFrame:SetCandidateData(ses, name, "response", response)
             SLVotingFrame:SetCandidateData(ses, name, "responseName", rollType)
             SLVotingFrame:SetCandidateData(ses, name, "roll", final)
+            local reason
+            if rollType == "Scrooge" then
+                reason = "+SP"
+            elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
+                reason = "-DP"
+            end
+            SLVotingFrame:SetCandidateData(ses, name, "rollInfo", {
+                base = base,
+                SP = sp,
+                DP = dp,
+                final = final,
+                reason = reason,
+            })
             SLVotingFrame:Update()
         end
     end

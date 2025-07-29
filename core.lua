@@ -301,7 +301,21 @@ function ScroogeLoot:OnEnable()
                                 local vf = self:GetModule("SLVotingFrame", true)
                                 if vf then
                                         vf:SetCandidateData(ses, name, "response", rType)
+                                        vf:SetCandidateData(ses, name, "responseName", rType)
                                         vf:SetCandidateData(ses, name, "roll", final)
+                                        local reason
+                                        if rType == "Scrooge" then
+                                                reason = "+SP"
+                                        elseif rType == "Deducktion" or rType == "Main-Spec" or rType == "Off-Spec" then
+                                                reason = "-DP"
+                                        end
+                                        vf:SetCandidateData(ses, name, "rollInfo", {
+                                                base = tonumber(base),
+                                                SP = tonumber(sp),
+                                                DP = tonumber(dp),
+                                                final = final,
+                                                reason = reason,
+                                        })
                                         vf:Update()
                                 end
                         end
