@@ -24,6 +24,16 @@ local keys = {} -- Lookup table for cols TODO implement this
 local menuFrame -- Right click menu frame
 local filterMenu -- Filter drop down menu
 local enchanters -- Enchanters drop down menu frame
+-- Map the text sent with ROLL messages to the numeric response index so
+-- the voting frame can show the correct button label even on WotLK (3.3.5a)
+local RESPONSE_MAP = {
+    ["Scrooge"] = 1,
+    ["Drool"] = 2,
+    ["Deducktion"] = 3,
+    ["Main-Spec"] = 4,
+    ["Off-Spec"] = 5,
+    ["Transmog"] = 6,
+}
 local guildRanks = {} -- returned from addon:GetGuildRanks()
 local GuildRankSort, ResponseSort -- Initialize now to avoid errors
 
@@ -43,8 +53,9 @@ local function OnAddonMessage(prefix, msg, channel, sender)
         elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
             final = base - dp
         end
+        local response = RESPONSE_MAP[rollType] or rollType
         if SLVotingFrame then
-            SLVotingFrame:SetCandidateData(ses, name, "response", rollType)
+            SLVotingFrame:SetCandidateData(ses, name, "response", response)
             SLVotingFrame:SetCandidateData(ses, name, "roll", final)
             SLVotingFrame:Update()
         end
@@ -840,6 +851,11 @@ function SLVotingFrame:GetFrame()
                         end
                         local total = data.attended + data.absent
                         data.attendance = total > 0 and math.floor((data.attended / total) * 100) or 0
+
+                        -- Award SP for raiders on attendance check
+                        if data.raiderrank then
+                                data.SP = (data.SP or 0) + 5
+                        end
                 end
 
                 if addon.playerDB and addon.playerDB.global then
