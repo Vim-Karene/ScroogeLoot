@@ -587,6 +587,18 @@ function ScroogeLootML:Award(session, winner, response, reason)
                                         addon:BroadcastPlayerData()
                                 end
                         end
+                        -- Deduct DP when item is awarded for a deducktion response
+                        if response == 3 and PlayerDB then
+                                if PlayerDB[winner] then
+                                        PlayerDB[winner].DP = (PlayerDB[winner].DP or 0) - 50
+                                end
+                                if addon.PlayerData and addon.PlayerData[winner] then
+                                        addon.PlayerData[winner].DP = (addon.PlayerData[winner].DP or 0) - 50
+                                end
+                                if addon.BroadcastPlayerData then
+                                        addon:BroadcastPlayerData()
+                                end
+                        end
                         -- IDEA Switch session ?
 
                         self:AnnounceAward(winner, self.lootTable[session].link, reason and reason.text or db.responses[response].text)
