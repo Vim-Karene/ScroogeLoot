@@ -571,14 +571,26 @@ function ScroogeLootML:Award(session, winner, response, reason)
 				end
 			end
 		end
-		if awarded then
-			-- flag the item as awarded and update
-			addon:SendCommand("group", "awarded", session)
-			self.lootTable[session].awarded = true -- No need to let Comms handle this
-			-- IDEA Switch session ?
+                if awarded then
+                        -- flag the item as awarded and update
+                        addon:SendCommand("group", "awarded", session)
+                        self.lootTable[session].awarded = true -- No need to let Comms handle this
+                        -- Reset SP when item is awarded for a scrooge response
+                        if response == 1 and PlayerDB then
+                                if PlayerDB[winner] then
+                                        PlayerDB[winner].SP = 0
+                                end
+                                if addon.PlayerData and addon.PlayerData[winner] then
+                                        addon.PlayerData[winner].SP = 0
+                                end
+                                if addon.BroadcastPlayerData then
+                                        addon:BroadcastPlayerData()
+                                end
+                        end
+                        -- IDEA Switch session ?
 
-			self:AnnounceAward(winner, self.lootTable[session].link, reason and reason.text or db.responses[response].text)
-			if self:HasAllItemsBeenAwarded() then self:EndSession() end
+                        self:AnnounceAward(winner, self.lootTable[session].link, reason and reason.text or db.responses[response].text)
+                        if self:HasAllItemsBeenAwarded() then self:EndSession() end
 
 		else -- If we reach here it means we couldn't find a valid MasterLootCandidate, propably due to the winner is unable to receive the loot
 			addon:Print(format(L["Unable to give 'item' to 'player' - (player offline, left group or instance?)"], self.lootTable[session].link, winner))
