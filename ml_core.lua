@@ -590,10 +590,14 @@ function ScroogeLootML:Award(session, winner, response, reason)
                         -- Deduct DP when item is awarded for a deducktion response
                         if response == 3 and PlayerDB then
                                 if PlayerDB[winner] then
-                                        PlayerDB[winner].DP = (PlayerDB[winner].DP or 0) - 50
+                                        local newDP = (PlayerDB[winner].DP or 0) - 50
+                                        if newDP < -200 then newDP = -200 end
+                                        PlayerDB[winner].DP = newDP
                                 end
                                 if addon.PlayerData and addon.PlayerData[winner] then
-                                        addon.PlayerData[winner].DP = (addon.PlayerData[winner].DP or 0) - 50
+                                        local newDP = (addon.PlayerData[winner].DP or 0) - 50
+                                        if newDP < -200 then newDP = -200 end
+                                        addon.PlayerData[winner].DP = newDP
                                 end
                                 if addon.BroadcastPlayerData then
                                         addon:BroadcastPlayerData()
