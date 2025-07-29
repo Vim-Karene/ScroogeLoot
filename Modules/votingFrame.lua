@@ -24,8 +24,9 @@ local keys = {} -- Lookup table for cols TODO implement this
 local menuFrame -- Right click menu frame
 local filterMenu -- Filter drop down menu
 local enchanters -- Enchanters drop down menu frame
--- Map roll type strings from the loot buttons to the response index
-local RESPONSE_LOOKUP = {
+-- Map the text sent with ROLL messages to the numeric response index so
+-- the voting frame can show the correct button label even on WotLK (3.3.5a)
+local RESPONSE_MAP = {
     ["Scrooge"] = 1,
     ["Drool"] = 2,
     ["Deducktion"] = 3,
@@ -52,7 +53,7 @@ local function OnAddonMessage(prefix, msg, channel, sender)
         elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
             final = base - dp
         end
-        local response = RESPONSE_LOOKUP[rollType] or rollType
+        local response = RESPONSE_MAP[rollType] or rollType
         if SLVotingFrame then
             SLVotingFrame:SetCandidateData(ses, name, "response", response)
             SLVotingFrame:SetCandidateData(ses, name, "roll", final)
