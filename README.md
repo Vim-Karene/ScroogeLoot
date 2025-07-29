@@ -111,7 +111,7 @@ and player data directly in game.
 - `/slroster` – View the current attendance summary.
 - `/slstats` – Show the statistics dashboard.
 - `/slhelp` – Print all available Scrooge Loot commands in chat.
-- `/sl export` – Export player data to
+- `/sl export` or `/sl -export` – Export player data to
   `Interface/AddOns/ScroogeLoot/Exports/PlayerData.xml`.
 
 # 🦆 Scrooge Loot – How the System is intended to work:

@@ -583,7 +583,7 @@ function ScroogeLoot:ChatCommand(msg)
                 wipe(debugLog)
                 self:Print("Debug Log cleared.")
 
-        elseif input == "export" then
+        elseif input == "export" or input == "-export" then
                 self:ExportPlayerDB()
 --@debug@
 	elseif input == 't' then -- Tester cmd
