@@ -606,6 +606,9 @@ function ScroogeLootML:Award(session, winner, response, reason)
                         -- IDEA Switch session ?
 
                         self:AnnounceAward(winner, self.lootTable[session].link, reason and reason.text or db.responses[response].text)
+                        if response == 6 then
+                                SendChatMessage("Thank you for making a small totally optional donation to the guild bank ;)", "WHISPER", nil, winner)
+                        end
                         if self:HasAllItemsBeenAwarded() then self:EndSession() end
 
 		else -- If we reach here it means we couldn't find a valid MasterLootCandidate, propably due to the winner is unable to receive the loot
