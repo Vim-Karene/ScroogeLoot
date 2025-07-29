@@ -94,6 +94,9 @@ local function OnRollOptionClick(playerName, rollType, sessionID)
         SendAddonMessage("ScroogeLoot", payload, "RAID")
     end
 
+    -- Notify the master looter via AceComm so the voting frame can update
+    addon:SendCommand("group", "roll_choice", sessionID, playerName, rollType)
+
     -- Update voting frame with this player if possible
     if addon.ShowCandidates then
         addon:ShowCandidates({playerName})
