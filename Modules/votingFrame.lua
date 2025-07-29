@@ -56,6 +56,7 @@ local function OnAddonMessage(prefix, msg, channel, sender)
         local response = RESPONSE_MAP[rollType] or rollType
         if SLVotingFrame then
             SLVotingFrame:SetCandidateData(ses, name, "response", response)
+            SLVotingFrame:SetCandidateData(ses, name, "responseName", rollType)
             SLVotingFrame:SetCandidateData(ses, name, "roll", final)
             SLVotingFrame:Update()
         end
@@ -257,6 +258,7 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
                        elseif command == "change_response" and addon:UnitIsUnit(sender, addon.masterLooter) then
                                local ses, name, response = unpack(data)
                                self:SetCandidateData(ses, name, "response", response)
+                               self:SetCandidateData(ses, name, "responseName", addon:GetButtonText(response))
                                self:Update()
 
                        elseif command == "roll_choice" and addon.isMasterLooter then
@@ -265,9 +267,10 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 
                        elseif command == "lootAck" then
 				local name = unpack(data)
-				for i = 1, #lootTable do
-					self:SetCandidateData(i, name, "response", "WAIT")
-				end
+                                for i = 1, #lootTable do
+                                        self:SetCandidateData(i, name, "response", "WAIT")
+                                        self:SetCandidateData(i, name, "responseName", addon:GetResponseText("WAIT"))
+                                end
 				self:Update()
 
 			elseif command == "awarded" and addon:UnitIsUnit(sender, addon.masterLooter) then
@@ -284,10 +287,11 @@ function SLVotingFrame:OnCommReceived(prefix, serializedMsg, distri, sender)
 			elseif command == "offline_timer" and addon:UnitIsUnit(sender, addon.masterLooter) then
 				for i = 1, #lootTable do
 					for name in pairs(lootTable[i].candidates) do
-						if self:GetCandidateData(i, name, "response") == "ANNOUNCED" then
-							addon:DebugLog("No response from:", name)
-							self:SetCandidateData(i, name, "response", "NOTHING")
-						end
+                                                if self:GetCandidateData(i, name, "response") == "ANNOUNCED" then
+                                                        addon:DebugLog("No response from:", name)
+                                                        self:SetCandidateData(i, name, "response", "NOTHING")
+                                                        self:SetCandidateData(i, name, "responseName", addon:GetResponseText("NOTHING"))
+                                                end
 					end
 				end
 				self:Update()
@@ -355,6 +359,7 @@ function SLVotingFrame:Setup(table)
                                attendance = CalculateAttendance(PlayerDB[name] and PlayerDB[name].attended or 0,
                                                             PlayerDB[name] and PlayerDB[name].absent or 0),
                                response = "ANNOUNCED",
+                               responseName = addon:GetResponseText("ANNOUNCED"),
                                gear1 = nil,
                                gear2 = nil,
                                votes = 0,
@@ -474,6 +479,7 @@ function SLVotingFrame:BuildST()
                                 name = name,
                                 raiderrank = pdata.raiderrank,
                                 response = cand.response,
+                                responseName = cand.responseName,
                                 attendance = attendance,
                                 gear1 = cand.gear1,
                                 gear2 = cand.gear2,
@@ -501,6 +507,7 @@ function SLVotingFrame:AddVotingRow(rowData)
                 name = rowData.name,
                 raiderrank = rowData.raiderrank,
                 response = rowData.response,
+                responseName = rowData.responseName,
                 attendance = rowData.attendance,
                 gear1 = rowData.gear1,
                 gear2 = rowData.gear2,
@@ -566,6 +573,7 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
     }
     row.raiderrank = pdata.raiderrank
     row.response = candidate.response
+    row.responseName = candidate.responseName
     row.attendance = attendance
     row.gear1 = candidate.gear1
     row.gear2 = candidate.gear2
@@ -1019,9 +1027,11 @@ function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, co
 end
 
 function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local name = data[realrow].name
-	frame.text:SetText(addon:GetResponseText(lootTable[session].candidates[name].response))
-	frame.text:SetTextColor(addon:GetResponseColor(lootTable[session].candidates[name].response))
+        local name = data[realrow].name
+        local cand = lootTable[session].candidates[name]
+        local text = cand.responseName or addon:GetResponseText(cand.response)
+        frame.text:SetText(text)
+        frame.text:SetTextColor(addon:GetResponseColor(cand.response))
 end
 
 function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
