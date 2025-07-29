@@ -48,16 +48,26 @@ local function OnAddonMessage(prefix, msg, channel, sender)
         sp = tonumber(sp)
         dp = tonumber(dp)
         local final = base
+        local reason
         if rollType == "Scrooge" then
             final = base + sp
+            reason = "+SP"
         elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
             final = base - dp
+            reason = "-DP"
         end
         local response = RESPONSE_MAP[rollType] or rollType
         if SLVotingFrame then
             SLVotingFrame:SetCandidateData(ses, name, "response", response)
             SLVotingFrame:SetCandidateData(ses, name, "responseName", rollType)
             SLVotingFrame:SetCandidateData(ses, name, "roll", final)
+            SLVotingFrame:SetCandidateData(ses, name, "rollInfo", {
+                base = base,
+                final = final,
+                SP = sp,
+                DP = dp,
+                reason = reason,
+            })
             SLVotingFrame:Update()
         end
     end
@@ -121,11 +131,14 @@ local function HandleRollChoice(sessionID, playerName, rollType)
 
     local baseRoll = math.random(1, 100)
     local modifiedRoll = baseRoll
+    local reason
 
-    if rollType == "SP" then
+    if rollType == "Scrooge" then
         modifiedRoll = baseRoll + (playerData.SP or 0)
-    elseif rollType == "DP" then
+        reason = "+SP"
+    elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
         modifiedRoll = baseRoll - (playerData.DP or 0)
+        reason = "-DP"
     end
 
     SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
@@ -134,6 +147,7 @@ local function HandleRollChoice(sessionID, playerName, rollType)
         final = modifiedRoll,
         SP = playerData.SP,
         DP = playerData.DP,
+        reason = reason,
     })
     if SLVotingFrame.frame and SLVotingFrame.frame.st then
         SLVotingFrame.frame.st:Refresh()
@@ -1193,9 +1207,9 @@ function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, co
                local base = info.base or 0
                tinsert(lines, "Base: " .. tostring(base))
                if info.reason == "+SP" and info.SP then
-                       tinsert(lines, "SP+: " .. tostring(info.SP))
+                       tinsert(lines, "SP: +" .. tostring(info.SP))
                elseif info.reason == "-DP" and info.DP then
-                       tinsert(lines, "DP-: " .. tostring(info.DP))
+                       tinsert(lines, "DP: -" .. tostring(info.DP))
                end
                local final = info.final or base
                tinsert(lines, "Final: " .. tostring(final))
