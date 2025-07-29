@@ -579,9 +579,12 @@ function ScroogeLoot:ChatCommand(msg)
 	elseif input == "debuglog" or input == "log" then
 		for k,v in ipairs(debugLog) do print(k,v); end
 
-	elseif input == "clearlog" then
-		wipe(debugLog)
-		self:Print("Debug Log cleared.")
+        elseif input == "clearlog" then
+                wipe(debugLog)
+                self:Print("Debug Log cleared.")
+
+        elseif input == "export" then
+                self:ExportPlayerDB()
 --@debug@
 	elseif input == 't' then -- Tester cmd
 		printtable(historyDB)
@@ -1433,11 +1436,40 @@ function ScroogeLoot:Getdb()
 end
 
 function ScroogeLoot:GetHistoryDB()
-	if self.isMasterLooter or (not self:IsInGroup() and not self:IsInRaid()) then 
-		return self.lootDB.factionrealm
-	else 
-		return self.mlhistory 
-	end
+        if self.isMasterLooter or (not self:IsInGroup() and not self:IsInRaid()) then
+                return self.lootDB.factionrealm
+        else
+                return self.mlhistory
+        end
+end
+
+function ScroogeLoot:ExportPlayerDB()
+        local function Escape(str)
+                if not str then return "" end
+                str = str:gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")
+                str = str:gsub('"','&quot;')
+                return str
+        end
+
+        local xml = "<PlayerData>\n"
+        for name, data in pairs(self.PlayerData or {}) do
+                local n = data.name or name
+                xml = xml .. string.format('<Player name="%s" class="%s" raider="%s" SP="%s" DP="%s" attended="%s" absent="%s" item1="%s" item1received="%s" item2="%s" item2received="%s" item3="%s" item3received="%s"/>\n',
+                        Escape(n), Escape(data.class), tostring(data.raiderrank or false), tostring(data.SP or 0), tostring(data.DP or 0),
+                        tostring(data.attended or 0), tostring(data.absent or 0), Escape(data.item1), tostring(data.item1received or false),
+                        Escape(data.item2), tostring(data.item2received or false), Escape(data.item3), tostring(data.item3received or false))
+        end
+        xml = xml .. "</PlayerData>"
+
+        local path = "Interface/AddOns/ScroogeLoot/Exports/PlayerData.xml"
+        local file, err = io.open(path, "w")
+        if not file then
+                self:Print("Failed to export player data: " .. tostring(err))
+                return
+        end
+        file:write(xml)
+        file:close()
+        self:Print("Exported player data to " .. path)
 end
 
 function ScroogeLoot:GetAnnounceChannel(channel)
