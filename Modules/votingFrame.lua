@@ -53,8 +53,8 @@ local function OnAddonMessage(prefix, msg, channel, sender)
             final = base + sp
             reason = "+SP"
         elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
-            final = base - dp
-            reason = "-DP"
+            final = base + dp
+            reason = "+DP"
         end
         local response = RESPONSE_MAP[rollType] or rollType
         if SLVotingFrame then
@@ -137,8 +137,8 @@ local function HandleRollChoice(sessionID, playerName, rollType)
         modifiedRoll = baseRoll + (playerData.SP or 0)
         reason = "+SP"
     elseif rollType == "Deducktion" or rollType == "Main-Spec" or rollType == "Off-Spec" then
-        modifiedRoll = baseRoll - (playerData.DP or 0)
-        reason = "-DP"
+        modifiedRoll = baseRoll + (playerData.DP or 0)
+        reason = "+DP"
     end
 
     SLVotingFrame:SetCandidateData(sessionID, playerName, "roll", modifiedRoll)
@@ -573,8 +573,8 @@ function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
         adjusted = adjusted + sp
         reason = "+SP"
     elseif rollType == "dp" then
-        adjusted = adjusted - dp
-        reason = "-DP"
+        adjusted = adjusted + dp
+        reason = "+DP"
     end
     if not self.frame or not self.frame.st then return end
 
@@ -1208,8 +1208,8 @@ function SLVotingFrame.SetCellRoll(rowFrame, frame, data, cols, row, realrow, co
                tinsert(lines, "Base: " .. tostring(base))
                if info.reason == "+SP" and info.SP then
                        tinsert(lines, "SP: +" .. tostring(info.SP))
-               elseif info.reason == "-DP" and info.DP then
-                       tinsert(lines, "DP: -" .. tostring(info.DP))
+               elseif info.reason == "+DP" and info.DP then
+                       tinsert(lines, "DP: +" .. tostring(info.DP))
                end
                local final = info.final or base
                tinsert(lines, "Final: " .. tostring(final))
