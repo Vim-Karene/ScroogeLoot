@@ -61,9 +61,7 @@ function SLPlayerManagementFrame:GetFrame()
     content.resetBtn:ClearAllPoints()
     content.resetBtn:SetPoint("RIGHT", content.saveBtn, "LEFT", -10, 0)
 
-    -- Move the title slightly above the frame
-    f.title:ClearAllPoints()
-    f.title:SetPoint("BOTTOM", f, "TOP", 0, 5)
+    -- Title is part of the frame; keep default positioning
 
     return f
 end
