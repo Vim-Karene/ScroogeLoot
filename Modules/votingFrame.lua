@@ -438,11 +438,17 @@ function SLVotingFrame:Update()
 		else
 			self.frame.abortBtn:SetText(L["Close"])
 		end
-		self.frame.disenchant:Show()
-	else -- Non-MLs:
-		self.frame.abortBtn:SetText(L["Close"])
-		self.frame.disenchant:Hide()
-	end
+                self.frame.disenchant:Show()
+                if self.frame.attendance then
+                        self.frame.attendance:Show()
+                end
+        else -- Non-MLs:
+                self.frame.abortBtn:SetText(L["Close"])
+                self.frame.disenchant:Hide()
+                if self.frame.attendance then
+                        self.frame.attendance:Hide()
+                end
+        end
 end
 
 function SLVotingFrame:SwitchSession(s)
@@ -833,6 +839,9 @@ function SLVotingFrame:GetFrame()
         local b5 = addon:CreateButton(L["Attendance Check"], f.content)
         b5:SetPoint("RIGHT", b4, "LEFT", -10, 0)
         b5:SetScript("OnClick", function()
+                if not addon.isMasterLooter then
+                        return addon:Print(L["You cannot use this command without being the Master Looter"])
+                end
                 PlayerDB = PlayerDB or {}
                 local inRaid = {}
 
