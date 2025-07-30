@@ -10,17 +10,17 @@ function SLPlayerManagementFrame:OnInitialize()
     self.scrollCols = {
         {name=L["Name"], width=100, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"name") end},
         {name=L["Class"], width=70, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"class") end},
-        {name=L["Raider"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"raiderrank") end},
-        {name="SP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"SP") end},
-        {name="DP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"DP") end},
-        {name=L["Attended"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"attended") end},
-        {name=L["Absence"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"absent") end},
+        {name=L["Raider"], width=20, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"raiderrank") end},
+        {name="SP", width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"SP") end},
+        {name="DP", width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"DP") end},
+        {name=L["Attended"], width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"attended") end},
+        {name=L["Absence"], width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"absent") end},
         {name="Item1", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1") end},
-        {name="Rec1", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1received") end},
+        {name="Rec1", width=20, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1received") end},
         {name="Item2", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2") end},
-        {name="Rec2", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2received") end},
+        {name="Rec2", width=20, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2received") end},
         {name="Item3", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item3") end},
-        {name="Rec3", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item3received") end},
+        {name="Rec3", width=20, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item3received") end},
     }
 end
 
@@ -63,7 +63,7 @@ function SLPlayerManagementFrame:GetFrame()
 
     -- Move the title slightly above the frame
     f.title:ClearAllPoints()
-    f.title:SetPoint("BOTTOM", f, "TOP", 0, 5)
+    f.title:SetPoint("BOTTOM", f, "TOP", 0, 0)
 
     return f
 end
