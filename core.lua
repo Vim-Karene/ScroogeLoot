@@ -139,7 +139,8 @@ function ScroogeLoot:OnInitialize()
 			observe = false, -- observe mode on/off
 			silentAutoPass = false, -- Show autopass message
 			--neverML = false, -- Never use the addon as ML
-			minimizeInCombat = false,
+                        minimizeInCombat = false,
+                        minimapPos = 225,
 
 			UI = { -- stores all ui information
 				['**'] = { -- Defaults for Lib-Window
@@ -1656,10 +1657,38 @@ function ScroogeLoot:CreateMinimapButton()
     b:SetSize(32, 32)
     b:SetFrameStrata("MEDIUM")
     b:SetFrameLevel(8)
-    b:SetNormalTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon_64x64.tga")
-    b:SetPushedTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon_64x64.tga")
+    b:SetNormalTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
+    b:SetPushedTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
     b:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-    b:SetPoint("TOPLEFT", Minimap, "TOPLEFT")
+
+    local overlay = b:CreateTexture(nil, "OVERLAY")
+    overlay:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    overlay:SetSize(54, 54)
+    overlay:SetPoint("TOPLEFT", -11, 11)
+
+    local function updatePosition(angle)
+        self.db.profile.minimapPos = angle
+        local radius = Minimap:GetWidth() / 2 + 5
+        local x = math.cos(math.rad(angle)) * radius
+        local y = math.sin(math.rad(angle)) * radius
+        b:SetPoint("CENTER", Minimap, "CENTER", x, y)
+    end
+
+    b:RegisterForDrag("LeftButton")
+    b:SetScript("OnDragStart", function()
+        b:SetScript("OnUpdate", function()
+            local mx, my = Minimap:GetCenter()
+            local x, y = GetCursorPosition()
+            local scale = Minimap:GetEffectiveScale()
+            x = mx - x / scale
+            y = y / scale - my
+            updatePosition(math.deg(math.atan2(y, x)))
+        end)
+    end)
+    b:SetScript("OnDragStop", function()
+        b:SetScript("OnUpdate", nil)
+    end)
+
     b:SetScript("OnClick", function()
         LibStub("AceConfigDialog-3.0"):Open("ScroogeLoot")
     end)
@@ -1669,6 +1698,8 @@ function ScroogeLoot:CreateMinimapButton()
     b:SetScript("OnLeave", function()
         self:HideTooltip()
     end)
+
+    updatePosition(self.db.profile.minimapPos or 225)
     self.minimapButton = b
 end
 
