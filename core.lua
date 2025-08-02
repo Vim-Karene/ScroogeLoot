@@ -152,6 +152,9 @@ function ScroogeLoot:OnInitialize()
 					y = -200,
 				},
 			},
+                        minimap = {
+                                pos = 225,
+                        },
 
 			modules = { -- For storing module specific data
 				['*'] = {},
@@ -1650,16 +1653,50 @@ function ScroogeLoot:CreateButton(text, parent)
 end
 
 --- Creates a minimap button that opens the config frame
+function ScroogeLoot:UpdateMinimapButton()
+    if not self.minimapButton then return end
+    local angle = self.db.profile.minimap and self.db.profile.minimap.pos or 225
+    local radius = Minimap:GetWidth() / 2 + 5
+    local x = math.cos(math.rad(angle)) * radius
+    local y = math.sin(math.rad(angle)) * radius
+    self.minimapButton:SetPoint("CENTER", Minimap, "CENTER", x, y)
+end
+
 function ScroogeLoot:CreateMinimapButton()
     if self.minimapButton then return end
     local b = CreateFrame("Button", "ScroogeLootMinimapButton", Minimap)
     b:SetSize(32, 32)
     b:SetFrameStrata("MEDIUM")
     b:SetFrameLevel(8)
-    b:SetNormalTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon_64x64.tga")
-    b:SetPushedTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon_64x64.tga")
+
+    local icon = b:CreateTexture(nil, "ARTWORK")
+    icon:SetTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
+    icon:SetTexCoord(0, 1, 0, 1)
+    icon:SetAllPoints()
+    b.icon = icon
+
+    local border = b:CreateTexture(nil, "OVERLAY")
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    border:SetSize(54, 54)
+    border:SetPoint("TOPLEFT", -11, 11)
+    b.border = border
+
     b:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-    b:SetPoint("TOPLEFT", Minimap, "TOPLEFT")
+
+    b:RegisterForDrag("LeftButton")
+    local function dragUpdate(btn)
+        local mx, my = Minimap:GetCenter()
+        local x, y = GetCursorPosition()
+        local scale = UIParent:GetEffectiveScale()
+        local dx, dy = x / scale - mx, y / scale - my
+        local angle = math.deg(math.atan2(dy, dx))
+        if angle < 0 then angle = angle + 360 end
+        ScroogeLoot.db.profile.minimap.pos = angle
+        ScroogeLoot:UpdateMinimapButton()
+    end
+    b:SetScript("OnDragStart", function(btn) btn:SetScript("OnUpdate", dragUpdate) end)
+    b:SetScript("OnDragStop", function(btn) btn:SetScript("OnUpdate", nil) end)
+
     b:SetScript("OnClick", function()
         LibStub("AceConfigDialog-3.0"):Open("ScroogeLoot")
     end)
@@ -1670,6 +1707,7 @@ function ScroogeLoot:CreateMinimapButton()
         self:HideTooltip()
     end)
     self.minimapButton = b
+    self:UpdateMinimapButton()
 end
 
 --- Displays a tooltip anchored to the mouse
