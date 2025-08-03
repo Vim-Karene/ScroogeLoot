@@ -158,12 +158,12 @@ end
 
 function SLVotingFrame:OnInitialize()
         self.scrollCols = {
-                { name = "Name",       width = 100, DoCellUpdate = self.SetCellName },
+                { name = "Name",       width = 120, DoCellUpdate = self.SetCellName },
                 { name = "Rank",       width = 50,  DoCellUpdate = self.SetCellRank },
-                { name = "Response",   width = 100, DoCellUpdate = self.SetCellResponse },
+                { name = "Response",   width = 120, DoCellUpdate = self.SetCellResponse },
                 { name = "Attendance", width = 70,  DoCellUpdate = self.SetCellAttendance },
-                { name = "Gear 1",     width = 120, DoCellUpdate = self.SetCellGear1 },
-                { name = "Gear 2",     width = 120, DoCellUpdate = self.SetCellGear2 },
+                { name = "Gear 1",     width = 20, DoCellUpdate = self.SetCellGear1 },
+                { name = "Gear 2",     width = 20, DoCellUpdate = self.SetCellGear2 },
                 { name = "Roll",       width = 60,  DoCellUpdate = self.SetCellRoll },
         }
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -1561,3 +1561,4 @@ function SLVotingFrame:GetItemStatus(item)
 	GameTooltip:Hide()
 	return text
 end
+
