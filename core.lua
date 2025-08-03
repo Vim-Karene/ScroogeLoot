@@ -123,16 +123,17 @@ function ScroogeLoot:OnInitialize()
 			autoOpen = true, -- auto open the voting frame
 			autoPassBoE = true,
 			autoPass = true,
-			altClickLooting = true,
-			acceptWhispers = true,
-			selfVote = true,
-			multiVote = true,
-			anonymousVoting = false,
-			showForML = false,
-			hideVotes = false, -- Hide the # votes until one have voted
-			allowNotes = true,
-			autoAward = false,
-			autoAwardLowerThreshold = 2,
+                        altClickLooting = true,
+                        acceptWhispers = true,
+                        selfVote = true,
+                        multiVote = true,
+                        anonymousVoting = false,
+                        minimapAngle = 225,
+                        showForML = false,
+                        hideVotes = false, -- Hide the # votes until one have voted
+                        allowNotes = true,
+                        autoAward = false,
+                        autoAwardLowerThreshold = 2,
 			autoAwardUpperThreshold = 3,
 			autoAwardTo = L["None"],
 			autoAwardReason = 1,
@@ -1691,7 +1692,29 @@ function ScroogeLoot:CreateMinimapButton()
     b:SetNormalTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
     b:SetPushedTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
     b:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-    b:SetPoint("TOPLEFT", Minimap, "TOPLEFT")
+
+    local border = CreateFrame("Frame", nil, b, BackdropTemplateMixin and "BackdropTemplate")
+    border:SetAllPoints()
+    border:SetBackdrop({
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        edgeSize = 12,
+    })
+    border:SetBackdropBorderColor(1, 1, 1, 1)
+
+    b:RegisterForDrag("RightButton")
+    b:SetScript("OnDragStart", function(frame)
+        frame:SetScript("OnUpdate", function()
+            local mx, my = Minimap:GetCenter()
+            local cx, cy = GetCursorPosition()
+            local scale = UIParent:GetEffectiveScale()
+            db.minimapAngle = math.deg(math.atan2((cy/scale) - my, (cx/scale) - mx))
+            self:UpdateMinimapButton()
+        end)
+    end)
+    b:SetScript("OnDragStop", function(frame)
+        frame:SetScript("OnUpdate", nil)
+    end)
+
     b:SetScript("OnClick", function()
         LibStub("AceConfigDialog-3.0"):Open("ScroogeLoot")
     end)
@@ -1702,6 +1725,15 @@ function ScroogeLoot:CreateMinimapButton()
         self:HideTooltip()
     end)
     self.minimapButton = b
+    self:UpdateMinimapButton()
+end
+
+function ScroogeLoot:UpdateMinimapButton()
+    if not self.minimapButton then return end
+    local angle = math.rad(db.minimapAngle or 225)
+    local radius = Minimap:GetWidth() / 2 + 5
+    self.minimapButton:ClearAllPoints()
+    self.minimapButton:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radius, math.sin(angle) * radius)
 end
 
 --- Displays a tooltip anchored to the mouse
