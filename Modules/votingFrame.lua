@@ -1083,18 +1083,33 @@ function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realr
 end
 
 function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local gear = data[realrow].cols[column].name -- gear1 or gear2
-	local name = data[realrow].name
-	gear = lootTable[session].candidates[name][gear] -- Get the actual gear
-	if gear then
-		local texture = select(10, GetItemInfo(gear))
-		frame:SetNormalTexture(texture)
-		frame:SetScript("OnEnter", function() addon:CreateHypertip(gear) end)
-		frame:SetScript("OnLeave", function() addon:HideTooltip() end)
-		frame:Show()
-        else
-                frame:Hide()
-        end
+       local gearKey = data[realrow].cols[column].name -- gear1 or gear2
+       local name = data[realrow].name
+       local gear = lootTable[session].candidates[name][gearKey] -- Get the actual gear link
+
+       if gear then
+               local texture = select(10, GetItemInfo(gear))
+               if not texture then -- item info might not be cached yet
+                       texture = "Interface/Icons/INV_Misc_QuestionMark"
+               end
+               frame:SetNormalTexture(texture)
+               frame:SetScript("OnEnter", function() addon:CreateHypertip(gear) end)
+               frame:SetScript("OnLeave", function() addon:HideTooltip() end)
+               frame:Show()
+       else
+               -- No gear received from player, show the slot texture instead of hiding
+               local equipLoc = lootTable[session].equipLoc
+               local slot = addon.INVTYPE_Slots[equipLoc]
+               if slot then
+                       local _, tex = GetInventorySlotInfo(slot[1] or slot)
+                       frame:SetNormalTexture(tex)
+                       frame:SetScript("OnEnter", nil)
+                       frame:SetScript("OnLeave", nil)
+                       frame:Show()
+               else
+                       frame:Hide()
+               end
+       end
 end
 
 function SLVotingFrame.SetCellGear1(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
