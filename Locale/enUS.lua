@@ -111,6 +111,7 @@ L["chat_commands"] = [=[
 - award     - Start a session with items looted to your inventory
 - winners   - Display the winners of awarded items looted to your inventory
 - pm        - Open the Player Management window
+- export    - Export player data to XML
 ]=]
 L["Check this to loot the items and distribute them later."] = true
 L["Check to append the realmname of a player from another realm"] = true
