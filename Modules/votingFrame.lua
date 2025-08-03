@@ -10,7 +10,7 @@ local LibDialog = LibStub("LibDialog-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
 local Deflate = LibStub("LibDeflate")
 
-local ROW_HEIGHT = 20;
+local ROW_HEIGHT = 30;
 local NUM_ROWS = 15;
 local db
 local session = 1 -- The session we're viewing
@@ -162,8 +162,8 @@ function SLVotingFrame:OnInitialize()
                 { name = "Rank",       width = 50,  DoCellUpdate = self.SetCellRank },
                 { name = "Response",   width = 100, DoCellUpdate = self.SetCellResponse },
                 { name = "Attendance", width = 70,  DoCellUpdate = self.SetCellAttendance },
-                { name = "Gear 1",     width = 120, DoCellUpdate = self.SetCellGear1 },
-                { name = "Gear 2",     width = 120, DoCellUpdate = self.SetCellGear2 },
+                { name = "Gear 1",     width = 30,  DoCellUpdate = self.SetCellGear1 },
+                { name = "Gear 2",     width = 30,  DoCellUpdate = self.SetCellGear2 },
                 { name = "Roll",       width = 60,  DoCellUpdate = self.SetCellRoll },
         }
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -1083,9 +1083,10 @@ function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realr
 end
 
 function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local gear = data[realrow].cols[column].name -- gear1 or gear2
-	local name = data[realrow].name
-	gear = lootTable[session].candidates[name][gear] -- Get the actual gear
+        local gear = data[realrow].cols[column].name -- gear1 or gear2
+        local name = data[realrow].name
+        frame:SetSize(30, 30)
+        gear = lootTable[session].candidates[name][gear] -- Get the actual gear
 	if gear then
 		local texture = select(10, GetItemInfo(gear))
 		frame:SetNormalTexture(texture)
