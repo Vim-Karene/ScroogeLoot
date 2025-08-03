@@ -141,6 +141,10 @@ function ScroogeLoot:OnInitialize()
 			--neverML = false, -- Never use the addon as ML
 			minimizeInCombat = false,
 
+			minimap = {
+				angle = math.rad(45),
+			},
+
 			UI = { -- stores all ui information
 				['**'] = { -- Defaults for Lib-Window
 					y		= 0,
@@ -1688,10 +1692,51 @@ function ScroogeLoot:CreateMinimapButton()
     b:SetSize(32, 32)
     b:SetFrameStrata("MEDIUM")
     b:SetFrameLevel(8)
-    b:SetNormalTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
-    b:SetPushedTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
+    b:RegisterForDrag("LeftButton")
+
+    local background = b:CreateTexture(nil, "BACKGROUND")
+    background:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+    background:SetSize(20, 20)
+    background:SetPoint("CENTER")
+
+    local icon = b:CreateTexture(nil, "ARTWORK")
+    icon:SetTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
+    icon:SetSize(20, 20)
+    icon:SetPoint("CENTER")
+
+    local border = b:CreateTexture(nil, "OVERLAY")
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    border:SetSize(54, 54)
+    border:SetPoint("TOPLEFT")
+
     b:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
-    b:SetPoint("TOPLEFT", Minimap, "TOPLEFT")
+
+    local function updatePosition(angle)
+        local radius = (Minimap:GetWidth() / 2) + 5
+        b:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radius, math.sin(angle) * radius)
+    end
+
+    local angle = db and db.minimap and db.minimap.angle or math.rad(45)
+    updatePosition(angle)
+
+    b:SetScript("OnDragStart", function(self)
+        self:SetScript("OnUpdate", function(btn)
+            local mx, my = Minimap:GetCenter()
+            local px, py = GetCursorPosition()
+            local scale = Minimap:GetEffectiveScale()
+            px, py = px / scale, py / scale
+            angle = math.atan2(py - my, px - mx)
+            updatePosition(angle)
+        end)
+    end)
+
+    b:SetScript("OnDragStop", function(self)
+        self:SetScript("OnUpdate", nil)
+        if db and db.minimap then
+            db.minimap.angle = angle
+        end
+    end)
+
     b:SetScript("OnClick", function()
         LibStub("AceConfigDialog-3.0"):Open("ScroogeLoot")
     end)
