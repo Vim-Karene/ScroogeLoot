@@ -892,9 +892,13 @@ function SLVotingFrame:GetFrame()
                         local total = data.attended + data.absent
                         data.attendance = total > 0 and math.floor((data.attended / total) * 100) or 0
 
-                        -- Award SP for raiders on attendance check
+                        -- Award SP and restore DP for raiders on attendance check
                         if data.raiderrank then
                                 data.SP = (data.SP or 0) + 5
+                                local currentDP = data.DP or 0
+                                if currentDP < 0 then
+                                        data.DP = math.min(currentDP + 25, 0)
+                                end
                         end
                 end
 
