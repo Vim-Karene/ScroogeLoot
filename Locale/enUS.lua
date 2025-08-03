@@ -356,4 +356,4 @@ L["You cannot use this command without being the Master Looter"] = true
 L["You haven't set a council! You can edit your council by typing '/sl council'"] = true
 L["You're already running a session."] = true
 L["Your note:"] = true
-L["minimap_open_settings"] = "Left-click to open Scrooge Loot settings"
+L["minimap_open_settings"] = "Left-click to open Scrooge Loot settings\nRight-click and drag to move"
