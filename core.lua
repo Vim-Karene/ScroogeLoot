@@ -973,7 +973,7 @@ ScroogeLoot.INVTYPE_Slots = {
 		INVTYPE_RANGEDRIGHT		= {"RangedSlot"},
 		INVTYPE_FINGER		    = {"Finger0Slot","Finger1Slot"},
 		INVTYPE_HOLDABLE	    = {"SecondaryHandSlot", ["or"] = "MainHandSlot"},
-		INVTYPE_TRINKET		    = {"TRINKET0SLOT", "TRINKET1SLOT"},
+		INVTYPE_TRINKET		    = {"Trinket0Slot", "Trinket1Slot"},
 		INVTYPE_RELIC			= {"RangedSlot"}
 }
 
@@ -1004,8 +1004,8 @@ ScroogeLoot.Slots_INVTYPE = {
 	["Finger1Slot"]			= INVTYPE_FINGER,
 	["SecondaryHandSlot"]	= INVTYPE_HOLDABLE,
 	["MainHandSlot"]		= INVTYPE_HOLDABLE,
-	["TRINKET0SLOT"]		= INVTYPE_TRINKET,
-	["TRINKET1SLOT"]		= INVTYPE_TRINKET,
+	["Trinket0Slot"]		= INVTYPE_TRINKET,
+	["Trinket1Slot"]		= INVTYPE_TRINKET,
 	["RangedSlot"]			= INVTYPE_RELIC,
 }
 
@@ -1017,8 +1017,8 @@ function ScroogeLoot:GetPlayersGear(link, equipLoc)
 	-- check if the item is a token, and if it is, return the matching current gear
 	if SLTokenTable[itemID] then
 		if SLTokenTable[itemID] == "Trinket" then -- We need to return both trinkets
-			item1 = GetInventoryItemLink("player", GetInventorySlotInfo("TRINKET0SLOT"))
-			item2 = GetInventoryItemLink("player", GetInventorySlotInfo("TRINKET1SLOT"))
+			item1 = GetInventoryItemLink("player", GetInventorySlotInfo("Trinket0Slot"))
+			item2 = GetInventoryItemLink("player", GetInventorySlotInfo("Trinket1Slot"))
 		else	-- Just return the slot from the tokentable
 			item1 = GetInventoryItemLink("player", GetInventorySlotInfo(SLTokenTable[itemID]))
 		end
