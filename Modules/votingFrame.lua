@@ -158,9 +158,9 @@ end
 
 function SLVotingFrame:OnInitialize()
         self.scrollCols = {
-                { name = "Name",       width = 100, DoCellUpdate = self.SetCellName },
-                { name = "Rank",       width = 50,  DoCellUpdate = self.SetCellRank },
-                { name = "Response",   width = 100, DoCellUpdate = self.SetCellResponse },
+                { name = "Name",       width = 120, DoCellUpdate = self.SetCellName },
+                { name = "Rank",       width = 60,  DoCellUpdate = self.SetCellRank },
+                { name = "Response",   width = 120, DoCellUpdate = self.SetCellResponse },
                 { name = "Attendance", width = 70,  DoCellUpdate = self.SetCellAttendance },
                 { name = "Gear 1",     width = 30,  DoCellUpdate = self.SetCellGear1 },
                 { name = "Gear 2",     width = 30,  DoCellUpdate = self.SetCellGear2 },
@@ -1547,4 +1547,5 @@ function SLVotingFrame:GetItemStatus(item)
 	GameTooltip:Hide()
 	return text
 end
+
 
