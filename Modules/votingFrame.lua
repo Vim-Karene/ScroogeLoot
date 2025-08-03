@@ -10,7 +10,7 @@ local LibDialog = LibStub("LibDialog-1.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
 local Deflate = LibStub("LibDeflate")
 
-local ROW_HEIGHT = 30;
+local ROW_HEIGHT = 20;
 local NUM_ROWS = 15;
 local db
 local session = 1 -- The session we're viewing
@@ -1547,3 +1547,4 @@ function SLVotingFrame:GetItemStatus(item)
 	GameTooltip:Hide()
 	return text
 end
+
