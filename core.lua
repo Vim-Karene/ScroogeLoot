@@ -268,10 +268,12 @@ function ScroogeLoot:OnInitialize()
 end
 
 function ScroogeLoot:OnEnable()
-	-- Register the player's name
-	self.realmName = GetRealmName()
-	self.playerName = UnitName("player")
-	self:DebugLog(self.playerName, self.version, self.tVersion)
+        -- Register the player's name
+        self.realmName = GetRealmName()
+        self.playerName = UnitName("player")
+        self:DebugLog(self.playerName, self.version, self.tVersion)
+
+        self:CreateMinimapButton()
 
 	-- register events
 	self:RegisterEvent("PARTY_LOOT_METHOD_CHANGED", "OnEvent")
@@ -579,9 +581,12 @@ function ScroogeLoot:ChatCommand(msg)
 	elseif input == "debuglog" or input == "log" then
 		for k,v in ipairs(debugLog) do print(k,v); end
 
-	elseif input == "clearlog" then
-		wipe(debugLog)
-		self:Print("Debug Log cleared.")
+        elseif input == "clearlog" then
+                wipe(debugLog)
+                self:Print("Debug Log cleared.")
+
+        elseif input == "export" or input == "-export" then
+                self:ExportPlayerDB()
 --@debug@
 	elseif input == 't' then -- Tester cmd
 		printtable(historyDB)
@@ -1433,11 +1438,40 @@ function ScroogeLoot:Getdb()
 end
 
 function ScroogeLoot:GetHistoryDB()
-	if self.isMasterLooter or (not self:IsInGroup() and not self:IsInRaid()) then 
-		return self.lootDB.factionrealm
-	else 
-		return self.mlhistory 
-	end
+        if self.isMasterLooter or (not self:IsInGroup() and not self:IsInRaid()) then
+                return self.lootDB.factionrealm
+        else
+                return self.mlhistory
+        end
+end
+
+function ScroogeLoot:ExportPlayerDB()
+        local function Escape(str)
+                if not str then return "" end
+                str = str:gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")
+                str = str:gsub('"','&quot;')
+                return str
+        end
+
+        local xml = "<PlayerData>\n"
+        for name, data in pairs(self.PlayerData or {}) do
+                local n = data.name or name
+                xml = xml .. string.format('<Player name="%s" class="%s" raider="%s" SP="%s" DP="%s" attended="%s" absent="%s" item1="%s" item1received="%s" item2="%s" item2received="%s" item3="%s" item3received="%s"/>\n',
+                        Escape(n), Escape(data.class), tostring(data.raiderrank or false), tostring(data.SP or 0), tostring(data.DP or 0),
+                        tostring(data.attended or 0), tostring(data.absent or 0), Escape(data.item1), tostring(data.item1received or false),
+                        Escape(data.item2), tostring(data.item2received or false), Escape(data.item3), tostring(data.item3received or false))
+        end
+        xml = xml .. "</PlayerData>"
+
+        local path = "Interface/AddOns/ScroogeLoot/Exports/PlayerData.xml"
+        local file, err = io.open(path, "w")
+        if not file then
+                self:Print("Failed to export player data: " .. tostring(err))
+                return
+        end
+        file:write(xml)
+        file:close()
+        self:Print("Exported player data to " .. path)
 end
 
 function ScroogeLoot:GetAnnounceChannel(channel)
@@ -1641,10 +1675,33 @@ end
 -- @param parent The frame that should hold the button
 -- @return The button object
 function ScroogeLoot:CreateButton(text, parent)
-	local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-	b:SetText(text)
-	b:SetSize(100,25)
-	return b
+        local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+        b:SetText(text)
+        b:SetSize(100,25)
+        return b
+end
+
+--- Creates a minimap button that opens the config frame
+function ScroogeLoot:CreateMinimapButton()
+    if self.minimapButton then return end
+    local b = CreateFrame("Button", "ScroogeLootMinimapButton", Minimap)
+    b:SetSize(32, 32)
+    b:SetFrameStrata("MEDIUM")
+    b:SetFrameLevel(8)
+    b:SetNormalTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon_64x64.tga")
+    b:SetPushedTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon_64x64.tga")
+    b:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+    b:SetPoint("TOPLEFT", Minimap, "TOPLEFT")
+    b:SetScript("OnClick", function()
+        LibStub("AceConfigDialog-3.0"):Open("ScroogeLoot")
+    end)
+    b:SetScript("OnEnter", function()
+        self:CreateTooltip("ScroogeLoot", L["minimap_open_settings"])
+    end)
+    b:SetScript("OnLeave", function()
+        self:HideTooltip()
+    end)
+    self.minimapButton = b
 end
 
 --- Displays a tooltip anchored to the mouse
