@@ -1128,17 +1128,18 @@ local autopassOverride = {
 }
 
 function ScroogeLoot:AutoPassCheck(subType, equipLoc, link)
-	if not tContains(autopassOverride, equipLoc) then
-		if subType and autopassTable[self.db.global.localizedSubTypes[subType]] then
-			return tContains(autopassTable[self.db.global.localizedSubTypes[subType]], self.playerClass)
-		end
-		-- The item wasn't a type we check for, but it might be a token
-		local id = type(link) == "number" and link or self:GetItemIDFromLink(link) -- Convert to id if needed
-		if SLTokenClasses[id] then -- It's a token
-			return not tContains(SLTokenClasses[id], self.playerClass)
-		end
-	end
-	return false
+        local id = type(link) == "number" and link or self:GetItemIDFromLink(link) -- Convert to id if needed
+        if id and IsEquippableItem(id) and select(1, IsUsableItem(id)) then return false end
+        if not tContains(autopassOverride, equipLoc) then
+                if subType and autopassTable[self.db.global.localizedSubTypes[subType]] then
+                        return tContains(autopassTable[self.db.global.localizedSubTypes[subType]], self.playerClass)
+                end
+                -- The item wasn't a type we check for, but it might be a token
+                if SLTokenClasses[id] then -- It's a token
+                        return not tContains(SLTokenClasses[id], self.playerClass)
+                end
+        end
+        return false
 end
 
 function ScroogeLoot:LocalizeSubTypes()
