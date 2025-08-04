@@ -86,15 +86,20 @@ local function CalculateAttendance(attended, absent)
     return math.floor((attended / total) * 100)
 end
 
+-- Return player data, preferring the master looter's broadcast
+local function GetPlayerData(name)
+    return (addon.PlayerData and addon.PlayerData[name]) or (PlayerDB and PlayerDB[name])
+end
+
 -- Update a single voting row using PlayerDB data
 local function UpdateVotingRow(playerName)
-    local data = PlayerDB and PlayerDB[playerName]
+    local data = GetPlayerData(playerName)
     if not data then
         local _, class = UnitClass(playerName)
         if RegisterPlayer then
             RegisterPlayer(playerName, class)
         end
-        data = PlayerDB and PlayerDB[playerName]
+        data = GetPlayerData(playerName)
     end
     if not data or not SLVotingFrame.frame then return end
 
@@ -104,7 +109,7 @@ local function UpdateVotingRow(playerName)
     if not st then return end
     for i, row in ipairs(st.data or {}) do
         if row.name == playerName then
-            local displayName = PlayerDB and PlayerDB[playerName] and PlayerDB[playerName].name or playerName
+            local displayName = data.name or playerName
             row.cols[1].value = displayName
             row.cols[2].value = data.raiderrank and 1 or 0
             row.cols[4].value = attendance
@@ -119,13 +124,13 @@ end
 
 -- Master looter only: handle an incoming roll choice and update the table
 local function HandleRollChoice(sessionID, playerName, rollType)
-    local playerData = PlayerDB and PlayerDB[playerName]
+    local playerData = GetPlayerData(playerName)
     if not playerData then
         local _, class = UnitClass(playerName)
         if RegisterPlayer then
             RegisterPlayer(playerName, class)
         end
-        playerData = PlayerDB and PlayerDB[playerName]
+        playerData = GetPlayerData(playerName)
     end
     if not playerData or not sessionID then return end
 
@@ -373,25 +378,26 @@ function SLVotingFrame:Setup(table)
 	for session, t in ipairs(lootTable) do -- and build the rest (candidates)
 		lootTable[session].haveVoted = false -- Have we voted for ANY candidate in this session?
 		t.candidates = {}
-		for name, v in pairs(candidates) do
-			t.candidates[name] = {
-                               class = v.class,
-                               rank = v.rank,
-                               role = v.role,
-                               raiderrank = PlayerDB[name] and PlayerDB[name].raiderrank,
-                               attendance = CalculateAttendance(PlayerDB[name] and PlayerDB[name].attended or 0,
-                                                            PlayerDB[name] and PlayerDB[name].absent or 0),
-                               response = "ANNOUNCED",
-                               responseName = addon:GetResponseText("ANNOUNCED"),
-                               gear1 = nil,
-                               gear2 = nil,
-                               votes = 0,
-				note = nil,
-				roll = "",
-				voters = {},
-				haveVoted = false, -- Have we voted for this particular candidate in this session?
-			}
-		end
+for name, v in pairs(candidates) do
+local pd = GetPlayerData(name) or {}
+t.candidates[name] = {
+class = v.class,
+rank = v.rank,
+role = v.role,
+raiderrank = pd.raiderrank,
+attendance = CalculateAttendance(pd.attended or 0,
+pd.absent or 0),
+response = "ANNOUNCED",
+responseName = addon:GetResponseText("ANNOUNCED"),
+gear1 = nil,
+gear2 = nil,
+votes = 0,
+note = nil,
+roll = "",
+voters = {},
+haveVoted = false, -- Have we voted for this particular candidate in this session?
+}
+end
 		-- Init session toggle
 		sessionButtons[session] = self:UpdateSessionButton(session, t.texture, t.link, t.awarded)
 		sessionButtons[session]:Show()
@@ -502,7 +508,7 @@ function SLVotingFrame:BuildST()
         local rows = {}
         if lootTable[session] and lootTable[session].candidates then
                 for name, cand in pairs(lootTable[session].candidates) do
-                        local pdata = PlayerDB and PlayerDB[name] or {}
+                        local pdata = GetPlayerData(name) or {}
                         local attendance = CalculateAttendance(pdata.attended, pdata.absent)
                         local row = {
                                 name = name,
@@ -543,7 +549,7 @@ function SLVotingFrame:AddVotingRow(rowData)
                 roll = rowData.roll,
                 rollInfo = rowData.rollInfo,
                 cols = {
-                        { value = (PlayerDB and PlayerDB[rowData.name] and PlayerDB[rowData.name].name) or rowData.name },
+                        { value = (GetPlayerData(rowData.name) and GetPlayerData(rowData.name).name) or rowData.name },
                         { value = rowData.raiderrank and 1 or 0 },
                         { value = rowData.response },
                         { value = rowData.attendance },
@@ -560,7 +566,7 @@ end
 
 -- Add a new row to the voting table using roll information
 function SLVotingFrame:AddVotingRowFromPlayer(name, rollType, rollValue)
-    local pdata = PlayerDB and PlayerDB[name]
+    local pdata = GetPlayerData(name)
     if not pdata then
         print("No PlayerDB entry for", name)
         return
@@ -852,12 +858,12 @@ function SLVotingFrame:GetFrame()
         -- Attendance Check button
         local b5 = addon:CreateButton(L["Attendance Check"], f.content)
         b5:SetPoint("RIGHT", b4, "LEFT", -10, 0)
-        b5:SetScript("OnClick", function()
-                if not addon.isMasterLooter then
-                        return addon:Print(L["You cannot use this command without being the Master Looter"])
-                end
-                PlayerDB = PlayerDB or {}
-                local inRaid = {}
+b5:SetScript("OnClick", function()
+if not addon.isMasterLooter then
+return addon:Print(L["You cannot use this command without being the Master Looter"])
+end
+local dbData = addon.PlayerData or PlayerDB or {}
+local inRaid = {}
 
                 if addon:IsInRaid() then
                         for i = 1, addon:GetNumGroupMembers() do
@@ -881,7 +887,7 @@ function SLVotingFrame:GetFrame()
                         end
                 end
 
-                for name, data in pairs(PlayerDB) do
+for name, data in pairs(dbData) do
                         data.attended = data.attended or 0
                         data.absent = data.absent or 0
                         if inRaid[name] then
@@ -899,9 +905,11 @@ function SLVotingFrame:GetFrame()
                         data.attendance = total > 0 and math.floor((data.attended / total) * 100) or 0
                 end
 
-                if addon.playerDB and addon.playerDB.global then
-                        addon.playerDB.global.playerData = PlayerDB
-                end
+if addon.playerDB and addon.playerDB.global then
+addon.playerDB.global.playerData = dbData
+end
+PlayerDB = dbData
+addon.PlayerData = dbData
 
                 if SLVotingFrame.frame and SLVotingFrame.frame.st and SLVotingFrame.frame.st.data then
                         for _, row in ipairs(SLVotingFrame.frame.st.data) do
@@ -1040,23 +1048,21 @@ function SLVotingFrame.SetCellClass(rowFrame, frame, data, cols, row, realrow, c
 end
 
 function SLVotingFrame.SetCellName(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-        local name = data[realrow].name
-        local displayName = name
-        if PlayerDB and PlayerDB[name] and PlayerDB[name].name then
-                displayName = PlayerDB[name].name
-        end
-        frame.text:SetText(displayName)
-        local c = addon:GetClassColor(lootTable[session].candidates[name].class)
-        frame.text:SetTextColor(c.r, c.g, c.b, c.a)
-        data[realrow].cols[column].value = displayName
+local name = data[realrow].name
+local pd = GetPlayerData(name)
+local displayName = pd and pd.name or name
+frame.text:SetText(displayName)
+local c = addon:GetClassColor(lootTable[session].candidates[name].class)
+frame.text:SetTextColor(c.r, c.g, c.b, c.a)
+data[realrow].cols[column].value = displayName
 end
 
 function SLVotingFrame.SetCellRank(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-        local name = data[realrow].name
-        local db = PlayerDB and PlayerDB[name]
-        local val = db and db.raiderrank
-        frame.text:SetText(RaiderText(val))
-        data[realrow].cols[column].value = val and 1 or 0
+local name = data[realrow].name
+local db = GetPlayerData(name)
+local val = db and db.raiderrank
+frame.text:SetText(RaiderText(val))
+data[realrow].cols[column].value = val and 1 or 0
 end
 
 function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -1068,19 +1074,19 @@ function SLVotingFrame.SetCellResponse(rowFrame, frame, data, cols, row, realrow
 end
 
 function SLVotingFrame.SetCellRaider(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local db = PlayerDB and PlayerDB[name]
-       local val = db and db.raiderrank
-       frame.text:SetText(RaiderText(val))
-       data[realrow].cols[column].value = val and 1 or 0
+local name = data[realrow].name
+local db = GetPlayerData(name)
+local val = db and db.raiderrank
+frame.text:SetText(RaiderText(val))
+data[realrow].cols[column].value = val and 1 or 0
 end
 
 function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-       local name = data[realrow].name
-       local db = PlayerDB and PlayerDB[name]
-       local val = db and CalculateAttendance(db.attended, db.absent) or 0
-       frame.text:SetText(tostring(val))
-       data[realrow].cols[column].value = tonumber(val) or 0
+local name = data[realrow].name
+local db = GetPlayerData(name)
+local val = db and CalculateAttendance(db.attended, db.absent) or 0
+frame.text:SetText(tostring(val))
+data[realrow].cols[column].value = tonumber(val) or 0
 end
 
 function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)

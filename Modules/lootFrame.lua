@@ -34,7 +34,7 @@ local function CanEquipItem(name, item) return true end
 -- Returns true if the current player has Raider rank
 local function PlayerHasRaiderRank()
     local player = UnitName("player")
-    local data = (PlayerDB and PlayerDB[player]) or (addon.PlayerData and addon.PlayerData[player])
+    local data = (addon.PlayerData and addon.PlayerData[player]) or (PlayerDB and PlayerDB[player])
     return data and data.raiderrank
 end
 
@@ -43,7 +43,7 @@ end
 local function PlayerHasReservedItem(itemName)
     if not itemName or itemName == "" then return false end
     local player = UnitName("player")
-    local data = (PlayerDB and PlayerDB[player]) or (addon.PlayerData and addon.PlayerData[player])
+    local data = (addon.PlayerData and addon.PlayerData[player]) or (PlayerDB and PlayerDB[player])
     if not data then return false end
 
     local function normalize(entry)
@@ -61,13 +61,13 @@ local function PlayerHasReservedItem(itemName)
 end
 
 local function OnRollOptionClick(playerName, rollType, sessionID)
-    local db = PlayerDB and PlayerDB[playerName]
+    local db = (addon.PlayerData and addon.PlayerData[playerName]) or (PlayerDB and PlayerDB[playerName])
     if not db then
         local _, class = UnitClass(playerName)
         if RegisterPlayer then
             RegisterPlayer(playerName, class)
         end
-        db = PlayerDB and PlayerDB[playerName]
+        db = (addon.PlayerData and addon.PlayerData[playerName]) or (PlayerDB and PlayerDB[playerName])
     end
     if not db then
         print("Player not found in PlayerDB:", playerName)

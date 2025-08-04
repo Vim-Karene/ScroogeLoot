@@ -789,19 +789,20 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
 
 			elseif command == "playerData" then
-				-- Update local PlayerData from the master looter
-                                if not self.isMasterLooter then
-                                        local incomingData = unpack(data)
-                                        self.PlayerData = incomingData
-                                        if self.EnsureNameFields then
-                                                self:EnsureNameFields()
-                                        end
-                                        if self.playerDB and self.playerDB.global then
-                                                self.playerDB.global.playerData = incomingData
-                                        end
-                                end
-			elseif command == "message" then
-				self:Print(unpack(data))
+-- Update local PlayerData from the master looter
+if not self.isMasterLooter and self:UnitIsUnit(sender, self.masterLooter) then
+local incomingData = unpack(data)
+self.PlayerData = incomingData
+if self.EnsureNameFields then
+self:EnsureNameFields()
+end
+if self.playerDB and self.playerDB.global then
+self.playerDB.global.playerData = incomingData
+end
+PlayerDB = incomingData
+end
+elseif command == "message" then
+self:Print(unpack(data))
 
 			elseif command == "session_end" and self.enabled then
 				if self:UnitIsUnit(sender, self.masterLooter) then
@@ -1812,7 +1813,7 @@ function ScroogeLoot:ShowCandidates(candidateList)
 
     local rows = {}
     for _, playerName in ipairs(candidateList) do
-        local p = PlayerDB and PlayerDB[playerName]
+        local p = (self.PlayerData and self.PlayerData[playerName]) or (PlayerDB and PlayerDB[playerName])
         if p then
             table.insert(rows, {
                 name = playerName,

@@ -94,19 +94,19 @@ end
 
 function ScroogeLootML:AddCandidate(name, class, role, rank, enchant, lvl)
         addon:DebugLog("ML:AddCandidate", name, class, role, rank, enchant, lvl)
-        local pd = nil
-        if PlayerDB and PlayerDB[name] then
-                pd = PlayerDB[name]
-        elseif addon.PlayerData and addon.PlayerData[name] then
-                pd = addon.PlayerData[name]
-        end
-        if not pd then
-                local _, cls = UnitClass(name)
-                if RegisterPlayer then
-                        RegisterPlayer(name, cls)
-                end
-                pd = PlayerDB and PlayerDB[name] or {}
-        end
+local pd = nil
+if addon.PlayerData and addon.PlayerData[name] then
+pd = addon.PlayerData[name]
+elseif PlayerDB and PlayerDB[name] then
+pd = PlayerDB[name]
+end
+if not pd then
+local _, cls = UnitClass(name)
+if RegisterPlayer then
+RegisterPlayer(name, cls)
+end
+pd = (addon.PlayerData and addon.PlayerData[name]) or (PlayerDB and PlayerDB[name]) or {}
+end
         self.candidates[name] = {
                 ["class"]       = class,
                 ["role"]        = role or "DAMAGER",
