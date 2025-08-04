@@ -886,20 +886,17 @@ function SLVotingFrame:GetFrame()
                         data.absent = data.absent or 0
                         if inRaid[name] then
                                 data.attended = data.attended + 1
+
+                                -- Award SP and DP for raiders present in the raid
+                                if data.raiderrank then
+                                        data.SP = (data.SP or 0) + 5
+                                        data.DP = math.min((data.DP or 0) + 25, 0)
+                                end
                         else
                                 data.absent = data.absent + 1
                         end
                         local total = data.attended + data.absent
                         data.attendance = total > 0 and math.floor((data.attended / total) * 100) or 0
-
-                        -- Award SP and restore DP for raiders on attendance check
-                        if data.raiderrank then
-                                data.SP = (data.SP or 0) + 5
-                                local currentDP = data.DP or 0
-                                if currentDP < 0 then
-                                        data.DP = math.min(currentDP + 25, 0)
-                                end
-                        end
                 end
 
                 if addon.playerDB and addon.playerDB.global then
