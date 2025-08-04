@@ -144,12 +144,12 @@ function SLPlayerManagementFrame:Save(target)
     wipe(PlayerDB)
     for _,row in ipairs(t.rows) do
         local d = row.data
-        local pd = {
+            local pd = {
             name = d.name or row.name,
             class = d.class,
             raiderrank = d.raiderrank,
             SP = tonumber(d.SP) or 0,
-            DP = tonumber(d.DP) or 0,
+            DP = math.max(math.min(tonumber(d.DP) or 0, 0), -200),
             attended = tonumber(d.attended) or 0,
             absent = tonumber(d.absent) or 0,
             item1 = d.item1,
