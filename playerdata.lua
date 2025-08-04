@@ -167,6 +167,7 @@ local function UpdateAttendance(playerName)
 end
 
 function RegisterPlayer(name, class)
+    if not addon.isMasterLooter then return end
     InitializePlayerData(name, class)
     UpdateAttendance(name)
 end
