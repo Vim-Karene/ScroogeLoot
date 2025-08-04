@@ -38,6 +38,16 @@ local function PlayerHasRaiderRank()
     return data and data.raiderrank
 end
 
+local function NormalizeItemEntry(entry)
+    if not entry or entry == "" then return nil end
+    if type(entry) ~= "string" then return nil end
+    if entry:find("|Hitem:") then
+        local n = GetItemInfo(entry)
+        if n then return n:lower() end
+    end
+    return entry:lower()
+end
+
 -- Returns true if the current player has the given item name
 -- listed in their PlayerDB or PlayerData item1-3 fields.
 local function PlayerHasReservedItem(itemName)
@@ -45,19 +55,22 @@ local function PlayerHasReservedItem(itemName)
     local player = UnitName("player")
     local data = (PlayerDB and PlayerDB[player]) or (addon.PlayerData and addon.PlayerData[player])
     if not data then return false end
-
-    local function normalize(entry)
-        if not entry or entry == "" then return nil end
-        if type(entry) ~= "string" then return nil end
-        if entry:find("|Hitem:") then
-            local n = GetItemInfo(entry)
-            if n then return n:lower() end
-        end
-        return entry:lower()
-    end
-
     local target = itemName:lower()
-    return normalize(data.item1) == target or normalize(data.item2) == target or normalize(data.item3) == target
+    return NormalizeItemEntry(data.item1) == target
+        or NormalizeItemEntry(data.item2) == target
+        or NormalizeItemEntry(data.item3) == target
+end
+
+-- Returns true if the current player has the given item marked as received
+local function PlayerHasReceivedItem(itemName)
+    if not itemName or itemName == "" then return false end
+    local player = UnitName("player")
+    local data = (PlayerDB and PlayerDB[player]) or (addon.PlayerData and addon.PlayerData[player])
+    if not data then return false end
+    local target = itemName:lower()
+    return (NormalizeItemEntry(data.item1) == target and data.item1received)
+        or (NormalizeItemEntry(data.item2) == target and data.item2received)
+        or (NormalizeItemEntry(data.item3) == target and data.item3received)
 end
 
 local function OnRollOptionClick(playerName, rollType, sessionID)
@@ -264,6 +277,11 @@ function LootFrame:Update()
                                 droolBtn:Disable()
                         end
                         if deduckBtn then deduckBtn:Enable() end
+                        -- If the player already received this reserved item, prevent Scrooge and Deducktion rolls
+                        if PlayerHasReceivedItem(v.name) then
+                                scroogeBtn:Disable()
+                                if deduckBtn then deduckBtn:Disable() end
+                        end
                         if not PlayerHasRaiderRank() then
                                 scroogeBtn:Disable()
                                 droolBtn:Disable()
