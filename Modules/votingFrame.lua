@@ -856,7 +856,8 @@ function SLVotingFrame:GetFrame()
                 if not addon.isMasterLooter then
                         return addon:Print(L["You cannot use this command without being the Master Looter"])
                 end
-                PlayerDB = PlayerDB or {}
+                addon.PlayerData = addon.PlayerData or {}
+                local playerDB = addon.PlayerData
                 local inRaid = {}
 
                 if addon:IsInRaid() then
@@ -881,7 +882,7 @@ function SLVotingFrame:GetFrame()
                         end
                 end
 
-                for name, data in pairs(PlayerDB) do
+                for name, data in pairs(playerDB) do
                         data.attended = data.attended or 0
                         data.absent = data.absent or 0
                         if inRaid[name] then
@@ -900,8 +901,10 @@ function SLVotingFrame:GetFrame()
                 end
 
                 if addon.playerDB and addon.playerDB.global then
-                        addon.playerDB.global.playerData = PlayerDB
+                        addon.playerDB.global.playerData = playerDB
                 end
+
+                PlayerDB = playerDB
 
                 if SLVotingFrame.frame and SLVotingFrame.frame.st and SLVotingFrame.frame.st.data then
                         for _, row in ipairs(SLVotingFrame.frame.st.data) do
