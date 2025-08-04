@@ -160,11 +160,11 @@ function SLVotingFrame:OnInitialize()
         self.scrollCols = {
                 { name = "Name",       width = 120, DoCellUpdate = self.SetCellName },
                 { name = "Rank",       width = 50,  DoCellUpdate = self.SetCellRank },
-                { name = "Response",   width = 120, DoCellUpdate = self.SetCellResponse },
+                { name = "Response",   width = 120, DoCellUpdate = self.SetCellResponse, comparesort = ResponseSort, sortnext = 7 },
                 { name = "Attendance", width = 70,  DoCellUpdate = self.SetCellAttendance },
                 { name = "Gear 1",     width = 20, DoCellUpdate = self.SetCellGear1 },
                 { name = "Gear 2",     width = 20, DoCellUpdate = self.SetCellGear2 },
-                { name = "Roll",       width = 60,  DoCellUpdate = self.SetCellRoll },
+                { name = "Roll",       width = 60,  DoCellUpdate = self.SetCellRoll, defaultsort = "dsc" },
         }
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
 	filterMenu = CreateFrame("Frame", "ScroogeLoot_VotingFrame_FilterMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -492,7 +492,7 @@ function SLVotingFrame:SwitchSession(s)
 	for i in ipairs(self.frame.st.cols) do
 		self.frame.st.cols[i].sort = nil
 	end
-	self.frame.st.cols[4].sort = "asc"
+        self.frame.st.cols[3].sort = "asc"
 	FauxScrollFrame_OnVerticalScroll(self.frame.st.scrollframe, 0, self.frame.st.rowHeight, function() self.frame.st:Refresh() end) -- Reset scrolling to 0
 	self:Update()
 	self:UpdatePeopleToVote()
