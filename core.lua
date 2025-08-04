@@ -83,11 +83,11 @@ function ScroogeLoot:OnInitialize()
 		AUTOPASS			= { color = {0.7,0.7,0.7,1},		sort = 801,		text = L["Autopass"], },
 		DISABLED			= { color = {0.3, 0.35, 0.5},		sort = 802,		text = L["Candidate has disabled ScroogeLoot"], },
 		--[[1]]			  { color = {0,1,0,1},				sort = 1,		text = "Scrooge",},
-		--[[2]]			  { color = {1,0.5,0,1},			sort = 2,		text = "Drool",	},
-		--[[3]]			  { color = {0,0.7,0.7,1},			sort = 3,		text = "Deducktion",},
-                --[[4]]                   { color = {1,1,0,1},               sort = 4,                text = "Main-Spec",},
-                --[[5]]                   { color = {0.9,0.6,1,1},             sort = 5,                text = "Off-Spec",},
-                --[[6]]                   { color = {0.7,0.7,0.7,1},           sort = 6,                text = "Transmog",},
+		--[[2]]			  { color = {1,0.5,0,1},			sort = 1,		text = "Drool",	},
+		--[[3]]			  { color = {0,0.7,0.7,1},			sort = 2,		text = "Deducktion",},
+                --[[4]]                   { color = {1,1,0,1},               sort = 3,                text = "Main-Spec",},
+                --[[5]]                   { color = {0.9,0.6,1,1},             sort = 4,                text = "Off-Spec",},
+                --[[6]]                   { color = {0.7,0.7,0.7,1},           sort = 5,                text = "Transmog",},
 	}
 	self.roleTable = {
 		TANK =		L["Tank"],
