@@ -237,8 +237,9 @@ function ScroogeLoot:OnInitialize()
 	self:RegisterComm("ScroogeLoot_WotLK")
        self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
        self.lootDB = LibStub("AceDB-3.0"):New("ScroogeLootLootDB")
-       self.playerDB = LibStub("AceDB-3.0"):New("PlayerDB", {global={playerData={}}})
-	--[[ Format:
+       -- PlayerDB persists data between sessions via SavedVariables
+       PlayerDB = PlayerDB or {}
+       --[[ Format:
 	"playerName" = {
 		[#] = {"lootWon", "date (d/m/y)", "time (h:m:s)", "instance", "boss", "votes", "itemReplaced1", "itemReplaced2", "response", "responseID", "color", "class", "isAwardReason"}
 	},
@@ -253,7 +254,7 @@ function ScroogeLoot:OnInitialize()
        debugLog = self.db.global.log
 
        -- Load persisted PlayerData
-       self.PlayerData = self.playerDB.global.playerData or {}
+       self.PlayerData = PlayerDB
        ScroogeLoot.PlayerData = self.PlayerData
        if self.EnsureNameFields then
                self:EnsureNameFields()
@@ -791,17 +792,15 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
                         elseif command == "playerData" then
                                 -- Update local PlayerData from the master looter
                                 if not self.isMasterLooter then
-                                        local incomingData = unpack(data)
-                                        self.PlayerData = incomingData
-                                        PlayerDB = incomingData
-                                        if self.EnsureNameFields then
-                                                self:EnsureNameFields()
-                                        end
-                                        if self.playerDB and self.playerDB.global then
-                                                self.playerDB.global.playerData = incomingData
-                                        end
+                                       local incomingData = unpack(data)
+                                       self.PlayerData = incomingData
+                                       PlayerDB = incomingData
+                                       ScroogeLoot.PlayerData = self.PlayerData
+                                       if self.EnsureNameFields then
+                                               self:EnsureNameFields()
+                                       end
                                 end
-			elseif command == "message" then
+                        elseif command == "message" then
 				self:Print(unpack(data))
 
 			elseif command == "session_end" and self.enabled then
