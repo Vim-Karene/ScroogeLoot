@@ -890,7 +890,7 @@ function SLVotingFrame:GetFrame()
                                 -- Award SP and DP for raiders present in the raid
                                 if data.raiderrank then
                                         data.SP = (data.SP or 0) + 5
-                                        data.DP = math.min((data.DP or 0) + 25, 0)
+                                        data.DP = math.max(math.min((data.DP or 0) + 25, 0), -200)
                                 end
                         else
                                 data.absent = data.absent + 1

@@ -184,7 +184,7 @@ function SLPlayerManager:Save(target)
             class = d.class,
             raiderrank = d.raiderrank,
             SP = tonumber(d.SP) or 0,
-            DP = tonumber(d.DP) or 0,
+            DP = math.max(math.min(tonumber(d.DP) or 0, 0), -200),
             attended = tonumber(d.attended) or 0,
             absent = tonumber(d.absent) or 0,
             item1 = d.item1,
@@ -241,7 +241,8 @@ function SLPlayerManager:ImportData(text)
             d.class = entry:match('class="([^"]*)"') or ""
             d.raiderrank = entry:match('raider="([^"]*)"') == "true"
             d.SP = tonumber(entry:match('SP="([^"]*)"') or 0)
-            d.DP = tonumber(entry:match('DP="([^"]*)"') or 0)
+            local dp = tonumber(entry:match('DP="([^"]*)"') or 0)
+            d.DP = math.max(math.min(dp, 0), -200)
             d.attended = tonumber(entry:match('attended="([^"]*)"') or 0)
             d.absent = tonumber(entry:match('absent="([^"]*)"') or 0)
             d.item1 = entry:match('item1="([^"]*)"')
