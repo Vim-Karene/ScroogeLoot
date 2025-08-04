@@ -900,11 +900,7 @@ function SLVotingFrame:GetFrame()
                         data.attendance = total > 0 and math.floor((data.attended / total) * 100) or 0
                 end
 
-                if addon.playerDB and addon.playerDB.global then
-                        addon.playerDB.global.playerData = playerDB
-                end
-
-                PlayerDB = playerDB
+PlayerDB = addon:SanitizePlayerDB(playerDB)
 
                 if SLVotingFrame.frame and SLVotingFrame.frame.st and SLVotingFrame.frame.st.data then
                         for _, row in ipairs(SLVotingFrame.frame.st.data) do

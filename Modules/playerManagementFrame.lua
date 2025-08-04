@@ -166,14 +166,12 @@ function SLPlayerManagementFrame:Save(target)
             pd.attendance = 100
         end
         local name = pd.name
-        PlayerDB[name] = pd
-        row.name = name
-    end
-    addon.PlayerData = PlayerDB
-    if addon.playerDB and addon.playerDB.global then
-        addon.playerDB.global.playerData = PlayerDB
-    end
-    addon:Print(L["Player Management"]..": "..L["Save"].."!")
+PlayerDB[name] = pd
+row.name = name
+end
+PlayerDB = addon:SanitizePlayerDB(PlayerDB)
+addon.PlayerData = PlayerDB
+addon:Print(L["Player Management"]..": "..L["Save"].."!")
 end
 
 return SLPlayerManagementFrame

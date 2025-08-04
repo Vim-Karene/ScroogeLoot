@@ -104,9 +104,6 @@ end
 
 -- Broadcast the complete PlayerData table to the raid.
 function addon:BroadcastPlayerData()
-    if self.playerDB and self.playerDB.global then
-        self.playerDB.global.playerData = self.PlayerData
-    end
     if not self.isMasterLooter then return end
     -- Send to everyone in the current group/raid
     self:SendCommand("group", "playerData", self.PlayerData)
@@ -115,7 +112,7 @@ end
 
 -- Simple player registration and attendance update
 local addonName = ...
-PlayerDB = PlayerDB or {}
+PlayerDB = addon:SanitizePlayerDB(PlayerDB)
 
 local function InitializePlayerData(playerName, class)
     if not PlayerDB[playerName] then
