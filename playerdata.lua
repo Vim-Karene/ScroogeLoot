@@ -112,7 +112,7 @@ end
 
 -- Simple player registration and attendance update
 local addonName = ...
-PlayerDB = PlayerDB or {}
+PlayerDB = addon:SanitizePlayerDB(PlayerDB)
 
 local function InitializePlayerData(playerName, class)
     if not PlayerDB[playerName] then

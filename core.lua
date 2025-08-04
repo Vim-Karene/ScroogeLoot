@@ -49,6 +49,19 @@ local frames = {} -- Contains all frames created by ScroogeLoot:CreateFrame()
 local unregisterGuildEvent = false
 local player_relogged = true -- Determines if we potentially need data from the ML due to /rl
 
+function ScroogeLoot:SanitizePlayerDB(db)
+       db = db or {}
+       if type(db.global) == "table" then
+               for name, data in pairs(db.global) do
+                       db[name] = data
+               end
+               db.global = nil
+       end
+       db.profileKeys = nil
+       db.profiles = nil
+       return db
+end
+
 function ScroogeLoot:OnInitialize()
 	--IDEA Consider if we want everything on self, or just whatever modules could need.
   	self.version = "2.0.4" -- hard code the version so reload ui updates will report correct version
@@ -238,7 +251,7 @@ function ScroogeLoot:OnInitialize()
        self.db = LibStub("AceDB-3.0"):New("ScroogeLootDB", self.defaults, true)
        self.lootDB = LibStub("AceDB-3.0"):New("ScroogeLootLootDB")
        -- PlayerDB persists data between sessions via SavedVariables
-       PlayerDB = PlayerDB or {}
+       PlayerDB = self:SanitizePlayerDB(PlayerDB)
        --[[ Format:
 	"playerName" = {
 		[#] = {"lootWon", "date (d/m/y)", "time (h:m:s)", "instance", "boss", "votes", "itemReplaced1", "itemReplaced2", "response", "responseID", "color", "class", "isAwardReason"}
@@ -792,7 +805,7 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
                         elseif command == "playerData" then
                                 -- Update local PlayerData from the master looter
                                 if not self.isMasterLooter then
-                                       local incomingData = unpack(data)
+                                       local incomingData = self:SanitizePlayerDB(unpack(data))
                                        self.PlayerData = incomingData
                                        PlayerDB = incomingData
                                        ScroogeLoot.PlayerData = self.PlayerData
