@@ -13,6 +13,7 @@ core.lua
 ml_core.lua
 compat.lua
 playerdata.lua
+playerdb.lua
 Modules\Modules.xml
 ScroogeLoot.lua
 VotingFrame.lua
