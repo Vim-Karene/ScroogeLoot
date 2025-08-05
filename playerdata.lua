@@ -115,7 +115,12 @@ end
 
 -- Simple player registration and attendance update
 local addonName = ...
-PlayerDB = PlayerDB or {}
+
+-- Ensure the global PlayerDB table points to the addon's persisted data
+PlayerDB = addon.PlayerData
+if addon.playerDB and addon.playerDB.global then
+    addon.playerDB.global.playerData = PlayerDB
+end
 
 local function InitializePlayerData(playerName, class)
     if not PlayerDB[playerName] then
