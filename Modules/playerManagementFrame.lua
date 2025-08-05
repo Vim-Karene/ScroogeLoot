@@ -140,11 +140,20 @@ end
 
 function SLPlayerManagementFrame:Save(target)
     local t = target or self.frame.content
-    PlayerDB = PlayerDB or {}
-    wipe(PlayerDB)
-    for _,row in ipairs(t.rows) do
+    -- Determine the target database table and ensure it exists
+    local db
+    if addon.playerDB and addon.playerDB.global then
+        addon.playerDB.global.playerData = addon.playerDB.global.playerData or {}
+        db = addon.playerDB.global.playerData
+    else
+        PlayerDB = PlayerDB or {}
+        db = PlayerDB
+    end
+
+    wipe(db)
+    for _, row in ipairs(t.rows) do
         local d = row.data
-            local pd = {
+        local pd = {
             name = d.name or row.name,
             class = d.class,
             raiderrank = d.raiderrank,
@@ -166,13 +175,12 @@ function SLPlayerManagementFrame:Save(target)
             pd.attendance = 100
         end
         local name = pd.name
-        PlayerDB[name] = pd
+        db[name] = pd
         row.name = name
     end
-    addon.PlayerData = PlayerDB
-    if addon.playerDB and addon.playerDB.global then
-        addon.playerDB.global.playerData = PlayerDB
-    end
+
+    addon.PlayerData = db
+    PlayerDB = db
     addon:Print(L["Player Management"]..": "..L["Save"].."!")
 end
 
