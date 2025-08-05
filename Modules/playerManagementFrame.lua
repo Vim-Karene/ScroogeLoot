@@ -176,6 +176,9 @@ function SLPlayerManagementFrame:Save(target)
     if addon.BroadcastPlayerData then
         addon:BroadcastPlayerData()
     end
+    -- Reload data so subsequent edits operate on the freshly saved DB
+    self:LoadData(t)
+    t.st:SetData(t.rows)
     addon:Print(L["Player Management"] .. ": " .. L["Save"] .. "!")
 end
 
