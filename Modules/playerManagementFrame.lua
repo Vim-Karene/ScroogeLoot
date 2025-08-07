@@ -170,9 +170,7 @@ function SLPlayerManagementFrame:Save(target)
         row.name = name
     end
     addon.PlayerData = PlayerDB
-    if addon.playerDB and addon.playerDB.global then
-        addon.playerDB.global.playerData = PlayerDB
-    end
+    addon:BroadcastPlayerData()
     addon:Print(L["Player Management"]..": "..L["Save"].."!")
 end
 
