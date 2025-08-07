@@ -106,6 +106,7 @@ end
 function addon:BroadcastPlayerData()
     if self.playerDB and self.playerDB.global then
         self.playerDB.global.playerData = self.PlayerData
+        PlayerDB = self.PlayerData
     end
     if not self.isMasterLooter then return end
     -- Send to everyone in the current group/raid
