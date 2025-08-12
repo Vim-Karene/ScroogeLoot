@@ -856,8 +856,8 @@ function SLVotingFrame:GetFrame()
                 if not addon.isMasterLooter then
                         return addon:Print(L["You cannot use this command without being the Master Looter"])
                 end
-                addon.PlayerData = addon.PlayerData or {}
-                local playerDB = addon.PlayerData
+                PlayerDB = PlayerDB or {}
+                local playerDB = PlayerDB
                 local inRaid = {}
 
                 if addon:IsInRaid() then

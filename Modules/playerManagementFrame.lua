@@ -82,8 +82,8 @@ end
 function SLPlayerManagementFrame:LoadData(target)
     local t = target or self.frame.content
     t.rows = {}
-    if not addon.PlayerData then return end
-    for name, data in pairs(addon.PlayerData) do
+    if not PlayerDB then return end
+    for name, data in pairs(PlayerDB) do
         local copy = {}
         for k,v in pairs(data) do copy[k] = v end
         copy.name = name
