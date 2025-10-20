@@ -76,9 +76,12 @@ end
 
 function SLPlayerManager:GetFrame()
     if self.frame then return self.frame end
-    local f = addon:CreateFrame("SLPlayerManagerFrame", "playerManager", L["Player Management"], 900, 400)
+    -- Slightly larger defaults so columns and title fit without overlap
+    local f = addon:CreateFrame("SLPlayerManagerFrame", "playerManager", L["Player Management"], 950, 450)
     self:CreateUI(f.content)
+    -- Resize to match the scrolling table and keep the title aligned
     f:SetWidth(f.content.st.frame:GetWidth()+20)
+    f.title:SetWidth(f:GetWidth())
 
     -- Add a close button and move existing buttons to make room
     local closeBtn = addon:CreateButton(L["Close"], f.content)
