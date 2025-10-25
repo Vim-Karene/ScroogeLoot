@@ -2,8 +2,9 @@
 -- Only the master looter may modify the table.
 
 local addon = LibStub("AceAddon-3.0"):GetAddon("ScroogeLoot")
-
-addon.PlayerData = addon.PlayerData or {}
+-- Use the saved variables table as the single source of truth for player info
+PlayerDB = PlayerDB or {}
+addon.PlayerData = PlayerDB
 
 -- Creates entry for player if not present
 local function EnsurePlayer(name)
@@ -115,7 +116,6 @@ end
 
 -- Simple player registration and attendance update
 local addonName = ...
-PlayerDB = PlayerDB or {}
 
 local function InitializePlayerData(playerName, class)
     if not PlayerDB[playerName] then
