@@ -111,6 +111,7 @@ L["chat_commands"] = [=[
 - award     - Start a session with items looted to your inventory
 - winners   - Display the winners of awarded items looted to your inventory
 - pm        - Open the Player Management window
+- export    - Export player data to XML
 ]=]
 L["Check this to loot the items and distribute them later."] = true
 L["Check to append the realmname of a player from another realm"] = true
@@ -355,3 +356,4 @@ L["You cannot use this command without being the Master Looter"] = true
 L["You haven't set a council! You can edit your council by typing '/sl council'"] = true
 L["You're already running a session."] = true
 L["Your note:"] = true
+L["minimap_open_settings"] = "Left-click to open Scrooge Loot settings"

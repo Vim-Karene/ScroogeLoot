@@ -4,23 +4,23 @@ local SLPlayerManagementFrame = addon:NewModule("SLPlayerManagementFrame")
 local ST = LibStub("ScrollingTable")
 local L = LibStub("AceLocale-3.0"):GetLocale("ScroogeLoot")
 
-local ROW_HEIGHT = 20
+local ROW_HEIGHT = 30
 
 function SLPlayerManagementFrame:OnInitialize()
     self.scrollCols = {
         {name=L["Name"], width=100, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"name") end},
         {name=L["Class"], width=70, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"class") end},
-        {name=L["Raider"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"raiderrank") end},
-        {name="SP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"SP") end},
-        {name="DP", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"DP") end},
-        {name=L["Attended"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"attended") end},
-        {name=L["Absence"], width=60, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"absent") end},
+        {name=L["Raider"], width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"raiderrank") end},
+        {name="SP", width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"SP") end},
+        {name="DP", width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"DP") end},
+        {name=L["Attended"], width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"attended") end},
+        {name=L["Absence"], width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"absent") end},
         {name="Item1", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1") end},
-        {name="Rec1", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1received") end},
+        {name="Rec1", width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item1received") end},
         {name="Item2", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2") end},
-        {name="Rec2", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2received") end},
+        {name="Rec2", width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item2received") end},
         {name="Item3", width=120, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellEdit(row,frame,data,cols,rowI,realrow,col,fShow,table,"item3") end},
-        {name="Rec3", width=40, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item3received") end},
+        {name="Rec3", width=30, DoCellUpdate=function(row,frame,data,cols,rowI,realrow,col,fShow,table,...) SLPlayerManagementFrame:SetCellCheck(row,frame,data,cols,rowI,realrow,col,fShow,table,"item3received") end},
     }
 end
 
@@ -63,7 +63,7 @@ function SLPlayerManagementFrame:GetFrame()
 
     -- Move the title slightly above the frame
     f.title:ClearAllPoints()
-    f.title:SetPoint("BOTTOM", f, "TOP", 0, 5)
+    f.title:SetPoint("BOTTOM", f, "TOP", 0, 0)
 
     return f
 end
@@ -82,8 +82,8 @@ end
 function SLPlayerManagementFrame:LoadData(target)
     local t = target or self.frame.content
     t.rows = {}
-    if not PlayerDB then return end
-    for name, data in pairs(PlayerDB) do
+    if not addon.PlayerData then return end
+    for name, data in pairs(addon.PlayerData) do
         local copy = {}
         for k,v in pairs(data) do copy[k] = v end
         copy.name = name
@@ -144,12 +144,12 @@ function SLPlayerManagementFrame:Save(target)
     wipe(PlayerDB)
     for _,row in ipairs(t.rows) do
         local d = row.data
-        local pd = {
+            local pd = {
             name = d.name or row.name,
             class = d.class,
             raiderrank = d.raiderrank,
             SP = tonumber(d.SP) or 0,
-            DP = tonumber(d.DP) or 0,
+            DP = math.max(math.min(tonumber(d.DP) or 0, 0), -200),
             attended = tonumber(d.attended) or 0,
             absent = tonumber(d.absent) or 0,
             item1 = d.item1,

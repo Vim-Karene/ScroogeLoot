@@ -19,3 +19,4 @@ VotingFrame.lua
 Config.lua
 
 Utils\tokenData.lua
+Utils\tophat_icon.tga

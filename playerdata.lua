@@ -73,6 +73,9 @@ end
 function addon:SetPlayerField(name, field, value)
     if not self.isMasterLooter then return end
     EnsurePlayer(name)
+    if field == "DP" then
+        value = math.max(math.min(tonumber(value) or 0, 0), -200)
+    end
     self.PlayerData[name][field] = value
     self:BroadcastPlayerData()
 end
@@ -164,6 +167,7 @@ local function UpdateAttendance(playerName)
 end
 
 function RegisterPlayer(name, class)
+    if not addon.isMasterLooter then return end
     InitializePlayerData(name, class)
     UpdateAttendance(name)
 end

@@ -141,6 +141,10 @@ function ScroogeLoot:OnInitialize()
 			--neverML = false, -- Never use the addon as ML
 			minimizeInCombat = false,
 
+			minimap = {
+				angle = math.rad(45),
+			},
+
 			UI = { -- stores all ui information
 				['**'] = { -- Defaults for Lib-Window
 					y		= 0,
@@ -268,10 +272,12 @@ function ScroogeLoot:OnInitialize()
 end
 
 function ScroogeLoot:OnEnable()
-	-- Register the player's name
-	self.realmName = GetRealmName()
-	self.playerName = UnitName("player")
-	self:DebugLog(self.playerName, self.version, self.tVersion)
+        -- Register the player's name
+        self.realmName = GetRealmName()
+        self.playerName = UnitName("player")
+        self:DebugLog(self.playerName, self.version, self.tVersion)
+
+        self:CreateMinimapButton()
 
 	-- register events
 	self:RegisterEvent("PARTY_LOOT_METHOD_CHANGED", "OnEvent")
@@ -579,9 +585,12 @@ function ScroogeLoot:ChatCommand(msg)
 	elseif input == "debuglog" or input == "log" then
 		for k,v in ipairs(debugLog) do print(k,v); end
 
-	elseif input == "clearlog" then
-		wipe(debugLog)
-		self:Print("Debug Log cleared.")
+        elseif input == "clearlog" then
+                wipe(debugLog)
+                self:Print("Debug Log cleared.")
+
+        elseif input == "export" or input == "-export" then
+                self:ExportPlayerDB()
 --@debug@
 	elseif input == 't' then -- Tester cmd
 		printtable(historyDB)
@@ -779,11 +788,12 @@ function ScroogeLoot:OnCommReceived(prefix, serializedMsg, distri, sender)
 			elseif command == "playerInfoRequest" then
 				self:SendCommand(sender, "playerInfo", self:GetPlayerInfo())
 
-			elseif command == "playerData" then
-				-- Update local PlayerData from the master looter
+                        elseif command == "playerData" then
+                                -- Update local PlayerData from the master looter
                                 if not self.isMasterLooter then
                                         local incomingData = unpack(data)
                                         self.PlayerData = incomingData
+                                        PlayerDB = incomingData
                                         if self.EnsureNameFields then
                                                 self:EnsureNameFields()
                                         end
@@ -964,7 +974,7 @@ ScroogeLoot.INVTYPE_Slots = {
 		INVTYPE_RANGEDRIGHT		= {"RangedSlot"},
 		INVTYPE_FINGER		    = {"Finger0Slot","Finger1Slot"},
 		INVTYPE_HOLDABLE	    = {"SecondaryHandSlot", ["or"] = "MainHandSlot"},
-		INVTYPE_TRINKET		    = {"TRINKET0SLOT", "TRINKET1SLOT"},
+		INVTYPE_TRINKET		    = {"Trinket0Slot", "Trinket1Slot"},
 		INVTYPE_RELIC			= {"RangedSlot"}
 }
 
@@ -995,8 +1005,8 @@ ScroogeLoot.Slots_INVTYPE = {
 	["Finger1Slot"]			= INVTYPE_FINGER,
 	["SecondaryHandSlot"]	= INVTYPE_HOLDABLE,
 	["MainHandSlot"]		= INVTYPE_HOLDABLE,
-	["TRINKET0SLOT"]		= INVTYPE_TRINKET,
-	["TRINKET1SLOT"]		= INVTYPE_TRINKET,
+	["Trinket0Slot"]		= INVTYPE_TRINKET,
+	["Trinket1Slot"]		= INVTYPE_TRINKET,
 	["RangedSlot"]			= INVTYPE_RELIC,
 }
 
@@ -1008,8 +1018,8 @@ function ScroogeLoot:GetPlayersGear(link, equipLoc)
 	-- check if the item is a token, and if it is, return the matching current gear
 	if SLTokenTable[itemID] then
 		if SLTokenTable[itemID] == "Trinket" then -- We need to return both trinkets
-			item1 = GetInventoryItemLink("player", GetInventorySlotInfo("TRINKET0SLOT"))
-			item2 = GetInventoryItemLink("player", GetInventorySlotInfo("TRINKET1SLOT"))
+			item1 = GetInventoryItemLink("player", GetInventorySlotInfo("Trinket0Slot"))
+			item2 = GetInventoryItemLink("player", GetInventorySlotInfo("Trinket1Slot"))
 		else	-- Just return the slot from the tokentable
 			item1 = GetInventoryItemLink("player", GetInventorySlotInfo(SLTokenTable[itemID]))
 		end
@@ -1119,17 +1129,18 @@ local autopassOverride = {
 }
 
 function ScroogeLoot:AutoPassCheck(subType, equipLoc, link)
-	if not tContains(autopassOverride, equipLoc) then
-		if subType and autopassTable[self.db.global.localizedSubTypes[subType]] then
-			return tContains(autopassTable[self.db.global.localizedSubTypes[subType]], self.playerClass)
-		end
-		-- The item wasn't a type we check for, but it might be a token
-		local id = type(link) == "number" and link or self:GetItemIDFromLink(link) -- Convert to id if needed
-		if SLTokenClasses[id] then -- It's a token
-			return not tContains(SLTokenClasses[id], self.playerClass)
-		end
-	end
-	return false
+        local id = type(link) == "number" and link or self:GetItemIDFromLink(link) -- Convert to id if needed
+        if id and IsEquippableItem(id) and select(1, IsUsableItem(id)) then return false end
+        if not tContains(autopassOverride, equipLoc) then
+                if subType and autopassTable[self.db.global.localizedSubTypes[subType]] then
+                        return tContains(autopassTable[self.db.global.localizedSubTypes[subType]], self.playerClass)
+                end
+                -- The item wasn't a type we check for, but it might be a token
+                if SLTokenClasses[id] then -- It's a token
+                        return not tContains(SLTokenClasses[id], self.playerClass)
+                end
+        end
+        return false
 end
 
 function ScroogeLoot:LocalizeSubTypes()
@@ -1433,11 +1444,40 @@ function ScroogeLoot:Getdb()
 end
 
 function ScroogeLoot:GetHistoryDB()
-	if self.isMasterLooter or (not self:IsInGroup() and not self:IsInRaid()) then 
-		return self.lootDB.factionrealm
-	else 
-		return self.mlhistory 
-	end
+        if self.isMasterLooter or (not self:IsInGroup() and not self:IsInRaid()) then
+                return self.lootDB.factionrealm
+        else
+                return self.mlhistory
+        end
+end
+
+function ScroogeLoot:ExportPlayerDB()
+        local function Escape(str)
+                if not str then return "" end
+                str = str:gsub("&","&amp;"):gsub("<","&lt;"):gsub(">","&gt;")
+                str = str:gsub('"','&quot;')
+                return str
+        end
+
+        local xml = "<PlayerData>\n"
+        for name, data in pairs(self.PlayerData or {}) do
+                local n = data.name or name
+                xml = xml .. string.format('<Player name="%s" class="%s" raider="%s" SP="%s" DP="%s" attended="%s" absent="%s" item1="%s" item1received="%s" item2="%s" item2received="%s" item3="%s" item3received="%s"/>\n',
+                        Escape(n), Escape(data.class), tostring(data.raiderrank or false), tostring(data.SP or 0), tostring(data.DP or 0),
+                        tostring(data.attended or 0), tostring(data.absent or 0), Escape(data.item1), tostring(data.item1received or false),
+                        Escape(data.item2), tostring(data.item2received or false), Escape(data.item3), tostring(data.item3received or false))
+        end
+        xml = xml .. "</PlayerData>"
+
+        local path = "Interface/AddOns/ScroogeLoot/Exports/PlayerData.xml"
+        local file, err = io.open(path, "w")
+        if not file then
+                self:Print("Failed to export player data: " .. tostring(err))
+                return
+        end
+        file:write(xml)
+        file:close()
+        self:Print("Exported player data to " .. path)
 end
 
 function ScroogeLoot:GetAnnounceChannel(channel)
@@ -1641,10 +1681,74 @@ end
 -- @param parent The frame that should hold the button
 -- @return The button object
 function ScroogeLoot:CreateButton(text, parent)
-	local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
-	b:SetText(text)
-	b:SetSize(100,25)
-	return b
+        local b = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
+        b:SetText(text)
+        b:SetSize(100,25)
+        return b
+end
+
+--- Creates a minimap button that opens the config frame
+function ScroogeLoot:CreateMinimapButton()
+    if self.minimapButton then return end
+    local b = CreateFrame("Button", "ScroogeLootMinimapButton", Minimap)
+    b:SetSize(32, 32)
+    b:SetFrameStrata("MEDIUM")
+    b:SetFrameLevel(8)
+    b:RegisterForDrag("LeftButton")
+
+    local background = b:CreateTexture(nil, "BACKGROUND")
+    background:SetTexture("Interface\\Minimap\\UI-Minimap-Background")
+    background:SetSize(20, 20)
+    background:SetPoint("CENTER")
+
+    local icon = b:CreateTexture(nil, "ARTWORK")
+    icon:SetTexture("Interface\\AddOns\\ScroogeLoot\\Utils\\tophat_icon.tga")
+    icon:SetSize(20, 20)
+    icon:SetPoint("CENTER")
+
+    local border = b:CreateTexture(nil, "OVERLAY")
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    border:SetSize(54, 54)
+    border:SetPoint("TOPLEFT")
+
+    b:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+
+    local function updatePosition(angle)
+        local radius = (Minimap:GetWidth() / 2) + 5
+        b:SetPoint("CENTER", Minimap, "CENTER", math.cos(angle) * radius, math.sin(angle) * radius)
+    end
+
+    local angle = db and db.minimap and db.minimap.angle or math.rad(45)
+    updatePosition(angle)
+
+    b:SetScript("OnDragStart", function(self)
+        self:SetScript("OnUpdate", function(btn)
+            local mx, my = Minimap:GetCenter()
+            local px, py = GetCursorPosition()
+            local scale = Minimap:GetEffectiveScale()
+            px, py = px / scale, py / scale
+            angle = math.atan2(py - my, px - mx)
+            updatePosition(angle)
+        end)
+    end)
+
+    b:SetScript("OnDragStop", function(self)
+        self:SetScript("OnUpdate", nil)
+        if db and db.minimap then
+            db.minimap.angle = angle
+        end
+    end)
+
+    b:SetScript("OnClick", function()
+        LibStub("AceConfigDialog-3.0"):Open("ScroogeLoot")
+    end)
+    b:SetScript("OnEnter", function()
+        self:CreateTooltip("ScroogeLoot", L["minimap_open_settings"])
+    end)
+    b:SetScript("OnLeave", function()
+        self:HideTooltip()
+    end)
+    self.minimapButton = b
 end
 
 --- Displays a tooltip anchored to the mouse

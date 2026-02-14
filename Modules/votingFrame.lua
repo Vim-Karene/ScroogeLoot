@@ -158,12 +158,12 @@ end
 
 function SLVotingFrame:OnInitialize()
         self.scrollCols = {
-                { name = "Name",       width = 100, DoCellUpdate = self.SetCellName },
+                { name = "Name",       width = 120, DoCellUpdate = self.SetCellName },
                 { name = "Rank",       width = 50,  DoCellUpdate = self.SetCellRank },
-                { name = "Response",   width = 100, DoCellUpdate = self.SetCellResponse },
+                { name = "Response",   width = 120, DoCellUpdate = self.SetCellResponse },
                 { name = "Attendance", width = 70,  DoCellUpdate = self.SetCellAttendance },
-                { name = "Gear 1",     width = 120, DoCellUpdate = self.SetCellGear1 },
-                { name = "Gear 2",     width = 120, DoCellUpdate = self.SetCellGear2 },
+                { name = "Gear 1",     width = 20, DoCellUpdate = self.SetCellGear1 },
+                { name = "Gear 2",     width = 20, DoCellUpdate = self.SetCellGear2 },
                 { name = "Roll",       width = 60,  DoCellUpdate = self.SetCellRoll },
         }
 	menuFrame = CreateFrame("Frame", "ScroogeLoot_VotingFrame_RightclickMenu", UIParent, "Lib_UIDropDownMenuTemplate")
@@ -856,7 +856,8 @@ function SLVotingFrame:GetFrame()
                 if not addon.isMasterLooter then
                         return addon:Print(L["You cannot use this command without being the Master Looter"])
                 end
-                PlayerDB = PlayerDB or {}
+                addon.PlayerData = addon.PlayerData or {}
+                local playerDB = addon.PlayerData
                 local inRaid = {}
 
                 if addon:IsInRaid() then
@@ -881,26 +882,29 @@ function SLVotingFrame:GetFrame()
                         end
                 end
 
-                for name, data in pairs(PlayerDB) do
+                for name, data in pairs(playerDB) do
                         data.attended = data.attended or 0
                         data.absent = data.absent or 0
                         if inRaid[name] then
                                 data.attended = data.attended + 1
+
+                                -- Award SP and DP for raiders present in the raid
+                                if data.raiderrank then
+                                        data.SP = (data.SP or 0) + 5
+                                        data.DP = math.max(math.min((data.DP or 0) + 25, 0), -200)
+                                end
                         else
                                 data.absent = data.absent + 1
                         end
                         local total = data.attended + data.absent
                         data.attendance = total > 0 and math.floor((data.attended / total) * 100) or 0
-
-                        -- Award SP for raiders on attendance check
-                        if data.raiderrank then
-                                data.SP = (data.SP or 0) + 5
-                        end
                 end
 
                 if addon.playerDB and addon.playerDB.global then
-                        addon.playerDB.global.playerData = PlayerDB
+                        addon.playerDB.global.playerData = playerDB
                 end
+
+                PlayerDB = playerDB
 
                 if SLVotingFrame.frame and SLVotingFrame.frame.st and SLVotingFrame.frame.st.data then
                         for _, row in ipairs(SLVotingFrame.frame.st.data) do
@@ -1083,18 +1087,33 @@ function SLVotingFrame.SetCellAttendance(rowFrame, frame, data, cols, row, realr
 end
 
 function SLVotingFrame.SetCellGear(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
-	local gear = data[realrow].cols[column].name -- gear1 or gear2
-	local name = data[realrow].name
-	gear = lootTable[session].candidates[name][gear] -- Get the actual gear
-	if gear then
-		local texture = select(10, GetItemInfo(gear))
-		frame:SetNormalTexture(texture)
-		frame:SetScript("OnEnter", function() addon:CreateHypertip(gear) end)
-		frame:SetScript("OnLeave", function() addon:HideTooltip() end)
-		frame:Show()
-        else
-                frame:Hide()
-        end
+       local gearKey = data[realrow].cols[column].name -- gear1 or gear2
+       local name = data[realrow].name
+       local gear = lootTable[session].candidates[name][gearKey] -- Get the actual gear link
+
+       if gear then
+               local texture = select(10, GetItemInfo(gear))
+               if not texture then -- item info might not be cached yet
+                       texture = "Interface/Icons/INV_Misc_QuestionMark"
+               end
+               frame:SetNormalTexture(texture)
+               frame:SetScript("OnEnter", function() addon:CreateHypertip(gear) end)
+               frame:SetScript("OnLeave", function() addon:HideTooltip() end)
+               frame:Show()
+       else
+               -- No gear received from player, show the slot texture instead of hiding
+               local equipLoc = lootTable[session].equipLoc
+               local slot = addon.INVTYPE_Slots[equipLoc]
+               if slot then
+                       local _, tex = GetInventorySlotInfo(slot[1] or slot)
+                       frame:SetNormalTexture(tex)
+                       frame:SetScript("OnEnter", nil)
+                       frame:SetScript("OnLeave", nil)
+                       frame:Show()
+               else
+                       frame:Hide()
+               end
+       end
 end
 
 function SLVotingFrame.SetCellGear1(rowFrame, frame, data, cols, row, realrow, column, fShow, table, ...)
@@ -1546,3 +1565,4 @@ function SLVotingFrame:GetItemStatus(item)
 	GameTooltip:Hide()
 	return text
 end
+
